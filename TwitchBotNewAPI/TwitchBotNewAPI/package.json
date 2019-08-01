@@ -1,0 +1,9 @@
+{
+  "name": "twitch-bot-new-api",
+  "version": "0.0.0",
+  "description": "TwitchBotNewAPI",
+  "main": "server.js",
+  "author": {
+    "name": ""
+  }
+}
