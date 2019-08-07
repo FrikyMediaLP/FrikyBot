@@ -1,0 +1,57 @@
+body{
+    background-image: url("../images/background.png") !important;
+}
+
+#menu {
+    margin: 0 auto;
+    padding-right: 6px;
+    border: 5px solid rgba(255,255,255, 0.01);
+
+    max-width: 600px;
+    display: grid;
+    grid-template-columns: 50% 50%;
+    grid-template-rows: auto;
+    grid-template-areas: "header header" "btn1 btn1" "btn2 btn2" "btn3 btn3" "btn4 btn4" "btn5 btn6";
+    grid-row-gap: 6px;
+    grid-column-gap: 6px;
+    background-color: rgba(255,255,255, 0.5);
+}
+
+#header{
+    grid-area: header;
+    width: 100%;
+}
+
+.button {
+    background-color: white;
+    padding: 10px;
+    border: none;
+}
+
+    .button:hover {
+        background-color: #ffab03;
+    }
+
+#button1 {
+    grid-area: btn1;
+}
+
+#button2 {
+    grid-area: btn2;
+}
+
+#button3 {
+    grid-area: btn3;
+}
+
+#button4 {
+    grid-area: btn4;
+}
+
+#button5 {
+    grid-area: btn5;
+}
+
+#button6 {
+    grid-area: btn6;
+}

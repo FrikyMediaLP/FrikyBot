@@ -1,0 +1,117 @@
+body {
+    background-color: lightgray;
+}
+
+#master {
+    margin: 0 auto;
+    max-width: 600px;
+    display: grid;
+    grid-template-columns: auto;
+    grid-template-rows: auto;
+    grid-template-areas: "header" "content";
+    background-color: white;
+}
+
+#header {
+    grid-area: header;
+    width: 100%;
+}
+
+#content {
+    display: grid;
+    grid-template-columns: auto;
+    grid-template-rows: auto;
+    grid-area: content;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 30px 100px auto;
+    grid-template-rows: auto;
+    grid-template-areas: "IDX NAME DESCRIPTION";
+    min-height: 50px;
+}
+
+    .row:nth-child(even) {
+        background-color: lavender;
+    }
+
+    .row:nth-child(odd) {
+        background-color: whitesmoke;
+    }
+
+    .row p {
+        display: table-cell;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+
+/*
+ *   HEADER
+ */
+
+#row {
+    display: grid;
+    grid-template-columns: 30px 100px auto;
+    grid-template-rows: auto;
+    grid-template-areas: "IDX NAME DESCRIPTION";
+    min-height: 20px;
+    background-color: whitesmoke;
+}
+
+    #row p {
+        display: table-cell;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+#command_index {
+    grid-area: IDX;
+    display: table;
+    height: 100%;
+    margin: 0;
+    border-right: 1px dashed gray;
+}
+
+#command_name {
+    grid-area: NAME;
+    display: table;
+    height: 100%;
+    margin: 0;
+    border-right: 1px dashed gray;
+}
+
+#command_description {
+    grid-area: DESCRIPTION;
+    display: table;
+    height: 100%;
+    margin: 0;
+}
+
+/*
+ *   CONTENT
+ */
+
+.command_index {
+    grid-area: IDX;
+    display: table;
+    height: 100%;
+    margin: 0;
+    border-right: 1px dashed gray;
+}
+
+.command_name {
+    grid-area: NAME;
+    display: table;
+    height: 100%;
+    margin: 0;
+    border-right: 1px dashed gray;
+}
+
+.command_description {
+    grid-area: DESCRIPTION;
+    display: table;
+    height: 100%;
+    margin: 0;
+}

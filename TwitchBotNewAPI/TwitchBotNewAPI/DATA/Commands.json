@@ -1,0 +1,11 @@
+{
+  "COMMANDS": [
+    {
+      "uid": 12,
+      "prefix": "!",
+      "name": "game",
+      "cooldown": "1m",
+      "output_string": "{toUser} - Friky spielt grade {game}"
+    }
+  ]
+}
