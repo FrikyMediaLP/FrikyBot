@@ -6,6 +6,13 @@
       "name": "game",
       "cooldown": "1m",
       "output_string": "{toUser} - Friky spielt grade {game}"
+    },
+    {
+      "uid": 11,
+      "prefix": "!",
+      "name": "SR",
+      "cooldown": "1m",
+      "output_string": "{toUser} - Friky ist grade {SR}"
     }
   ]
 }

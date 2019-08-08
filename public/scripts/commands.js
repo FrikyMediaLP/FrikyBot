@@ -1,4 +1,6 @@
 let biggestIDX = 0;
+let errorDiv = "<div style='text-align: center; color: grey; padding: 3px;'>An error has occurred</div>";
+let variableDiv = "<div style='text-align: center; color: grey; padding: 3px; border-top: 1px solid gray'>Checkout <a href='/Commands/Variables' style='text-decoration: none; color:blue;'>Command Variables</a> for more Features</div>";
 
 function setup() {
     noCanvas();
@@ -17,12 +19,12 @@ function loadCommands() {
             console.log(json);
 
             if (!json.data || json.err) {
-                select('#content').html("<div style='text-align: center; color: grey; padding: 3px;'>Ein Fehler ist aufgetreten</div>");
+                select('#content').html(errorDiv + variableDiv);
                 return;
             }
 
             if (json.data.length == 0) {
-                select('#content').html("<div style='text-align: center; color: grey; padding: 3px;'>Keine Commands gefunden</div>");
+                select('#content').html("<div style='text-align: center; color: grey; padding: 3px;'>No Commands found!</div>" + variableDiv);
             } else {
 
                 select('#content').html("<div id='row'><div id='command_index'><p>UID</p></div><div id='command_name'><p>Name</p></div><div id='command_description'><p>Description</p></div></div>");
@@ -30,13 +32,15 @@ function loadCommands() {
                 for (let command of json.data) {
                     createCommand(command).parent(select('#content'));
                 }
+
+                select('#content').html(select('#content').html() + variableDiv);
             }
 
             ajustGrid();
         })
         .catch(err => {
             console.log(err);
-            select('#content').html("<div style='text-align: center; color: grey; padding: 3px;'>Ein Fehler ist aufgetreten</div>");
+            select('#content').html(errorDiv + variableDiv);
         });
 }
 

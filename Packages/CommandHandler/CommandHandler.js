@@ -16,8 +16,10 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
 
         this.InitAPIEndpoints();
         this.Commands = [];
+        this.Variables = {};
 
         this.loadCommands();
+        this.loadVariables();
     }
 
     InitAPIEndpoints() {
@@ -42,7 +44,15 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
             response.json({
                 status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
                 req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                data: this.Commands                 //Name
+                data: this.Commands                 //Commands
+            });
+        }, false);
+
+        super.AddAPIEndpoint('get', '/Variables', (request, response) => {
+            response.json({
+                status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
+                req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
+                data: this.Variables                //Variables
             });
         }, false);
     }
@@ -85,6 +95,56 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
             }
 
             this.Commands = temp;
+        } catch (err) {
+            console.log("ERROR: " + err);
+            return err;
+        }
+    }
+    loadVariables() {
+        try {
+
+            let s = super.readFile(this.config.Variables_File);
+
+            //read File and convert to JSON (errors if errored before)
+            let json = JSON.parse(s);
+
+            let temp = { };
+
+            for (let vari of Object.getOwnPropertyNames(json)) {
+
+                //check JSON for Completion
+                let completion = "UNKNOWN ERROR!";
+
+                if (!json[vari].pretitle) {
+                    completion = "pretitle missing!"
+                } else{
+                    if (json[vari].Nightbot) {
+                        if (!json[vari].Nightbot.version) {
+                            completion = "Nightbot version missing!"
+                        } else {
+                            if (!json[vari].Nightbot.link) {
+                                completion = "Nightbot link missing!"
+                            } else {
+                                completion = "COMPLETE";
+                            }
+                        }
+                    } else {
+                        if (!json[vari].description) {
+                            completion = "description missing!";
+                        } else {
+                            completion = "COMPLETE";
+                        }
+                    }
+                }
+
+                if (completion != "COMPLETE") {
+                    console.log("ERROR: Variable " + vari + " not complete: " + completion.red);
+                } else {
+                    temp[vari] = json[vari];
+                }
+            }
+
+            this.Variables = temp;
         } catch (err) {
             console.log("ERROR: " + err);
             return err;

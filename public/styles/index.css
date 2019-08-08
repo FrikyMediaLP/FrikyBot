@@ -19,6 +19,9 @@ body{
 
 #header{
     grid-area: header;
+}
+
+#header img {
     width: 100%;
 }
 
