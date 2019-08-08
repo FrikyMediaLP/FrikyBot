@@ -1,14 +1,13 @@
 ﻿'use strict';
 
 console.log("\n");
-
 console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////");
 console.log("                                   NEW TWITCH CHAT BOT - NODE JS SERVER")
 console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////");
 
 /*
  *  ----------------------------------------------------------
- *                      REQUIRE
+ *                      NPM MODULES
  *  ----------------------------------------------------------
  */
 
@@ -69,16 +68,6 @@ let API_PW_PROTECTED_ENDPOINTS = [      //Password protected API Endpoints
    
 ];
 
-//LOGISTICS
-let COMMAND_CONTENT_REQUIRED = ["prefix", "name", "cooldown", "output_string"];
-let CommandTemplate = {
-    uid: 123123,
-    prefix: "",
-    name: "",
-    cooldown: "",
-    output_string: ""
-};
-
 /*
  *  ----------------------------------------------------------
  *                      WEBSITE - INIT
@@ -86,22 +75,23 @@ let CommandTemplate = {
  */
 
 const app = express();
+
 app.listen(1337, () => console.log("Listening on localhost:1337..."));
 app.use(express.static("public", {
     extensions: ['html', 'htm']
 }));
 app.use(express.json({ limit: "1mb" }));
 
-//ROUTERS
+////ROUTERS
 app.use(function (req, res, next) {
-    
+
     if (!req.originalUrl) {
         res.status(500).send("Something broke!");
         return;
     }
 
     let path = req.originalUrl;
-
+    
     if (path.substring(0, 5) == "/api/") {
 
         if (isPWProtected(path)) {
@@ -126,10 +116,22 @@ app.use(function (req, res, next) {
 
         //go to endpoints
         next();
+
+    //Redirect to .html without .html in URL / to 404 page not found page
     } else {
-        res.status(404).redirect("http://localhost:1337/not-found.html");
+        
+        //trim extra / ,but leave if folder requested
+        if (path.charAt(path.length-1) == "/") {
+            path = path.substring(0, path.length - 1);
+        }
+
+        //allready redirected? else redirect to path.html
+        if (path.indexOf(".html.html") >= 0)
+            res.status(404).redirect("http://localhost:1337/not-found.html");
+        else
+            res.redirect("http://localhost:1337" + path + ".html");
     }
-})
+});
 
 INIT();
 
@@ -161,9 +163,6 @@ function INIT() {
     //CONFIG READ / CREATE
     loadConfig();
     loadPackages();
-
-    //COMMANDS LOAD
-    //loadCommands();
     
     //TWITCH IRC 
     Twitch_IRC_Init();
@@ -239,35 +238,6 @@ function loadPackages() {
     }
 }
 
-function loadCommands() {
-    try {
-
-        let s = readFile(CONFIG.Data_Storage.Commands_File);
-
-        //read File and convert to JSON (errors if errored before)
-        let json = JSON.parse(s);
-
-        let temp = [];
-
-        for (let cmd of json.COMMANDS) {
-
-            //check JSON for Completion
-            let completion = checkForCompletion(cmd, CommandTemplate, COMMAND_CONTENT_REQUIRED);
-
-            if (completion != "COMPLETE") {
-                console.log("ERROR: Config File not complete: " + completion.red);
-            } else {
-                temp.push(cmd);
-            }
-        }
-
-        COMMAND_INFOS = temp;
-    } catch (err) {
-        console.log("ERROR: " + err);
-        return err;
-    }
-}
-
 /*
  *  ----------------------------------------------------------
  *                 TWITCH IRC | EVENTHANDLERS
@@ -337,7 +307,14 @@ function onMessageHandler(channel, userstate, message, self) {
     if (self) { return; } // Ignore messages from the bot
 
     let msg = new TWITCHIRC.Message(channel, userstate, message);
-    console.log(msg.toString());
+
+    for (let pack of Object.getOwnPropertyNames(INSTALLED_PACKAGES)) {
+        let packObject = INSTALLED_PACKAGES[pack].Object;
+
+        if (packObject) {
+            packObject.MessageHandler(msg);
+        }
+    }
 }
 function onMessagedeletedHandler(channel, username, deletedMessage, userstate) {
 
@@ -507,10 +484,14 @@ function isPWProtected(path) {
         }
     }
 
-    let pack = getPackageByName(path.substring(5, path.indexOf('/', 5))).Object;
+    let pack = getPackageByName(path.substring(5, path.indexOf('/', 5)));
+
     if (pack) {
-        if (pack.isPWProtected(path.substring(path.indexOf('/', 5)))) {
-            return true;
+        pack = pack.Object;
+        if (pack) {
+            if (pack.isPWProtected(path.substring(path.indexOf('/', 5)))) {
+                return true;
+            }
         }
     }
 

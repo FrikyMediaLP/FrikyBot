@@ -11,20 +11,7 @@ function draw() {
 }
 
 function loadCommands() {
-    let data = {
-        Authentication: "1234"
-    };
-
-
-    let req = {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(data)
-    };
-
-    fetch("/api/bot/reload-commands", req)
+    fetch("/api/CommandHandler/Commands")
         .then(response => response.json())
         .then(json => {
             console.log(json);
@@ -47,7 +34,10 @@ function loadCommands() {
 
             ajustGrid();
         })
-        .catch(err => console.log(err));
+        .catch(err => {
+            console.log(err);
+            select('#content').html("<div style='text-align: center; color: grey; padding: 3px;'>Ein Fehler ist aufgetreten</div>");
+        });
 }
 
 function createCommand(command) {
