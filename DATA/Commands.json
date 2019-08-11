@@ -5,14 +5,21 @@
       "prefix": "!",
       "name": "game",
       "cooldown": "1m",
-      "output_string": "{toUser} - Friky spielt grade {game}"
+      "output_string": "$(toUser) - Friky spielt grade $(game)"
     },
     {
       "uid": 11,
       "prefix": "!",
       "name": "SR",
       "cooldown": "1m",
-      "output_string": "{toUser} - Friky ist grade {SR}"
+      "output_string": "$(toUser) - Friky ist grade $(SR)"
+    },
+    {
+      "uid": 10,
+      "prefix": "!",
+      "name": "Peter",
+      "cooldown": "1m",
+      "output_string": "$(toUser) - Zufalls Argument $($(random 1 3))"
     }
   ]
 }

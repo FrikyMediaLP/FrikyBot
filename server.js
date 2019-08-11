@@ -14,6 +14,7 @@ console.log("///////////////////////////////////////////////////////////////////
 //NPM
 const express = require('express');
 const fs = require('fs');
+const path = require('path');
 const REQUEST = require('request');
 const colors = require('colors');
 
@@ -64,7 +65,7 @@ let INSTALLED_PACKAGES = {
 const CONSTANTS = require('./CONSTANTS.js');
 
 let PW = "1234";                        //Password for protected API Endpoints
-let API_PW_PROTECTED_ENDPOINTS = [      //Password protected API Endpoints
+let API_PW_PROTECTED_ENDPOINTS = [      //Password protected API Endpoints (format: {path: "API_ENPOINT_PATH", type: "GET/POST/..."})
    
 ];
 
@@ -91,10 +92,10 @@ app.use(function (req, res, next) {
     }
 
     let path = req.originalUrl;
-    
-    if (path.substring(0, 5) == "/api/") {
 
-        if (isPWProtected(path)) {
+    if (path.substring(0, 5) == "/api/") {
+        
+        if (isPWProtected({ path: path, type: req.method })) {
             if (req.body && req.body.Authentication) {
                 if (req.body.Authentication != PW) {
                     res.json({
@@ -163,7 +164,10 @@ function INIT() {
     //CONFIG READ / CREATE
     loadConfig();
     loadPackages();
-    
+
+    //removeOldPackageStuff
+    removeOldPackageFiles("public");
+
     //TWITCH IRC 
     Twitch_IRC_Init();
 
@@ -174,8 +178,9 @@ function INIT() {
     //init all Loaded/Installed Packages by there Class and save Object nack in the INSTALLED_PACKAGES Object
     for (let pack of Object.getOwnPropertyNames(INSTALLED_PACKAGES)) {
         let packClass = INSTALLED_PACKAGES[pack].Class;
-        INSTALLED_PACKAGES[pack].Object = new packClass(CONFIG.Packages[pack], app);
+        INSTALLED_PACKAGES[pack].Object = new packClass(CONFIG.Packages[pack], app, TwitchChat, null);
     }
+
 }
 
 function loadConfig() {
@@ -292,6 +297,8 @@ function Twitch_IRC_Init() {
 
 function onConnectedHandler(addr, port) {
     console.log(`* Connected to ${addr}:${port}`);
+
+    TwitchChat.send("FrikyBot online!");
 }
 function onDisconnectedHandler(reason) {
     console.log("Bot got disconnected from TwitchIRC: " + reason);
@@ -476,20 +483,23 @@ function checkForCompletion(source, template, required) {
     }
     return "COMPLETE";
 }
-function isPWProtected(path) {
+function isPWProtected(endpoint) {
 
     for (let pwProtected of API_PW_PROTECTED_ENDPOINTS) {
-        if (pwProtected == path.substring(5)) {
+        if (pwProtected.path == endpoint.path && pwProtected.type == endpoint.type) {
             return true;
         }
     }
 
-    let pack = getPackageByName(path.substring(5, path.indexOf('/', 5)));
+    let pack = getPackageByName(endpoint.path.substring(5, endpoint.path.indexOf('/', 5)));
 
     if (pack) {
         pack = pack.Object;
         if (pack) {
-            if (pack.isPWProtected(path.substring(path.indexOf('/', 5)))) {
+
+            let cuttedPath = endpoint.path.substring(endpoint.path.indexOf('/', 5));
+
+            if (pack.isPWProtected({path: cuttedPath, type: endpoint.type})) {
                 return true;
             }
         }
@@ -503,6 +513,33 @@ function getPackageByName(name) {
         return INSTALLED_PACKAGES[name];
     } else {
         return null;
+    }
+}
+function removeOldPackageFiles(blankPath) {
+
+    let exeptions = ["public/Commands", "public/images", "public/scripts", "public/styles"];
+
+    for (let exept of exeptions) {
+        if (exept == blankPath) {
+            return;
+        }
+    }
+
+    let publicDir = path.resolve(blankPath);
+
+    if (fs.existsSync(publicDir)) {
+        fs.readdirSync(publicDir).forEach(function (file, index) {
+            var curPath = blankPath + "/" + file;
+            var curPathRes = path.resolve(blankPath + "/" + file);
+            if (fs.lstatSync(curPathRes).isDirectory()) { // recurse
+                removeOldPackageFiles(curPath);
+            } else {
+                if (blankPath != "public") {
+                    fs.unlinkSync(curPathRes);
+                }
+            }
+        });
+        if(blankPath != "public") fs.rmdirSync(publicDir);
     }
 }
 
@@ -538,5 +575,21 @@ function readFile(path) {
     } catch (err) {
         console.log("ERROR: " + err);
         return "ERROR: " + err;
+    }
+}
+function removeDir(blankPath) {
+    let publicDir = path.resolve(blankPath);
+
+    if (fs.existsSync(publicDir)) {
+        let pack = this;
+        fs.readdirSync(publicDir).forEach(function (file, index) {
+            var curPath = path.resolve(blankPath + "/" + file);
+            if (fs.lstatSync(curPath).isDirectory()) { // recurse
+                pack.removeHTML(curPath);
+            } else { // delete file
+                fs.unlinkSync(curPath);
+            }
+        });
+        fs.rmdirSync(publicDir);
     }
 }

@@ -78,6 +78,19 @@ class TwitchIRC {
         }
     }
 
+    send(message) {
+        if (this.client) {
+            this.client.say(this.Channel, message)
+                .then((data) => {
+                    //console.log(data);
+                }).catch((err) => {
+                    //console.log(err);
+                });
+        } else {
+            console.log("Client not defined! Client init went wrong or client disconnected?");
+        }
+    }
+
 }
 
 class Message {

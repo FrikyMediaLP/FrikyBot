@@ -1,9 +1,9 @@
-const CONSTANTS = require('./../../CONSTANTS.js');
+﻿const CONSTANTS = require('./../../CONSTANTS.js');
 
-class MessageDatabase extends require('./../PackageBase.js').PackageBase {
+class OverwatchLeague extends require('./../PackageBase.js').PackageBase {
 
     constructor(config, app, twitchIRC, twitchNewApi) {
-        super(config, app, twitchIRC, twitchNewApi, "MessageDatabase");
+        super(config, app, twitchIRC, twitchNewApi, "OverwatchLeague");
 
         this.InitAPIEndpoints();
     }
@@ -32,4 +32,4 @@ class MessageDatabase extends require('./../PackageBase.js').PackageBase {
     }
 }
 
-module.exports.MessageDatabase = MessageDatabase;
+module.exports.OverwatchLeague = OverwatchLeague;

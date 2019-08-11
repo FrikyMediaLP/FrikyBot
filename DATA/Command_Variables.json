@@ -1,90 +1,98 @@
 {
-	"Arguments": {
-		"pretitle": "space separated arguments in the command's input",
-		"Nightbot": {
-			"version": "16th Oct 2016",
-			"link": "https://docs.nightbot.tv/commands/variables/arguments"
-		}
-	},
-	"Channel": {
-		"pretitle": "name of the current channel",
-		"Nightbot": {
-			"version": "16th Oct 2016",
-			"link": "https://docs.nightbot.tv/commands/variables/channel"
-		}
-	},
-	"Count": {
-		"pretitle": "variable that automatically increments",
-		"Nightbot": {
-			"version": "16th Oct 2016",
-			"link": "https://docs.nightbot.tv/commands/variables/count"
-		}
-	},
-	"Countdown": {
-		"pretitle": "time left until a specified time",
-		"Nightbot": {
-			"version": "10th May 2017",
-			"link": "https://docs.nightbot.tv/commands/variables/countdown"
-		}
-	},
-	"Countup": {
-		"pretitle": "time past since a specified time",
-		"Nightbot": {
-			"version": "16th Oct 2016",
-			"link": "https://docs.nightbot.tv/commands/variables/countup"
-		}
-	},
-	"Query": {
-		"pretitle": "full input that comes after the command",
-		"Nightbot": {
-			"version": "16th Oct 2016",
-			"link": "https://docs.nightbot.tv/commands/variables/query"
-		}
-	},
-	"RandomNumber": {
-		"pretitle": "",
-		"description": ""
-	},
-	"Time": {
-		"pretitle": "current time in a selected timezone",
-		"Nightbot": {
-			"version": "16th Oct 2016",
-			"link": "https://docs.nightbot.tv/commands/variables/time"
-		}
-	},
-	"ToUser": {
-		"pretitle": "first argument given to the command",
-		"Nightbot": {
-			"version": "10th May 2017",
-			"link": "https://docs.nightbot.tv/commands/variables/touser"
-		}
-	},
-	"Twitch": {
-		"pretitle": "user information from a Twitch profile",
-		"Nightbot": {
-			"version": "2nd Dec 2018",
-			"link": "https://docs.nightbot.tv/commands/variables/twitch"
-		}
-	},
-	"UrlFetch": {
-		"pretitle": "output from a remote url (formerly <variable>customapi</variable>)",
-		"Nightbot": {
-			"version": "20th Aug 2018",
-			"link": "https://docs.nightbot.tv/commands/variables/urlfetch"
-		}
-	},
-	"User": {
-		"pretitle": "name of the calling user",
-		"Nightbot": {
-			"version": "16th Oct 2016",
-			"link": "https://docs.nightbot.tv/commands/variables/user"
-		}
-	},
-	"UserLevel": {
-		"pretitle": "userlevel of the calling user",
-		"Nightbot": {
-			"version": "24th May 2019",
-			"link": "https://docs.nightbot.tv/commands/variables/userlevel"
-		}
-	}
+  "Arguments": {
+    "pretitle": "space separated arguments in the command's input",
+    "Nightbot": {
+      "version": "16th Oct 2016",
+      "link": "https://docs.nightbot.tv/commands/variables/arguments"
+    }
+  },
+  "Channel": {
+    "pretitle": "name of the current channel",
+    "Nightbot": {
+      "version": "16th Oct 2016",
+      "link": "https://docs.nightbot.tv/commands/variables/channel"
+    }
+  },
+  "Count": {
+    "pretitle": "variable that automatically increments",
+    "Nightbot": {
+      "version": "16th Oct 2016",
+      "link": "https://docs.nightbot.tv/commands/variables/count"
+    }
+  },
+  "Countdown": {
+    "pretitle": "time left until a specified time",
+    "Nightbot": {
+      "version": "10th May 2017",
+      "link": "https://docs.nightbot.tv/commands/variables/countdown"
+    }
+  },
+  "Countup": {
+    "pretitle": "time past since a specified time",
+    "Nightbot": {
+      "version": "16th Oct 2016",
+      "link": "https://docs.nightbot.tv/commands/variables/countup"
+    }
+  },
+  "Game": {
+    "pretitle": "name of the current game played",
+    "description": ""
+  },
+  "Query": {
+    "pretitle": "full input that comes after the command",
+    "Nightbot": {
+      "version": "16th Oct 2016",
+      "link": "https://docs.nightbot.tv/commands/variables/query"
+    }
+  },
+  "RandomNumber": {
+    "pretitle": "generates a random number",
+    "description": ""
+  },
+  "Time": {
+    "pretitle": "current time in a selected timezone",
+    "Nightbot": {
+      "version": "16th Oct 2016",
+      "link": "https://docs.nightbot.tv/commands/variables/time"
+    }
+  },
+  "ToUser": {
+    "pretitle": "first argument given to the command",
+    "Nightbot": {
+      "version": "10th May 2017",
+      "link": "https://docs.nightbot.tv/commands/variables/touser"
+    }
+  },
+  "Twitch": {
+    "pretitle": "user information from a Twitch profile",
+    "Nightbot": {
+      "version": "2nd Dec 2018",
+      "link": "https://docs.nightbot.tv/commands/variables/twitch"
+    }
+  },
+  "UrlFetch": {
+    "pretitle": "output from a remote url (formerly <variable>customapi</variable>)",
+    "Nightbot": {
+      "version": "20th Aug 2018",
+      "link": "https://docs.nightbot.tv/commands/variables/urlfetch"
+    }
+  },
+  "User": {
+    "pretitle": "name of the calling user",
+    "Nightbot": {
+      "version": "16th Oct 2016",
+      "link": "https://docs.nightbot.tv/commands/variables/user"
+    }
+  },
+  "UserLevel": {
+    "pretitle": "userlevel of the calling user",
+    "Nightbot": {
+      "version": "24th May 2019",
+      "link": "https://docs.nightbot.tv/commands/variables/userlevel"
+    }
+  },
+  "Variable": {
+    "pretitle": "set/get own variables",
+    "description": ""
+  }
 }
