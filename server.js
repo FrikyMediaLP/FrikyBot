@@ -517,7 +517,7 @@ function getPackageByName(name) {
 }
 function removeOldPackageFiles(blankPath) {
 
-    let exeptions = ["public/Commands", "public/images", "public/scripts", "public/styles"];
+    let exeptions = ["public/images", "public/scripts", "public/styles"];
 
     for (let exept of exeptions) {
         if (exept == blankPath) {

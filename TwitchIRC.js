@@ -1,4 +1,5 @@
 const tmi = require('tmi.js');
+const CONSTANTS = require('./CONSTANTS.js');
 
 class TwitchIRC {
     
@@ -98,6 +99,28 @@ class Message {
         this.message = message;
         this.channel = channel;
         this.userstate = userstate;
+
+        if (this.hasBadge("staff")) {
+            this.userLevel = CONSTANTS.UserLevel.Staff;
+        } else if (this.hasBadge("admin")) {
+            this.userLevel = CONSTANTS.UserLevel.Admin;
+        } else if (this.hasBadge("broadcaster")) {
+            this.userLevel = CONSTANTS.UserLevel.Broadcaster;
+        } else if (this.hasBadge("global_mod")) {
+            this.userLevel = CONSTANTS.UserLevel.GlobalMod;
+        } else if (this.hasBadge("moderator") || userstate.mod == 1) {
+            this.userLevel = CONSTANTS.UserLevel.Moderator;
+        } else if (this.hasBadge("vip")) {
+            this.userLevel = CONSTANTS.UserLevel.VIP;
+        } else if (this.hasBadge("subscriber")) {
+            this.userLevel = CONSTANTS.UserLevel.Subscriber;
+        } else {
+            this.userLevel = CONSTANTS.UserLevel.Regular;
+        }
+    }
+
+    getDisplayName() {
+        return (this.userstate['display-name'] && this.userstate['display-name'] != "" ? this.userstate['display-name'] : this.userstate.username);
     }
 
     toString() {
@@ -122,11 +145,16 @@ class Message {
         };
     }
 
-    hasCommand(command) {
-        if (command)
-            return (this.message.indexOf(command) >= 0);
-        else
-            return false;
+    getUserLevel() {
+        return this.userLevel;
+    }
+
+    getUserLevelAsText() {
+       return Object.getOwnPropertyNames(CONSTANTS.UserLevel)[Object.getOwnPropertyNames(CONSTANTS.UserLevel).length - 1 - this.userLevel];
+    }
+
+    hasBadge(badgeName) {
+        return this.userstate.badges[badgeName] ? true : false;
     }
 }
 

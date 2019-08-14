@@ -73,9 +73,9 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
     }
 
     MessageHandler(message) {
-
-        if (this.isHardCodedCommand(message.message.indexOf(cmd.prefix + cmd.name))) {
-
+        
+        if (this.isHardCodedCommand(message)) {
+            return;
         } else {
             for (let cmd of this.Commands) {
                 if (message.message.indexOf(cmd.prefix + cmd.name) >= 0) {
@@ -86,10 +86,34 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
         }
     }
 
-    isHardCodedCommand() {
+    isHardCodedCommand(message) {
 
+        let commandName = message.message.split(" ")[0];
+        let parameters = (message.message.split(" ").length == 1 ? "" : message.message.substring((message.message.indexOf(" ") + 1)));
+
+        let game = "GAR NIX!";
+
+        if (commandName == "!game") {
+            if (message.getUserLevel() >= CONSTANTS.UserLevel.Moderator) {
+                //print Game
+                if (parameters == "") {
+                    this.twitchIRC.send("Friky spielt grade " + game);
+                } else {
+                    //print Game
+                    if (parameters.charAt(0) == "@") {
+                        this.twitchIRC.send(parameters + " -> Friky spielt grade " + game);
+                    } else {
+                        //nothing for now - wait till TwitchNewAPI implemented
+                    }
+                }
+            } else {
+                this.twitchIRC.send("@" + (parameters == "" ? message.getDisplayName() : parameters) + " -> Friky spielt grade " + game);
+            }
+            return true;
+        }
+
+        return false;
     }
-
     executeCommand(command, message) {
         if (command) {
             if (command.output_string) {
@@ -105,7 +129,6 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
             }
         }
     }
-
     replaceVariables(command, message, origCommand) {
 
         if (command.indexOf("$(") >= 0) {
@@ -163,7 +186,6 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
             return false;
         }
     }
-
     getVariableContent(variable, message, command) {
 
         let name = variable.substring(2, (variable.indexOf(" ") >= 0 ? variable.indexOf(" ") : variable.length - 1));
@@ -197,7 +219,6 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
             }
         }
     }
-
     loadCommands() {
         try {
 
