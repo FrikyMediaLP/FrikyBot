@@ -11,6 +11,7 @@ As mentioned before, you need to install [Node.js](https://nodejs.org) and the f
 * ``npm install tmi.js``
 * ``npm install request``
 * ``npm install colors``
+* ``npm install path``
 
 ## Deployment
 Use the config.json File to set YOUR Twitch Account Details and the Packages you´d like to use. Default Directory of the Config File is the Desktop, but you can change this in the server.js File (``CONFIG_PATH``).
