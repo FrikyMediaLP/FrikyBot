@@ -14,7 +14,6 @@ function setup() {
             fetch(rootAPI + "/live-match")
                 .then(res => res.json())
                 .then(json => {
-                    console.log(json.data.length);
                     showMatch(json.data.liveMatch);
                 });
         });
@@ -23,17 +22,15 @@ function setup() {
 }
 
 function draw() {
-    if(!end) fetch(rootAPI + "/live-match")
+    if (!end) fetch(rootAPI + "/live-match")
         .then(res => res.json())
         .then(json => {
-            console.log(json.data);
-            showMatch(json.data.liveMatch);
+            updateMaps(json.data.liveMatch);
         });
 }
 
 function showMatch(match) {
-
-    if (!match)
+    if (!match || Object.getOwnPropertyNames(match).length == 0)
         return;
 
     //console.clear();
@@ -50,13 +47,11 @@ function createMap(match, idx) {
 
     let details = getMapDetails(map.attributes.mapGuid);
 
-    console.log(map);
-
-    let s = "<div class='Map_Index'><p>" + idx + "</p></div>";
-    s += "<div class='Map_Left'></div>";
-    s += "<div class='Map_Name'><p>" + details.name.en_US + "</p></div>";
-    s += "<div class='Map_Img'><img src='" + details.thumbnail + "' /></div>";
-    s += "<div class='Map_Right'></div>";
+    let s = "<div class='Map_Index' id='Map_Index_" + idx + "'><p>" + idx + "</p></div>";
+    s += "<div class='Map_Left' id='Map_Left_" + idx + "'></div>";
+    s += "<div class='Map_Name' id='Map_Name_" + idx + "'><p>" + details.name.en_US + "</p></div>";
+    s += "<div class='Map_Img' id='Map_Img_" + idx + "'><img src='" + details.thumbnail + "' /></div>";
+    s += "<div class='Map_Right' id='Map_Right_" + idx + "'></div>";
 
     //let s = "<div class='Map_Index'><p>" + idx + "</p></div>";
     //s += "<div class='Map_Left' style='background-color: " + (map.state == "CONCLUDED" ? "#" + match.competitors[getMapWinner(map)].primaryColor : "orange") + ";' ></div>";
@@ -75,9 +70,31 @@ function createMap(match, idx) {
     return div;
 }
 
+function updateMaps(match) {
+    let idx = 1;
+    let prevLive = false;
+
+    while (select("#" + idx)) {
+
+        let map = getMap(match, idx);
+        let details = getMapDetails(map.attributes.mapGuid);
+
+        if (map.state == "CONCLUDED" || (map.state == "PENDING" && !prevLive)) {
+            div.style("grid-template-rows", "55px");
+        } else {
+            if (map.state == "IN_PROGRESS") {
+                select("#Map_Name_" + idx).html("<p></p><p>" + details.name.en_US + "</p>");
+            }
+        }
+
+        console.log(idx);
+        idx++;
+    };
+}
+
 function getMap(match, idx) {
     for (let game of match.games) {
-         
+
         if (game.number == idx) {
             return game;
         }
@@ -88,9 +105,9 @@ function getMap(match, idx) {
 function getMapScore(map) {
     if (map.state == "IN_PROGRESS") {
         return map.points ? map.points[0] + " - " + map.points[1] : " 0 - 0";
-    }else if (map.state == "CONCLUDED") {
+    } else if (map.state == "CONCLUDED") {
         return map.points[0] + " - " + map.points[1];
-    }else {
+    } else {
         return "";
     }
 }
@@ -107,7 +124,7 @@ function getMapWinner(map) {
 }
 
 function getMapDetails(mapGUID) {
-    for(let map of MAPS){
+    for (let map of MAPS) {
         if (map.guid == mapGUID) {
             return map;
         }

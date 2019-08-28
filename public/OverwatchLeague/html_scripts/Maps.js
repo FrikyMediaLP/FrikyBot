@@ -25,7 +25,7 @@ function draw() {
     if (!end) fetch(rootAPI + "/live-match")
         .then(res => res.json())
         .then(json => {
-            updateMaps(json.data.liveMatch);
+            showMatch(json.data.liveMatch);
         });
 }
 
@@ -37,35 +37,35 @@ function showMatch(match) {
     select("body").html("<div id='Match_Maps'></div>");
 
     for (let i = 1; i <= match.games.length; i++) {
-        createMap(match, i);
+        createMap(match, i, (i == 1 ? true : getMap(match, i).state == "IN_PROGRESS" || getMap(match, i).state == "CONCLUDED")).parent(select("#Match_Maps"));
     }
 }
 
-function createMap(match, idx) {
+function createMap(match, idx, prevLive) {
 
     let map = getMap(match, idx);
 
     let details = getMapDetails(map.attributes.mapGuid);
 
-    let s = "<div class='Map_Index' id='Map_Index_" + idx + "'><p>" + idx + "</p></div>";
-    s += "<div class='Map_Left' id='Map_Left_" + idx + "'></div>";
-    s += "<div class='Map_Name' id='Map_Name_" + idx + "'><p>" + details.name.en_US + "</p></div>";
-    s += "<div class='Map_Img' id='Map_Img_" + idx + "'><img src='" + details.thumbnail + "' /></div>";
-    s += "<div class='Map_Right' id='Map_Right_" + idx + "'></div>";
+    //let s = "<div class='Map_Index' id='Map_Index_" + idx + "'><p>" + idx + "</p></div>";
+    //s += "<div class='Map_Left' id='Map_Left_" + idx + "'></div>";
+    //s += "<div class='Map_Name' id='Map_Name_" + idx + "'><p>" + details.name.en_US + "</p></div>";
+    //s += "<div class='Map_Img' id='Map_Img_" + idx + "'><img src='" + details.thumbnail + "' /></div>";
+    //s += "<div class='Map_Right' id='Map_Right_" + idx + "'></div>";
 
-    //let s = "<div class='Map_Index'><p>" + idx + "</p></div>";
-    //s += "<div class='Map_Left' style='background-color: " + (map.state == "CONCLUDED" ? "#" + match.competitors[getMapWinner(map)].primaryColor : "orange") + ";' ></div>";
-    //s += "<div class='Map_Name'>" + (map.state == "CONCLUDED" ? "" : map.state == "IN_PROGRESS" ? "<p>" + getMapScore(map) + "</p>" : map.state == "PENDING" ? (!prevLive ? "" : "<p>Next Map</p>") : " ") + "<p>" + details.name.en_US + "</p></div>";
-    //s += "<div class='Map_Img'><img src='" + details.thumbnail + "' /></div>";
-    //s += "<div class='Map_Right' style='background-color: " + (map.state == "CONCLUDED" ? "#" + match.competitors[getMapWinner(map)].primaryColor : "orange") + ";' ></div>";
+    let s = "<div class='Map_Index'><p>" + idx + "</p></div>";
+    s += "<div class='Map_Left' style='background-color: " + (map.state == "CONCLUDED" ? "#" + match.competitors[getMapWinner(map)].primaryColor : "orange") + ";' ></div>";
+    s += "<div class='Map_Name'>" + (map.state == "CONCLUDED" ? "" : map.state == "IN_PROGRESS" ? "<p>" + getMapScore(map) + "</p>" : map.state == "PENDING" ? (!prevLive ? "" : "<p>Next Map</p>") : " ") + "<p>" + details.name.en_US + "</p></div>";
+    s += "<div class='Map_Img'><img src='" + details.thumbnail + "' /></div>";
+    s += "<div class='Map_Right' style='background-color: " + (map.state == "CONCLUDED" ? "#" + match.competitors[getMapWinner(map)].primaryColor : "orange") + ";' ></div>";
 
     let div = createDiv(s);
     div.class("Map");
     div.id(map.number);
 
-    //if ((map.state == "CONCLUDED" || map.state == "PENDING") && !prevLive) {
-    //    div.style("grid-template-rows", "55px");
-    //}
+    if (!prevLive) {
+        div.style("grid-template-rows", "55px");
+    }
 
     return div;
 }
@@ -78,6 +78,8 @@ function updateMaps(match) {
 
         let map = getMap(match, idx);
         let details = getMapDetails(map.attributes.mapGuid);
+
+		let div = select("#" + idx);
 
         if (map.state == "CONCLUDED" || (map.state == "PENDING" && !prevLive)) {
             div.style("grid-template-rows", "55px");

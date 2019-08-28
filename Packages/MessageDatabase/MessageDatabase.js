@@ -28,7 +28,7 @@ class MessageDatabase extends require('./../PackageBase.js').PackageBase {
     }
 
     MessageHandler(message) {
-
+        console.log(message.toString());
     }
 }
 
