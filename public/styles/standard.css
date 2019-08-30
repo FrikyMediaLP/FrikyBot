@@ -1,0 +1,123 @@
+﻿body {
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+}
+
+#grid {
+    height: 100%;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 230px auto;
+    grid-template-rows: 50px auto;
+    grid-template-areas: "naviHeader contentHeader" "navi content";
+}
+
+    #grid #naviHeader {
+        grid-area: naviHeader;
+        height: 44px;
+        width: 100%;
+        padding-top: 6px;
+        background-color: #028deb;
+        font-family: 'Roboto', sans-serif;
+        font-size: 30px;
+    }
+
+        #grid #naviHeader a {
+            text-decoration: none;
+            margin-left: 42px;
+            font-weight: 300;
+            color: white !important;
+        }
+
+        #grid #naviHeader span {
+            font-weight: 400;
+        }
+
+    #grid #navi {
+        grid-area: navi;
+        background-color: #2b353b;
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: 100px auto;
+    }
+
+        #grid #navi #statusHeader {
+            padding: 20px;
+            color: white !important;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+        }
+
+        #grid #navi #mainNavi {
+            display: grid;
+            grid-template-columns: auto;
+            grid-template-rows: 40px 40px 40px 40px 40px 40px 40px 40px 40px 40px 40px 40px;
+        }
+
+            #grid #navi #mainNavi #mainNaviHeader {
+                background-color: #001d2e;
+                padding: 10px;
+            }
+
+                #grid #navi #mainNavi #mainNaviHeader span {
+                    color: lightgray !important;
+                    font-family: 'Roboto', sans-serif;
+                    font-weight: 300;
+                }
+
+            #grid #navi #mainNavi .caption {
+                margin: 10px 0px 10px 10px;
+            }
+
+                #grid #navi #mainNavi .caption a {
+                    text-decoration: none;
+                    font-family: 'Roboto', sans-serif;
+                    font-weight: 300;
+                    font-size: 20px;
+                    color: white;
+                    position: relative;
+                }
+
+                    #grid #navi #mainNavi .caption a:hover {
+                        filter: invert(20%);
+                    }
+
+                #grid #navi #mainNavi .caption span {
+                    position: absolute;
+                    top: 0;
+                    left: 30px;
+                    width: 180px;
+                }
+
+                #grid #navi #mainNavi .caption img {
+                    filter: invert(100%);
+                    width: 25px;
+                    position: absolute;
+                    top: 0px;
+                }
+
+        #grid #navi #license {
+            position: absolute;
+            bottom: 0;
+            left: 55px;
+            color: white;
+        }
+
+            #grid #navi #license a {
+                text-decoration: none;
+                font-size: 15px;
+                color: white;
+            }
+
+    #grid #contentHeader {
+        grid-area: contentHeader;
+        height: 100%;
+        background-color: #19a3ff;
+    }
+
+    #grid #content {
+        grid-area: content;
+        height: 100%;
+        background-color: white;
+    }

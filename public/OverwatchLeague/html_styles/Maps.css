@@ -28,7 +28,6 @@
 
         #Match_Maps .Map .Map_Left {
             grid-area: Left;
-			background-color: orange;
         }
 
         #Match_Maps .Map .Map_Name {
@@ -56,7 +55,6 @@
 
         #Match_Maps .Map .Map_Right {
             grid-area: Right;
-			background-color: orange;
         }
 
 #Match {

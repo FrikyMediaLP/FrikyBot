@@ -1,7 +1,7 @@
 let CONSTANTS = {
     STATUS_SUCCESS: "SUCCESS",         //Indicades Successfull Api Request
     STATUS_FAILED: "FAILED",           //Indicades Failed Api Request
-    UserLevel: {
+    UserLevel: {                       //Twitch User Levels
         Staff: 7,
         Admin: 6,
         Broadcaster: 5,
