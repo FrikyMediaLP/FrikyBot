@@ -19,28 +19,28 @@ function loadCommands() {
             console.log(json);
 
             if (!json.data || json.err) {
-                select('#content').html(errorDiv + variableDiv);
+                select('#master').html(errorDiv + variableDiv);
                 return;
             }
 
             if (json.data.length == 0) {
-                select('#content').html("<div style='text-align: center; color: grey; padding: 3px;'>No Commands found!</div>" + variableDiv);
+                select('#master').html("<div style='text-align: center; color: grey; padding: 3px;'>No Commands found!</div>" + variableDiv);
             } else {
 
-                select('#content').html("<div id='row'><div id='command_index'><p>UID</p></div><div id='command_name'><p>Name</p></div><div id='command_description'><p>Description</p></div></div>");
+                select('#master').html("<div id='row'><div id='command_index'><p>UID</p></div><div id='command_name'><p>Name</p></div><div id='command_description'><p>Description</p></div></div>");
 
                 for (let command of json.data) {
-                    createCommand(command).parent(select('#content'));
+                    createCommand(command).parent(select('#master'));
                 }
 
-                select('#content').html(select('#content').html() + variableDiv);
+                select('#master').html(select('#master').html() + variableDiv);
             }
 
             ajustGrid();
         })
         .catch(err => {
             console.log(err);
-            select('#content').html(errorDiv + variableDiv);
+            select('#master').html(errorDiv + variableDiv);
         });
 }
 

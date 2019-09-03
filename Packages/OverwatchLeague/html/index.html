@@ -3,22 +3,26 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
-    <title>FrikyBot</title>
+    <title>Commands - FrikyBot</title>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/x-icon" href="../images/favicon.png" />
+    <link href="html_styles/index.css" rel="stylesheet">
+    <script src="html_scripts/index.js"></script>
 
-    <link rel="shortcut icon" type="image/x-icon" href="images/favicon.png" />
 
-    <link href="styles/index.css" rel="stylesheet">
-    <link href="styles/standard.css" rel="stylesheet">
-    <script src="scripts/index.js"></script>
-    <script src="scripts/standard.js"></script>
+    <script src="../scripts/standard.js"></script>
+    <link href="../styles/standard.css" rel="stylesheet">
+
+    <script src="../scripts/libraries/p5.js"></script>
+    <script src="../scripts/libraries/p5.dom.js"></script>
 
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
 </head>
 <body onload="getBotStatus();">
     <div id="grid">
         <div class="cellM" id="naviHeader">
-            <a href="">FRIKY<span>BOT</span></a>
+            <a href="../">FRIKY<span>BOT</span></a>
         </div>
 
         <div class="cellM" id="contentHeader">
@@ -27,7 +31,7 @@
 
         <div class="cellM" id="navi">
             <div id="status">
-                <img src="images/icons/refresh.svg" onclick="getBotStatus();"/>
+                <img src="../../images/icons/refresh.svg" onclick="getBotStatus();" />
                 <p id="statusHeader">Status</p>
             </div>
 
@@ -43,29 +47,29 @@
                 </div>
 
                 <div class="caption">
-                    <a href="">
-                        <img src="images/icons/home.svg" />
+                    <a href="../">
+                        <img src="../images/icons/home.svg" />
                         <span>Homepage</span>
                     </a>
                 </div>
 
                 <div class="caption">
-                    <a href="Commands">
-                        <img src="images/icons/command.svg" />
+                    <a href="../Commands">
+                        <img src="../images/icons/command.svg" />
                         <span>Commands</span>
                     </a>
                 </div>
 
                 <div class="caption">
                     <a href="">
-                        <img src="images/icons/cup.svg" />
+                        <img src="../images/icons/cup.svg" />
                         <span>Chat Stats</span>
                     </a>
                 </div>
 
                 <div class="caption">
                     <a href="">
-                        <img src="images/icons/chat.svg" />
+                        <img src="../images/icons/chat.svg" />
                         <span>Custom Chat</span>
                     </a>
                 </div>
@@ -81,22 +85,22 @@
                 </div>
 
                 <div class="caption">
-                    <a href="/OverwatchLeague">
-                        <img src="images/icons/OWL.png" />
+                    <a href="">
+                        <img src="../images/icons/OWL.png" />
                         <span>Overwatch League</span>
                     </a>
                 </div>
 
                 <div class="caption">
                     <a href="">
-                        <img src="images/icons/poll.svg" />
+                        <img src="../images/icons/poll.svg" />
                         <span>Voting / Polls</span>
                     </a>
                 </div>
 
                 <div class="caption">
                     <a href="">
-                        <img src="images/icons/packages.svg" />
+                        <img src="../images/icons/packages.svg" />
                         <span>Other Packages</span>
                     </a>
                 </div>
@@ -113,14 +117,14 @@
 
                 <div class="caption">
                     <a href="">
-                        <img src="images/icons/gear.svg" />
+                        <img src="../images/icons/gear.svg" />
                         <span>Options</span>
                     </a>
                 </div>
 
                 <div class="caption">
                     <a href="">
-                        <img src="images/icons/twitch.svg" />
+                        <img src="../images/icons/twitch.svg" />
                         <span>Sign In</span>
                     </a>
                 </div>
@@ -129,11 +133,7 @@
         </div>
 
         <div class="cellM" id="content">
-            <h1>Weclome to the FrikyBot Webinterface!</h1>
-            <h2>Bot Status</h2>
-            <p>Bot is currently online and logged in. Channel: FrikyMediaLP</p>
-            <h2>News</h2>
-            <p>Hier stehen News!</p>
+            <h1>Overwatch League Viewer</h1>
         </div>
     </div>
 </body>

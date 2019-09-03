@@ -145,6 +145,15 @@ INIT();
  *  ----------------------------------------------------------
  */
 
+//STATUS 
+app.all('/api/Status', (request, response) => {
+    response.json({
+        status: CONSTANTS.STATUS_SUCCESS,
+        req: request.body,
+        data: "RUNNING!"
+    });
+});
+
 //NO ENDPOINT FOUND
 app.all('/api/*', (request, response) => {
     response.json({
@@ -298,7 +307,7 @@ function Twitch_IRC_Init() {
 function onConnectedHandler(addr, port) {
     console.log(`* Connected to ${addr}:${port}`);
 
-    TwitchChat.send("FrikyBot online!");
+    //TwitchChat.send("FrikyBot online!");
 }
 function onDisconnectedHandler(reason) {
     console.log("Bot got disconnected from TwitchIRC: " + reason);

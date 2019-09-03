@@ -1,24 +1,4 @@
-body {
-    background-color: lightgray;
-}
-
-#master {
-    margin: 0 auto;
-    max-width: 600px;
-    display: grid;
-    grid-template-columns: auto;
-    grid-template-rows: auto;
-    grid-template-areas: "header" "content";
-    background-color: white;
-}
-
-#header {
-    grid-area: header;
-    width: 100%;
-}
-
 #content {
-    margin: 0 auto;
     padding: 0 10px;
     color: #333333;
     font-family: 'Roboto', sans-serif;

@@ -49,7 +49,7 @@ function loadVariables() {
                 return;
             }
 
-            let s = "<span id='headerTitle'>Bot Command Variables</span><a href='../commands.html' id='back'>BACK</a></br></br>";
+            let s = "<span id='headerTitle'>Bot Command Variables</span><a href='../Commands' id='back'>BACK</a></br></br>";
 
             for (let vari of Object.getOwnPropertyNames(json.data)) {
                 s += "<div class=variable><span> &#8226; ";

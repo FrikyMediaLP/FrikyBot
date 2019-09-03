@@ -14,7 +14,7 @@
 
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
 </head>
-<body>
+<body onload="getBotStatus();">
     <div id="grid">
         <div class="cellM" id="naviHeader">
             <a href="index.html">FRIKY<span>BOT</span></a>
@@ -26,8 +26,15 @@
 
         <div class="cellM" id="navi">
             <div id="status">
+                <img src="images/icons/refresh.svg" onclick="getBotStatus();" />
                 <p id="statusHeader">Status</p>
             </div>
+
+            <!--
+            ////////////////////////////////
+                        MAIN
+            ////////////////////////////////
+            -->
 
             <div id="mainNavi">
                 <div id="mainNaviHeader">
@@ -35,14 +42,14 @@
                 </div>
 
                 <div class="caption">
-                    <a href="">
+                    <a href="index.html">
                         <img src="images/icons/home.svg" />
                         <span>Homepage</span>
                     </a>
                 </div>
 
                 <div class="caption">
-                    <a href="">
+                    <a href="Commands/commands.html">
                         <img src="images/icons/command.svg" />
                         <span>Commands</span>
                     </a>
@@ -62,12 +69,18 @@
                     </a>
                 </div>
 
+                <!--
+                ////////////////////////////////
+                            PACKAGES
+                ////////////////////////////////
+                -->
+
                 <div id="mainNaviHeader">
                     <span>PACKAGES</span>
                 </div>
 
                 <div class="caption">
-                    <a href="">
+                    <a href="OverwatchLeague">
                         <img src="images/icons/OWL.png" />
                         <span>Overwatch League</span>
                     </a>
@@ -86,6 +99,12 @@
                         <span>Other Packages</span>
                     </a>
                 </div>
+
+                <!--
+                ////////////////////////////////
+                            SETTINGS
+                ////////////////////////////////
+                -->
 
                 <div id="mainNaviHeader">
                     <span>SETTINGS</span>
