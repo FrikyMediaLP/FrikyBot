@@ -64,7 +64,6 @@ let INSTALLED_PACKAGES = {
 //CONSTANTS (for sync of other Packages)
 const CONSTANTS = require('./CONSTANTS.js');
 
-let PW = "1234";                        //Password for protected API Endpoints
 let API_PW_PROTECTED_ENDPOINTS = [      //Password protected API Endpoints (format: {path: "API_ENPOINT_PATH", type: "GET/POST/..."})
    
 ];
@@ -97,7 +96,7 @@ app.use(function (req, res, next) {
         
         if (isPWProtected({ path: path, type: req.method })) {
             if (req.body && req.body.Authentication) {
-                if (req.body.Authentication != PW) {
+                if (req.body.Authentication != CONSTANTS.API_PASSWORD) {
                     res.json({
                         status: CONSTANTS.STATUS_FAILED,    //Sending Failure confimation
                         req: req.body,                      //Mirror-Request (for debug reasons / sending error detection)
@@ -189,7 +188,6 @@ function INIT() {
         let packClass = INSTALLED_PACKAGES[pack].Class;
         INSTALLED_PACKAGES[pack].Object = new packClass(CONFIG.Packages[pack], app, TwitchChat, null);
     }
-
 }
 
 function loadConfig() {

@@ -159,6 +159,36 @@ class PackageBase {
     return "COMPLETE";
 }
 
+    StringContains(string, array) {
+        for (let element of array) {
+            if (string.indexOf(element) != -1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    ReplaceObjectContents(object, path, value) {
+        if (path == "") {
+            return value;
+        } else {
+            let temp = object[path.split(".")[0]];
+
+            if (!temp) {
+                object[path.split(".")[0]] = value;
+                temp = object[path.split(".")[0]];
+            }
+
+            if (path.split(".").length == 1) {
+                object[path.split(".")[0]] = this.ReplaceObjectContents(temp, "", value);
+            } else {
+                object[path.split(".")[0]] = this.ReplaceObjectContents(temp, path.substring(path.indexOf(".") + 1), value);
+            }
+
+            return object;
+        }
+    }
+
     writeFile(path, data) {
         let fd;
 

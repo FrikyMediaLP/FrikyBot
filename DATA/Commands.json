@@ -1,32 +1,64 @@
 {
-  "COMMANDS": [
-    {
-      "uid": 12,
-      "prefix": "!",
-      "name": "game",
-      "cooldown": "1m",
-      "output_string": "$(toUser) - Friky spielt grade $(game)"
-    },
-    {
-      "uid": 11,
-      "prefix": "!",
-      "name": "SR",
-      "cooldown": "1m",
-      "output_string": "$(toUser) - Friky ist grade $(SR)"
-    },
-    {
-      "uid": 10,
-      "prefix": "!",
-      "name": "Peter",
-      "cooldown": "1m",
-      "output_string": "$(toUser) - Zufalls Argument $($(random 1 3))"
-    },
-    {
-      "uid": 9,
-      "prefix": "!",
-      "name": "placements",
-      "cooldown": "1m",
-      "output_string": "DPS: 2-3 -> 3922SR | TANK: 5-0 -> 3719SR | SUPPORT: 4-1: 3841SR"
-    }
-  ]
+  "COMMANDS": {
+    "Hardcoded": [
+      {
+        "uid": 12,
+        "prefix": "!",
+        "name": "game",
+        "cooldown": "1m",
+        "output_string": "For Mods (with parameter): changing Game - For Others (Mods without Parameters too): Displays current Game",
+        "enabled": true
+      }
+    ],
+    "Custom": [
+      {
+        "uid": 0,
+        "prefix": "!",
+        "name": "DPS",
+        "cooldown": "1m",
+        "output_string": "Friky ist grade $(OWRankName $(SR.Season18.DPS -1)) mit $(SR.Season18.DPS) SR als DPS!",
+        "enabled": true
+      },
+      {
+        "uid": 1,
+        "prefix": "!",
+        "name": "TANK",
+        "cooldown": "1m",
+        "output_string": "Friky ist grade $(OWRankName $(SR.Season18.Tank -1)) mit $(SR.Season18.Tank) SR als Tank!",
+        "enabled": true
+      },
+      {
+        "uid": 2,
+        "prefix": "!",
+        "name": "SUPPORT",
+        "cooldown": "1m",
+        "output_string": "Friky ist grade $(OWRankName $(SR.Season18.Support -1)) mit $(SR.Season18.Support) SR als Support!",
+        "enabled": true
+      },
+      {
+        "uid": 3,
+        "prefix": "!",
+        "name": "Skill",
+        "cooldown": "1m",
+        "output_string": "$(toUser) hat heute $(random 0 100)% Skill! dhaluSkill",
+        "enabled": true
+      },
+      {
+        "uid": 4,
+        "prefix": "!",
+        "name": "placementsBETA",
+        "cooldown": "1m",
+        "output_string": "DPS: 2-3 -> 3922 SR | TANK: 5-0 -> 3719 SR | SUPPORT: 4-1: 3841 SR",
+        "enabled": true
+      },
+      {
+        "uid": 5,
+        "prefix": "!",
+        "name": "placements18",
+        "cooldown": "1m",
+        "output_string": "DPS: 2-3 -> 3649 SR | TANK: 2-3 -> 3982 SR | SUPPORT: 1-4 -> 3642 SR",
+        "enabled": true
+      }
+    ]
+  }
 }

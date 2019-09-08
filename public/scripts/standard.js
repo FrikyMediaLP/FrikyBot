@@ -17,3 +17,18 @@ function getBotStatus() {
             x.innerHTML = "Status: <span style='color: red;'>ERROR! " + err + "</span>";
         });
 }
+
+function GetURLParams() {
+    return window.location.search.substring(1).split('&');
+}
+
+function HasURLParam(ParamName) {
+    let sURLVariables = window.location.search.substring(1).split('&');
+
+    for (var i = 0; i < sURLVariables.length; i++) {
+        let sParamName = sURLVariables[i].split('=');
+        if (sParamName[0] == ParamName) {
+            return sParamName[1];
+        }
+    }
+}

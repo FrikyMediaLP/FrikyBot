@@ -18,18 +18,22 @@ function loadCommands() {
         .then(json => {
             console.log(json);
 
-            if (!json.data || json.err) {
+            if (!json.data || json.err || !json.data.Hardcoded || !json.data.Custom) {
                 select('#master').html(errorDiv + variableDiv);
                 return;
             }
 
-            if (json.data.length == 0) {
+            if (json.data.Hardcoded.length == 0 && json.data.Custom.length == 0) {
                 select('#master').html("<div style='text-align: center; color: grey; padding: 3px;'>No Commands found!</div>" + variableDiv);
             } else {
 
                 select('#master').html("<div id='row'><div id='command_index'><p>UID</p></div><div id='command_name'><p>Name</p></div><div id='command_description'><p>Description</p></div></div>");
 
-                for (let command of json.data) {
+                for (let command of json.data.Hardcoded) {
+                    createCommand(command).parent(select('#master'));
+                }
+
+                for (let command of json.data.Custom) {
                     createCommand(command).parent(select('#master'));
                 }
 

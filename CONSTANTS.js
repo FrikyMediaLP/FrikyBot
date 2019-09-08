@@ -1,4 +1,5 @@
 let CONSTANTS = {
+    API_PASSWORD: "1234",              //Api Password for Protected Access
     STATUS_SUCCESS: "SUCCESS",         //Indicades Successfull Api Request
     STATUS_FAILED: "FAILED",           //Indicades Failed Api Request
     UserLevel: {                       //Twitch User Levels

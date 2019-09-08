@@ -1,4 +1,14 @@
 const CONSTANTS = require('./../../CONSTANTS.js');
+const fs = require('fs');
+
+const proto = {
+    Messages: {
+        
+    },
+    MetaData: {
+        Date: ""
+    }
+};
 
 class MessageDatabase extends require('./../PackageBase.js').PackageBase {
 
@@ -6,6 +16,13 @@ class MessageDatabase extends require('./../PackageBase.js').PackageBase {
         super(config, app, twitchIRC, twitchNewApi, "MessageDatabase");
 
         this.InitAPIEndpoints();
+
+        if (fs.existsSync(config.Raw_File)) {
+            console.log('The file exists.');
+        } else {
+            console.log('The file does not exists.');
+            super.writeFile(config.Raw_File, JSON.stringify(proto, null, 4));
+        }
     }
 
     InitAPIEndpoints() {

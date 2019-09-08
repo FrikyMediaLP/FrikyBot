@@ -8,7 +8,7 @@ function setup() {
     fetch(rootAPI + "/maps")
         .then(res => res.json())
         .then(json => {
-            console.log(json);
+            //console.log(json);
             MAPS = json;
 
             fetch(rootAPI + "/live-match")
@@ -30,14 +30,21 @@ function draw() {
 }
 
 function showMatch(match) {
-    if (!match || Object.getOwnPropertyNames(match).length == 0)
+    if (!match || Object.getOwnPropertyNames(match).length == 0) {
+        console.error("OWL API empty or incomplete right now! Just wait, till THEY update it!");
         return;
+    }
+
+    if (GetURLParams()[0].split('=')[0] == "view" && GetURLParams()[0].split('=')[1] == "overlay") {
+        select("body").html("<div id='Match_Maps'></div>");
+    } else {
+        select("#content").html("<div id='Match_Maps'></div>");
+    }
 
     //console.clear();
-    select("body").html("<div id='Match_Maps'></div>");
 
     for (let i = 1; i <= match.games.length; i++) {
-        createMap(match, i);
+        createMap(match, i).parent(select("#Match_Maps"));
     }
 }
 
@@ -80,7 +87,7 @@ function updateMaps(match) {
         let details = getMapDetails(map.attributes.mapGuid);
 
         if (map.state == "CONCLUDED" || (map.state == "PENDING" && !prevLive)) {
-            div.style("grid-template-rows", "55px");
+            select("#" + idx).style("grid-template-rows", "55px");
         } else {
             if (map.state == "IN_PROGRESS") {
                 select("#Map_Name_" + idx).html("<p></p><p>" + details.name.en_US + "</p>");

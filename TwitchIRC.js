@@ -81,7 +81,7 @@ class TwitchIRC {
 
     send(message) {
         if (this.client) {
-            this.client.say(this.Channel, message)
+            this.client.say(this.Channel, message.toString())
                 .then((data) => {
                     //console.log(data);
                 }).catch((err) => {

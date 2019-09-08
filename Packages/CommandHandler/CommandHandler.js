@@ -1,12 +1,13 @@
 ﻿const CONSTANTS = require('./../../CONSTANTS.js');
 
-let COMMAND_CONTENT_REQUIRED = ["prefix", "name", "cooldown", "output_string"];
+let COMMAND_CONTENT_REQUIRED = ["prefix", "name", "cooldown", "output_string", "enabled"];
 let CommandTemplate = {
     uid: 123123,
     prefix: "",
     name: "",
     cooldown: "",
-    output_string: ""
+    output_string: "",
+    enabled: false
 };
 
 class CommandHandler extends require('./../PackageBase.js').PackageBase{
@@ -16,9 +17,11 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
 
         this.InitAPIEndpoints();
         this.Commands = [];
+        this.CommandVariables = {};
         this.Variables = {};
 
         this.loadCommands();
+        this.loadCommandVariables();
         this.loadVariables();
     }
     InitAPIEndpoints() {
@@ -47,85 +50,175 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
             });
         }, false);
 
-        super.AddAPIEndpoint('POST', '/Commands', (request, response) => {
-            response.json({
-                status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
-                req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                data: this.Commands                 //Commands
-            });
-        }, false);
+        //super.AddAPIEndpoint('POST', '/Commands', (request, response) => {
+        //    response.json({
+        //        status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
+        //        req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
+        //        data: this.Commands                 //Commands
+        //    });
+        //}, false);
 
         super.AddAPIEndpoint('GET', '/Variables', (request, response) => {
             response.json({
                 status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
                 req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                data: this.Variables                //Variables
+                data: this.CommandVariables                //Variables
             });
         }, false);
 
-        super.AddAPIEndpoint('POST', '/Variables', (request, response) => {
-            response.json({
-                status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
-                req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                data: this.Variables                //Variables
-            });
-        }, false);
+        //super.AddAPIEndpoint('POST', '/Variables', (request, response) => {
+        //    response.json({
+        //        status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
+        //        req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
+        //        data: this.CommandVariables                //Variables
+        //    });
+        //}, false);
     }
 
     MessageHandler(message) {
-        
-        if (this.isHardCodedCommand(message)) {
-            return;
-        } else {
-            for (let cmd of this.Commands) {
-                if (message.message.indexOf(cmd.prefix + cmd.name) >= 0) {
-                    this.executeCommand(cmd, message);
-                    break;
-                }
+
+        for (let cmd of this.Commands.Hardcoded) {
+            if (cmd.enabled && message.message.indexOf(cmd.prefix + cmd.name) >= 0) {
+                if(this.isHardCodedCommand(message))                                        //check and execute and return - when not pressent or no access then
+                    return;                                                                 
+                break;                                                                      //just break and check custom commands
+            }
+        }
+
+        for (let cmd of this.Commands.Custom) {
+            if (cmd.enabled && message.message.indexOf(cmd.prefix + cmd.name) >= 0) {
+                this.executeCommand(cmd, message);
+                return;
             }
         }
     }
-
     isHardCodedCommand(message) {
 
         let commandName = message.message.split(" ")[0];
         let parameters = (message.message.split(" ").length == 1 ? "" : message.message.substring((message.message.indexOf(" ") + 1)));
-
-        let game = "GAR NIX!";
-
+        
         if (commandName == "!game") {
             if (message.getUserLevel() >= CONSTANTS.UserLevel.Moderator) {
                 //print Game
                 if (parameters == "") {
-                    this.twitchIRC.send("Friky spielt grade " + game);
+                    this.twitchIRC.send("Friky spielt grade " + this.getVariableContent("$(game)", "", ""));
                 } else {
                     //print Game
                     if (parameters.charAt(0) == "@") {
-                        this.twitchIRC.send(parameters + " -> Friky spielt grade " + game);
+                        this.twitchIRC.send(parameters + " -> Friky spielt grade " + this.getVariableContent("$(game)", "", ""));
                     } else {
                         //nothing for now - wait till TwitchNewAPI implemented
                     }
                 }
             } else {
-                this.twitchIRC.send("@" + (parameters == "" ? message.getDisplayName() : parameters) + " -> Friky spielt grade " + game);
+                this.twitchIRC.send("@" + (parameters == "" ? message.getDisplayName() : parameters) + " -> Friky spielt grade " + this.getVariableContent("$(game)", "", ""));
             }
             return true;
         }
 
         return false;
     }
+    
+    getVariableContent(variable, message, command) {
+        
+        let name = variable.substring(2, (variable.indexOf(" ") >= 0 ? variable.indexOf(" ") : variable.length - 1));
+        let parameters = (variable.indexOf(" ") >= 0 ? variable.substring(message.message.indexOf(" ") + 3, variable.length - 1) : "");
+        
+        if (name == "toUser") {
+            //Nighbot inspired
+            return (message.message.split(" ").length > 1 ? message.message.split(" ")[1] : message.userstate['display-name']);
+        } else if (name == "random") {
+            try {
+                let min = parseInt(parameters.split(" ")[1]);
+                let max = parseInt(parameters.split(" ")[2]);
+                let rng = Math.floor(Math.random() * max) + min;
+
+                return rng;
+            } catch (err) {
+                return "";
+            }
+        } else if (name == "channel") {
+            return this.twitchIRC.Channel;
+        } else if (name == "game") {
+            //placeholder for now - wait till TwitchNewAPI implemented
+            return "GAR NIX LUL";
+        } else if (name == "OWRankName") {
+            //return the Rankname of a given SR
+            let SR = parseInt(parameters.split(" ")[1]);
+            if (SR < 1500) {
+                return "Bronze";
+            } else if (SR < 2000) {
+                return "Silver";
+            } else if (SR < 2500) {
+                return "Gold";
+            } else if (SR < 3000) {
+                return "Platin";
+            } else if (SR < 3500) {
+                return "Diamond";
+            } else if (SR < 4000) {
+                return "Master";
+            } else if (SR < 5000) {
+                return "Grandmaster";
+            } else {
+                return "";
+            }
+        } else {
+
+            //has number -> use Nighbot inspired - (Argument)
+            if (message.message.split(" ")[parseInt(name)]) {
+                return message.message.split(" ")[parseInt(name)];
+            }
+
+            //otherwise search after a variable name in the variable.json file
+            let curVarObj = this.Variables;
+
+            for (let part of name.substring(0, name.lastIndexOf(".")).split(".")) {
+
+                if (curVarObj[part]) {
+                    curVarObj = curVarObj[part];
+                }
+            }
+
+            if (curVarObj[name.split(".")[name.split(".").length-1]]) {
+                //replace or output
+                if (message.message.split(" ").length >= 2) {
+                    //replace
+
+                    this.Variables = super.ReplaceObjectContents(this.Variables, name, message.message.split(" ")[1]);
+                    
+                    super.writeFile(this.config.Variables_File, JSON.stringify(this.Variables, null, 4));
+                    return message.message.split(" ")[1];
+                } else {
+                    //output
+                    return curVarObj[name.split(".")[name.split(".").length - 1]];
+                }
+            } else {
+                //init
+                if (parameters.split(" ").length == 2 && !super.StringContains(parameters.split(" ")[1], [" ", "\"", ","])) {
+                    this.Variables = super.ReplaceObjectContents(this.Variables, name, parameters.split(" ")[1]);
+                    
+                    super.writeFile(this.config.Variables_File, JSON.stringify(this.Variables, null, 4));
+                    return parameters.split(" ")[1];
+                }
+            }
+
+            return "";
+        }
+    }
+
     executeCommand(command, message) {
         if (command) {
             if (command.output_string) {
                 let temp = false;
-                let output = das;
+                let output = temp;
 
                 do {
                     output = temp;
                     temp = this.replaceVariables((temp ? temp : command.output_string), message, command);
                 } while (temp != false);
-                
-                this.twitchIRC.send(output);
+
+                if (typeof output == "string")
+                    this.twitchIRC.send(output);
             }
         }
     }
@@ -134,36 +227,7 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
         if (command.indexOf("$(") >= 0) {
             if (command.indexOf(")", command.indexOf("$(")) >= 0) {
                 
-                let variables = [];
-                let start = 0;
-                let open;
-                let close;
-                
-                while (start >= 0 && start < command.length) {
-                    if (command.indexOf("$(", start) < 0) break;
-                    start = command.indexOf("$(", start) + 2;
-
-                    open = 1;
-                    close = 0;
-
-                    let tempStart = start;
-
-                    while (open != close) {
-                        if (command.indexOf("$(", tempStart) < command.indexOf(")", tempStart) && command.indexOf("$(", tempStart) >= 0) {
-                            open++;
-                            tempStart = command.indexOf("$(", tempStart) + 2;
-                        } else if (command.indexOf(")", tempStart) >= 0) {
-                            close++;
-                            tempStart = command.indexOf(")", tempStart) + 1;
-                        } else {
-                            console.log("ERRRRR");
-                            return false;
-                        }
-                    }
-                    
-                    variables.push(command.substring(start - 2, tempStart))
-                    start = tempStart;
-                }
+                let variables = this.extractVariables(command);
 
                 for (let vari of variables) {
 
@@ -186,38 +250,42 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
             return false;
         }
     }
-    getVariableContent(variable, message, command) {
+    extractVariables(command) {
+        let variables = [];
+        if (command.indexOf("$(") >= 0) {
+            if (command.indexOf(")", command.indexOf("$(")) >= 0) {
+                let start = 0;
+                let open;
+                let close;
 
-        let name = variable.substring(2, (variable.indexOf(" ") >= 0 ? variable.indexOf(" ") : variable.length - 1));
-        let parameters = (variable.indexOf(" ") >= 0 ? variable.substring(message.message.indexOf(" ") + 3, variable.length - 1) : "");
-        
-        console.log(parameters);
+                while (start >= 0 && start < command.length) {
+                    if (command.indexOf("$(", start) < 0) break;
+                    start = command.indexOf("$(", start) + 2;
 
-        if (name == "toUser") {
-            return (message.message.split(" ").length > 1 ? message.message.split(" ")[1] : message.userstate['display-name']);
-        } else if (name == "random") {
-            try {
-                let min = parseInt(parameters.split(" ")[0]);
-                let max = parseInt(parameters.split(" ")[1]);
-                let rng = Math.floor(Math.random() * max) + min;
+                    open = 1;
+                    close = 0;
 
-                return rng;
-            } catch (err) {
-                return "";
-            }
-        } else if (name == "channel") {
-            return this.twitchIRC.Channel;
-        } else if (name == "game") {
-            return "GAR NIX LUL";
-        } else if (name == "SR") {
-            return "Grandmaster / Top500";
-        } else {
-            try {
-                return message.message.split(" ")[parseInt(name)];
-            } catch (err) {
-                return "";
+                    let tempStart = start;
+
+                    while (open != close) {
+                        if (command.indexOf("$(", tempStart) < command.indexOf(")", tempStart) && command.indexOf("$(", tempStart) >= 0) {
+                            open++;
+                            tempStart = command.indexOf("$(", tempStart) + 2;
+                        } else if (command.indexOf(")", tempStart) >= 0) {
+                            close++;
+                            tempStart = command.indexOf(")", tempStart) + 1;
+                        } else {
+                            console.log("ERRRRR");
+                            return false;
+                        }
+                    }
+
+                    variables.push(command.substring(start - 2, tempStart))
+                    start = tempStart;
+                }
             }
         }
+        return variables;
     }
     loadCommands() {
         try {
@@ -227,9 +295,13 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
             //read File and convert to JSON (errors if errored before)
             let json = JSON.parse(s);
 
-            let temp = [];
+            let temp = {
+                Hardcoded: [],
+                Custom: [],
+            };
 
-            for (let cmd of json.COMMANDS) {
+            //Hardcoded Commands
+            for (let cmd of json.COMMANDS.Hardcoded) {
 
                 //check JSON for Completion
                 let completion = super.checkForCompletion(cmd, CommandTemplate, COMMAND_CONTENT_REQUIRED);
@@ -237,7 +309,20 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
                 if (completion != "COMPLETE") {
                     console.log("ERROR: Command " + (cmd.uid ? cmd.uid + " " : "") + "not complete: " + completion.red);
                 } else {
-                    temp.push(cmd);
+                    temp.Hardcoded.push(cmd);
+                }
+            }
+
+            //Custom Commands
+            for (let cmd of json.COMMANDS.Custom) {
+
+                //check JSON for Completion
+                let completion = super.checkForCompletion(cmd, CommandTemplate, COMMAND_CONTENT_REQUIRED);
+
+                if (completion != "COMPLETE") {
+                    console.log("ERROR: Command " + (cmd.uid ? cmd.uid + " " : "") + "not complete: " + completion.red);
+                } else {
+                    temp.Custom.push(cmd);
                 }
             }
 
@@ -255,7 +340,21 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
             //read File and convert to JSON (errors if errored before)
             let json = JSON.parse(s);
 
-            let temp = { };
+            this.Variables = json;
+        } catch (err) {
+            console.log("ERROR: " + err);
+            return err;
+        }
+    }
+    loadCommandVariables() {
+        try {
+
+            let s = super.readFile(this.config.Command_Variables_File);
+
+            //read File and convert to JSON (errors if errored before)
+            let json = JSON.parse(s);
+
+            let temp = {};
 
             for (let vari of Object.getOwnPropertyNames(json)) {
 
@@ -264,7 +363,7 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
 
                 if (!json[vari].pretitle) {
                     completion = "pretitle missing!"
-                } else{
+                } else {
                     if (json[vari].Nightbot) {
                         if (!json[vari].Nightbot.version) {
                             completion = "Nightbot version missing!"
@@ -291,7 +390,7 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
                 }
             }
 
-            this.Variables = temp;
+            this.CommandVariables = temp;
         } catch (err) {
             console.log("ERROR: " + err);
             return err;

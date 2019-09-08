@@ -38,6 +38,10 @@
     "pretitle": "name of the current game played",
     "description": ""
   },
+  "OWRankName": {
+    "pretitle": "returns the Rank name of a given Overwatch SR",
+    "description": ""
+  },
   "Query": {
     "pretitle": "full input that comes after the command",
     "Nightbot": {
