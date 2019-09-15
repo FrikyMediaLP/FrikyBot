@@ -15,7 +15,6 @@ console.log("///////////////////////////////////////////////////////////////////
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const REQUEST = require('request');
 const colors = require('colors');
 
 /*
@@ -54,6 +53,8 @@ const TWITCHIRC = require('./TwitchIRC.js');
 let TwitchChat;
 
 //TWITCH NEW API
+const TWITCHNEWAPI = require('./TwitchNewAPI.js');
+let TwitchNewAPI;
 let BOT_SCOPES = ["channel:read:subscriptions"];
 
 //BOT DATA COLLECTION - PACKAGES
@@ -92,8 +93,9 @@ app.use(function (req, res, next) {
 
     let path = req.originalUrl;
 
+    //Is part of an API
     if (path.substring(0, 5) == "/api/") {
-        
+
         if (isPWProtected({ path: path, type: req.method })) {
             if (req.body && req.body.Authentication) {
                 if (req.body.Authentication != CONSTANTS.API_PASSWORD) {
@@ -117,7 +119,15 @@ app.use(function (req, res, next) {
         //go to endpoints
         next();
 
-    //Redirect to .html without .html in URL / to 404 page not found page
+        //Redirect to .html without .html in URL / to 404 page not found page
+    } else if (path.indexOf("/Twitch-redirect?") >= 0) {
+        if (req.url.indexOf("&scope=") < 0) {
+            TwitchNewAPI.getUserAccessTokenWithCode(req.url.substring(req.url.indexOf("?code=") + 6));
+        } else {
+            TwitchNewAPI.getUserAccessTokenWithCode(req.url.substring(req.url.indexOf("?code=") + 6, req.url.indexOf("&scope=")));
+        }
+
+        res.redirect("Bot");
     } else {
         
         //trim extra / ,but leave if folder requested
@@ -133,8 +143,6 @@ app.use(function (req, res, next) {
     }
 });
 
-INIT();
-
 /*
  *  ----------------------------------------------------------
  *                      BOT API
@@ -149,9 +157,31 @@ app.all('/api/Status', (request, response) => {
     response.json({
         status: CONSTANTS.STATUS_SUCCESS,
         req: request.body,
-        data: "RUNNING!"
+        data: {
+            Status: "RUNNING!",
+            LogIn: {
+                Name: TwitchChat.Username,
+                Status: TwitchNewAPI.UserAccessToken ? true : false
+            }
+        }
     });
 });
+
+//UserInfo 
+app.all('/api/TwitchNewAPI/GetBot', async (request, response) => {
+    response.json(await TwitchNewAPI.getBotUserDetails());
+});
+
+//UserInfo 
+app.post('/api/TwitchNewAPI/GetLogInPage', async (request, response) => {
+    let s = await TwitchNewAPI.getLogInHTMLPage(request.body.scopes);
+
+    response.send(s);
+});
+
+//INIT PACKAGES/TWITCHCHAT/NEWAPI/ AND PACKAGE API AFTER BOT API AND BEFORE NOT FOUND ENDPOINT
+INIT();
+
 
 //NO ENDPOINT FOUND
 app.all('/api/*', (request, response) => {
@@ -180,13 +210,14 @@ function INIT() {
     Twitch_IRC_Init();
 
     //Twitch New API
+    Twitch_NEW_API_Init();
 
 
     //DataCollection
     //init all Loaded/Installed Packages by there Class and save Object nack in the INSTALLED_PACKAGES Object
     for (let pack of Object.getOwnPropertyNames(INSTALLED_PACKAGES)) {
         let packClass = INSTALLED_PACKAGES[pack].Class;
-        INSTALLED_PACKAGES[pack].Object = new packClass(CONFIG.Packages[pack], app, TwitchChat, null);
+        INSTALLED_PACKAGES[pack].Object = new packClass(CONFIG.Packages[pack], app, TwitchChat, TwitchNewAPI);
     }
 }
 
@@ -407,42 +438,8 @@ function onCheerHandler(channel, userstate, message) {
  *  ----------------------------------------------------------
  */
 
-//OWN API
-app.get('/Twitch-redirect', (req, res) => {
-    res.send("YOU MOM GEY");
-    console.log(req.url);
-});
-
-function getSubscribers() {
-    let options = {
-        url: 'https://api.twitch.tv/helix/subscriptions?broadcaster_id=38921745',
-        method: "GET",
-        headers: {
-            "Authorization": "Bearer " + CONFIG.ACCESS_TOKEN.token
-        }
-    };
-
-
-    REQUEST(options, (error, response, body) => {
-        if (error) {
-            console.log(json.error.red);
-            return;
-        }
-
-        try {
-            let json = JSON.parse(body);
-            console.log(json);
-
-            //Twitch returns an error
-            if (json.error) {
-                console.log("Twitch Error: " + json.error.red);
-                return;
-            }
-
-        } catch (err) {
-            console.error(err);
-        }
-    });
+function Twitch_NEW_API_Init() {
+    TwitchNewAPI = new TWITCHNEWAPI.TwitchNewAPI(CONFIG.TwitchNewAPI, TwitchChat);
 }
 
 /*

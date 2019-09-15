@@ -1,6 +1,27 @@
 {
-    "Messages": {},
+    "Messages": [
+        {
+            "badge-info": {
+                "subscriber": "6"
+            },
+            "badges": {
+                "broadcaster": "1",
+                "subscriber": "6",
+                "overwatch-league-insider_2019A": "1"
+            },
+            "color": "#8A2BE2",
+            "display-name": "FrikyMediaLP",
+            "emotes": null,
+            "id": "a061092d-e00a-4770-b51a-afaca1c1e954",
+            "mod": false,
+            "room-id": "38921745",
+            "tmi-sent-ts": "1568050914842",
+            "user-id": "38921745",
+            "username": "frikymedialp",
+            "Message": "AWLASDASD"
+        }
+    ],
     "MetaData": {
-        "Date": ""
+        "Date": 1568049455595
     }
 }

@@ -1,0 +1,30 @@
+#grid #content h1 {
+    margin: 0;
+    font-weight: 400;
+}
+
+#grid #content h2 {
+    font-weight: 400;
+}
+
+#grid #content p {
+    font-weight: 300;
+}
+
+    #grid #content>img{
+        height: 200px;
+        float: right;
+    }
+
+#grid #content #DUMP {
+    width: 100%;
+}
+
+    #grid #content #DUMP #viewcount {
+        display: grid;
+        height: 30px;
+        width: 100vw;
+        grid-template-rows: 30px;
+        grid-template-columns: repeat(auto-fill, 10px);
+        grid-column-gap: 3px;
+    }

@@ -3,42 +3,41 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
-    <title>Commands - FrikyBot</title>
-
+    <title>BOT STATUS - FrikyBot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" type="image/x-icon" href="../images/favicon.png" />
-    <link href="html_styles/index.css" rel="stylesheet">
 
-
-    <script src="../scripts/standard.js"></script>
-    <link href="../styles/standard.css" rel="stylesheet">
-
-    <script src="../scripts/libraries/p5.js"></script>
-    <script src="../scripts/libraries/p5.dom.js"></script>
+    <link href="styles/Bot.css" rel="stylesheet">
+    <link href="styles/standard.css" rel="stylesheet">
+    <script src="scripts/Bot.js"></script>
+    <script src="scripts/standard.js"></script>
 
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
 </head>
-<body onload="getBotStatus();">
+<body onload="Standard_Page_Init(); init();">
+    <!-- MAIN GRID -->
     <div id="grid">
+        <!-- NAVI HEADER -->
         <div class="cellM" id="naviHeader">
-            <a href="../">FRIKY<span>BOT</span></a>
+            <a href="./">FRIKY<span>BOT</span></a>
         </div>
 
+        <!-- CONTENT HEADER -->
         <div class="cellM" id="contentHeader">
 
         </div>
 
+        <!-- NAVI -->
         <div class="cellM" id="navi">
             <div id="status">
-                <img src="../../images/icons/refresh.svg" onclick="getBotStatus();" />
+                <img src="images/icons/refresh.svg" onclick="getBotStatus();" />
                 <p id="statusHeader">Status</p>
             </div>
 
             <!--
-            ////////////////////////////////
-                        MAIN
-            ////////////////////////////////
-            -->
+        ////////////////////////////////
+                    MAIN
+        ////////////////////////////////
+        -->
 
             <div id="mainNavi">
                 <div id="mainNaviHeader">
@@ -46,99 +45,99 @@
                 </div>
 
                 <div class="caption">
-                    <a href="../">
-                        <img src="../images/icons/home.svg" />
+                    <a href="./">
+                        <img src="images/icons/home.svg" />
                         <span>Homepage</span>
                     </a>
                 </div>
 
                 <div class="caption">
-                    <a href="../Commands">
-                        <img src="../images/icons/command.svg" />
+                    <a href="/Commands">
+                        <img src="images/icons/command.svg" />
                         <span>Commands</span>
                     </a>
                 </div>
 
                 <div class="caption">
-                    <a href="">
-                        <img src="../images/icons/cup.svg" />
+                    <a href="ChatStats">
+                        <img src="images/icons/cup.svg" />
                         <span>Chat Stats</span>
                     </a>
                 </div>
 
                 <div class="caption">
-                    <a href="">
-                        <img src="../images/icons/chat.svg" />
+                    <a href="CustomChat">
+                        <img src="images/icons/chat.svg" />
                         <span>Custom Chat</span>
                     </a>
                 </div>
 
                 <!--
-                ////////////////////////////////
-                            PACKAGES
-                ////////////////////////////////
-                -->
+            ////////////////////////////////
+                        PACKAGES
+            ////////////////////////////////
+            -->
 
                 <div id="mainNaviHeader">
                     <span>PACKAGES</span>
                 </div>
 
                 <div class="caption">
-                    <a href="">
-                        <img src="../images/icons/OWL.png" />
+                    <a href="/OverwatchLeague">
+                        <img src="images/icons/OWL.png" />
                         <span>Overwatch League</span>
                     </a>
                 </div>
 
                 <div class="caption">
-                    <a href="">
-                        <img src="../images/icons/poll.svg" />
+                    <a href="Voting">
+                        <img src="images/icons/poll.svg" />
                         <span>Voting / Polls</span>
                     </a>
                 </div>
 
                 <div class="caption">
-                    <a href="">
-                        <img src="../images/icons/packages.svg" />
+                    <a href="packages">
+                        <img src="images/icons/packages.svg" />
                         <span>Other Packages</span>
                     </a>
                 </div>
 
                 <!--
-                ////////////////////////////////
-                            SETTINGS
-                ////////////////////////////////
-                -->
+            ////////////////////////////////
+                        SETTINGS
+            ////////////////////////////////
+            -->
 
                 <div id="mainNaviHeader">
                     <span>SETTINGS</span>
                 </div>
 
                 <div class="caption">
-                    <a href="">
-                        <img src="../images/icons/gear.svg" />
+                    <a href="options">
+                        <img src="images/icons/gear.svg" />
                         <span>Options</span>
                     </a>
                 </div>
 
                 <div id="SignIn_Bot_Navi" class="caption">
-                    <a href="">
-                        <img src="../images/icons/twitch.svg" />
-                        <span>Sign In</span>
+                    <a href="Bot">
+                        <img src="images/icons/twitch.svg" />
+                        <span>Bot Status</span>
                     </a>
                 </div>
             </div>
             <div id="license"> - <a href="https://fontawesome.com/license" target="_blank">Icon license</a> - </div>
         </div>
 
+        <!-- ACTUAL CONTENT -->
         <div class="cellM" id="content">
-            <img src="images/OWLViewerBanner.png" />
-            <br />
-            <a href="Maps">Map Set - presented by TOYOTA</a>
-            <br />
-            <a href="images/Match Banner.png">Match Banner</a>
-            <br />
-            <a href="images/MatchDayOverview.png">Match Day Overview</a>
+            <img id="profile_pic" />
+            <h1 id="headTitle"></h1>
+            <h2 id="underTitle"></h2>
+            <div id="DUMP">
+
+            </div>
         </div>
     </div>
 </body>

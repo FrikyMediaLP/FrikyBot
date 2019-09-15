@@ -89,7 +89,7 @@ class PackageBase {
 
                 if (fs.lstatSync(curPathRes).isDirectory()) { // recurse
                     pack.placeHTML(newPublic, curPath);
-                } else { // delete file
+                } else {
                     pack.copyFile(curPathRes, publicDirRes);
                 }
             });

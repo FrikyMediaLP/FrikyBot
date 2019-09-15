@@ -16,7 +16,7 @@
         "prefix": "!",
         "name": "DPS",
         "cooldown": "1m",
-        "output_string": "Friky ist grade $(OWRankName $(SR.Season18.DPS -1)) mit $(SR.Season18.DPS) SR als DPS!",
+        "output_string": "Friky ist grade $(OWRankName $(SR.Season18.DPS)) mit $(SR.Season18.DPS) SR als DPS!",
         "enabled": true
       },
       {
@@ -24,7 +24,7 @@
         "prefix": "!",
         "name": "TANK",
         "cooldown": "1m",
-        "output_string": "Friky ist grade $(OWRankName $(SR.Season18.Tank -1)) mit $(SR.Season18.Tank) SR als Tank!",
+        "output_string": "Friky ist grade $(OWRankName $(SR.Season18.Tank)) mit $(SR.Season18.Tank) SR als Tank!",
         "enabled": true
       },
       {
@@ -32,31 +32,31 @@
         "prefix": "!",
         "name": "SUPPORT",
         "cooldown": "1m",
-        "output_string": "Friky ist grade $(OWRankName $(SR.Season18.Support -1)) mit $(SR.Season18.Support) SR als Support!",
+        "output_string": "Friky ist grade $(OWRankName $(SR.Season18.Support)) mit $(SR.Season18.Support) SR als Support!",
         "enabled": true
       },
       {
         "uid": 3,
         "prefix": "!",
-        "name": "Skill",
+        "name": "placementsBETA",
         "cooldown": "1m",
-        "output_string": "$(toUser) hat heute $(random 0 100)% Skill! dhaluSkill",
+        "output_string": "DPS: $(SR.BetaSeason.Placements.DPS.Record) -> $(SR.BetaSeason.Placements.DPS.SR) SR | TANK: $(SR.BetaSeason.Placements.Tank.Record) -> $(SR.BetaSeason.Placements.Tank.SR) SR | SUPPORT: $(SR.BetaSeason.Placements.Support.Record) -> $(SR.BetaSeason.Placements.Support.SR) SR",
         "enabled": true
       },
       {
         "uid": 4,
         "prefix": "!",
-        "name": "placementsBETA",
+        "name": "placements18",
         "cooldown": "1m",
-        "output_string": "DPS: 2-3 -> 3922 SR | TANK: 5-0 -> 3719 SR | SUPPORT: 4-1: 3841 SR",
+        "output_string": "DPS: $(SR.Season18.Placements.DPS.Record) -> $(SR.Season18.Placements.DPS.SR) SR | TANK: $(SR.Season18.Placements.Tank.Record) -> $(SR.Season18.Placements.Tank.SR) SR | SUPPORT: $(SR.Season18.Placements.Support.Record) -> $(SR.Season18.Placements.Support.SR) SR",
         "enabled": true
       },
       {
         "uid": 5,
         "prefix": "!",
-        "name": "placements18",
+        "name": "Skill",
         "cooldown": "1m",
-        "output_string": "DPS: 2-3 -> 3649 SR | TANK: 2-3 -> 3982 SR | SUPPORT: 1-4 -> 3642 SR",
+        "output_string": "$(toUser) hat heute $(random 0 100)% Skill! dhaluSkill",
         "enabled": true
       }
     ]

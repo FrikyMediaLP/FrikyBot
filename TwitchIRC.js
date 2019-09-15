@@ -4,7 +4,7 @@ const CONSTANTS = require('./CONSTANTS.js');
 class TwitchIRC {
     
     constructor(user, pw, channel) {
-        console.log("Twitch Connection init...");
+        console.log("Twitch IRC Connection init...");
 
         //User settings
         this.Username = undefined;
@@ -127,12 +127,46 @@ class Message {
         return this.userstate['display-name'] + " : " + this.message;
     }
 
+    toJSON() {
+
+        let temp = this.userstate;
+        temp.Message = this.message;
+
+        //Attributes to remove
+        let exclude = ["message-type", "badges-raw", "badge-info-raw", "emotes-raw", "user-type", "subscriber", "turbo", "flags"];
+        for (let key of exclude) {
+            if (temp[key] || temp[key] == null || temp[key] == false) {
+                delete temp[key];
+            }
+        }
+        
+        return temp;
+    }
+
     getUser() {
         return userstate;
     }
 
     getMessage() {
         return this.message;
+    }
+
+    getTime() {
+        let t = new Date(parseInt(this.userstate["tmi-sent-ts"]));
+
+        let s = t.getHours() + ":";
+
+        if (t.getHours() < 10) {
+            s = "0" + s;
+        }
+
+        if (t.getMinutes() < 10) {
+            s += "0";
+        }
+
+        s += t.getMinutes();
+
+        return s;
     }
 
     getMessageDetails() {

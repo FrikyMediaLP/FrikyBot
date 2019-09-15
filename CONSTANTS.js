@@ -1,4 +1,4 @@
-let CONSTANTS = {
+const CONSTANTS = {
     API_PASSWORD: "1234",              //Api Password for Protected Access
     STATUS_SUCCESS: "SUCCESS",         //Indicades Successfull Api Request
     STATUS_FAILED: "FAILED",           //Indicades Failed Api Request
@@ -11,6 +11,11 @@ let CONSTANTS = {
         Subscriber: 2,
         Follower: 1,
         Regular: 0
+    },
+    NewTwitchAPI_TOKEN_IDENTIFIER: {    //Used in the New Twitch API Class to identify a API Endpoint to a Token Type
+        AppAccess: 0,
+        UserAccess: 1,
+        IDAccess: 2
     }
 };
 

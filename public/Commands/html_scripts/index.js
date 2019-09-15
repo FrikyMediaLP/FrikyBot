@@ -1,4 +1,5 @@
 let biggestIDX = 0;
+let biggestName = 0;
 let errorDiv = "<div style='text-align: center; color: grey; padding: 3px;'>An error has occurred</div>";
 let variableDiv = "<div style='text-align: center; color: grey; padding: 3px; border-top: 1px solid gray'>Checkout <a href='/Commands/Variables' style='text-decoration: none; color:blue;'>Command Variables</a> for more Features</div>";
 
@@ -51,11 +52,11 @@ function loadCommands() {
 function createCommand(command) {
     let div = createDiv("");
     div.class("row");
-    
+
     let idDiv = createDiv("<p>" + command.uid + "</p>");
     idDiv.class("command_index");
     idDiv.parent(div);
-    
+
     if (biggestIDX < idDiv.child()[0].offsetWidth) {
         biggestIDX = idDiv.child()[0].offsetWidth;
     }
@@ -63,6 +64,10 @@ function createCommand(command) {
     let nameDiv = createDiv("<p>" + command.prefix + command.name + "</p>");
     nameDiv.class("command_name");
     nameDiv.parent(div);
+
+    if (biggestName < nameDiv.child()[0].offsetWidth) {
+        biggestName = nameDiv.child()[0].offsetWidth;
+    }
 
     let descDiv = createDiv("<p>" + command.output_string + "</p>");
     descDiv.class("command_description");
@@ -72,13 +77,12 @@ function createCommand(command) {
 }
 
 function ajustGrid() {
-
     if (select("#row")) {
 
-        select("#row").style('grid-template-columns', (biggestIDX + 10) + 'px 100px auto');
+        select("#row").style('grid-template-columns', (biggestIDX + 10) + 'px ' + (biggestName + 20) + 'px auto');
 
         for (let row of selectAll(".row")) {
-            row.style('grid-template-columns', (biggestIDX + 10) + 'px 100px auto');
+            row.style('grid-template-columns', (biggestIDX + 10) + 'px ' + (biggestName + 20) + 'px auto');
         }
     }
 }

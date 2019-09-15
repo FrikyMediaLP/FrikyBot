@@ -1,0 +1,36 @@
+#grid #content h1 {
+    margin: 0;
+    font-weight: 400;
+}
+
+#grid #content h2 {
+    font-weight: 400;
+    margin: 10px 0;
+}
+
+#grid #content h3 {
+    margin: 15px 0 0 0;
+    font-weight: 400;
+}
+
+#grid #content h4 {
+    margin: 5px 0;
+    font-weight: 300;
+}
+
+#grid #content #unlock {
+    box-shadow: none;
+    border: none;
+    background-color: lightcoral;
+}
+
+#grid #content #Scopes {
+    list-style-type: none;
+
+    padding-left: 0;
+    margin: 5px 0;
+}
+
+    #grid #content #Scopes ul{
+        list-style-type: none;
+    }

@@ -14,6 +14,7 @@ function setup() {
             fetch(rootAPI + "/live-match")
                 .then(res => res.json())
                 .then(json => {
+                    console.log(json);
                     showMatch(json.data.liveMatch);
                 });
         });
@@ -39,6 +40,10 @@ function showMatch(match) {
         select("body").html("<div id='Match_Maps'></div>");
     } else {
         select("#content").html("<div id='Match_Maps'></div>");
+        if (match.games.length == 0) {
+            select("#Match_Maps").html("OWL API HAS NO LISTED MAPS FOR THIS MATCH! Might be Playoffs? Might be their mistake? Anyways - we need to wait for them!");
+            return;
+        }
     }
 
     //console.clear();

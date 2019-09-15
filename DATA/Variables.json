@@ -1,9 +1,42 @@
 {
-    "SR": {
-        "Season18": {
-            "DPS": "3589",
-            "Support": "3642",
-            "Tank": "4004"
+  "SR": {
+    "Season18": {
+      "Placements": {
+        "DPS": {
+          "SR": 3649,
+          "Record": "2-3"
+        },
+        "Support": {
+          "SR": 3642,
+          "Record": "1-4"
+        },
+        "Tank": {
+          "SR": 3982,
+          "Record": "2-3"
         }
+      },
+      "DPS": "3589",
+      "Support": "3642",
+      "Tank": "4004"
+    },
+    "BetaSeason": {
+      "Placements": {
+        "DPS": {
+          "SR": 3922,
+          "Record": "2-3"
+        },
+        "Support": {
+          "SR": 3841,
+          "Record": "4-1"
+        },
+        "Tank": {
+          "SR": 3719,
+          "Record": "5-0"
+        }
+      },
+      "DPS": "",
+      "Support": "",
+      "Tank": ""
     }
+  }
 }

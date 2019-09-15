@@ -9,7 +9,7 @@ body {
 #master {
     display: grid;
     grid-template-columns: auto;
-    grid-template-rows: 50px auto;
+    grid-template-rows: repeat( auto-fit, minmax(50px, auto));
 }
 
 .row {
@@ -100,5 +100,5 @@ body {
     grid-area: DESCRIPTION;
     display: table;
     height: 100%;
-    margin: 0;
+    padding: 10px;
 }
