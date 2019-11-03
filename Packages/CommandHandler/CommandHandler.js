@@ -1,19 +1,40 @@
 ﻿const CONSTANTS = require('./../../CONSTANTS.js');
 
-let COMMAND_CONTENT_REQUIRED = ["prefix", "name", "cooldown", "output_string", "enabled"];
+let COMMAND_CONTENT_REQUIRED = ["prefix", "name", "cooldown", "output", "enabled"];
 let CommandTemplate = {
     uid: 123123,
     prefix: "",
     name: "",
     cooldown: "",
-    output_string: "",
+    output: "",
     enabled: false
 };
 
 class CommandHandler extends require('./../PackageBase.js').PackageBase{
 
     constructor(config, app, twitchIRC, twitchNewApi) {
-        super(config, app, twitchIRC, twitchNewApi, "CommandHandler");
+
+        //Create Details
+        let det = {
+            Description: "Typical Command Handler as you know it!",
+            Capabilities: {
+                Chat: {
+                    title: "Uses the TwitchIRC Chat to check Chat Messages for Commands!"
+                },
+                MessageHandler: {
+                    title: "If supplied, Commands can be tracked by the MessageHandler Package!",
+                    depended: false
+                },
+                TwitchAPI: {
+                    title: "Uses the Twitch NEW API to execute Commands/get User specific Data or change Stream Details"
+                }
+            },
+            Settings: {
+                enabled: ((config.enabled == undefined || config.enabled == true) ? true : false)
+            }
+        };
+
+        super(config, app, twitchIRC, twitchNewApi, "CommandHandler", det);
 
         this.InitAPIEndpoints();
         this.Commands = [];
@@ -29,16 +50,18 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
         /*
          *  ----------------------------------------------------------
          *                      BOT API
-         *     /api/MessageDatabase/
+         *     /api/CommandHandler/
          *     - GET:  returns Name
          *  ----------------------------------------------------------
          */
-
+        
         super.AddAPIEndpoint('GET', '/', (request, response) => {
             response.json({
                 status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
                 req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                data: this.name                     //Name
+                data: {                             //Details
+                    [this.name]: this.details
+                }
             });
         }, false);
 
@@ -50,14 +73,6 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
             });
         }, false);
 
-        //super.AddAPIEndpoint('POST', '/Commands', (request, response) => {
-        //    response.json({
-        //        status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
-        //        req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-        //        data: this.Commands                 //Commands
-        //    });
-        //}, false);
-
         super.AddAPIEndpoint('GET', '/Variables', (request, response) => {
             response.json({
                 status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
@@ -65,14 +80,6 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
                 data: this.CommandVariables                //Variables
             });
         }, false);
-
-        //super.AddAPIEndpoint('POST', '/Variables', (request, response) => {
-        //    response.json({
-        //        status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
-        //        req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-        //        data: this.CommandVariables                //Variables
-        //    });
-        //}, false);
     }
 
     MessageHandler(message) {

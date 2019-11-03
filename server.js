@@ -55,7 +55,6 @@ let TwitchChat;
 //TWITCH NEW API
 const TWITCHNEWAPI = require('./TwitchNewAPI.js');
 let TwitchNewAPI;
-let BOT_SCOPES = ["channel:read:subscriptions"];
 
 //BOT DATA COLLECTION - PACKAGES
 let INSTALLED_PACKAGES = {
@@ -128,8 +127,12 @@ app.use(function (req, res, next) {
         }
 
         res.redirect("Bot");
+    } else if (path.indexOf("/Twitch-redirect") >= 0) {
+        res.redirect("options");
+    } else if (path.substring(0,12) == "/CustomChat/") {
+        let channels = path.substring(12).split('/');
+        res.redirect("/CustomChat?Channels=" + channels);
     } else {
-        
         //trim extra / ,but leave if folder requested
         if (path.charAt(path.length-1) == "/") {
             path = path.substring(0, path.length - 1);
@@ -167,16 +170,110 @@ app.all('/api/Status', (request, response) => {
     });
 });
 
-//UserInfo 
-app.all('/api/TwitchNewAPI/GetBot', async (request, response) => {
+//TwitchNewAPI - GetUserDetailsByOAuth 
+app.post('/api/GetUserDetailsByOAuth', async (request, response) => {
+
+    if (request.body.OAuth) {
+        response.json({
+            status: CONSTANTS.STATUS_SUCCESS,
+            req: request.body,
+            data: {
+                User: await TwitchNewAPI.getUserDetailsByOAuth(request.body.OAuth)
+            }
+        });
+    } else {
+        response.json({
+            status: CONSTANTS.STATUS_FAILED,
+            req: request.body,
+            err: "OAUTH not found!"
+        });
+    }
+});
+
+//TwitchNewAPI - Revoke 
+app.post('/api/TwitchNewAPI/Revoke', async (request, response) => {
+
+    if (request.body.token) {
+
+        let temp = await TwitchNewAPI.revoke(request.body.token);
+        
+        response.json({
+            status: CONSTANTS.STATUS_SUCCESS,
+            req: request.body,
+            data: temp
+        });
+    } else {
+        response.json({
+            status: CONSTANTS.STATUS_FAILED,
+            req: request.body,
+            err: "Token not found!"
+        });
+    }
+});
+
+//TwitchNewAPI - BotUserInfo 
+app.get('/api/TwitchNewAPI/GetBot', async (request, response) => {
     response.json(await TwitchNewAPI.getBotUserDetails());
 });
 
-//UserInfo 
-app.post('/api/TwitchNewAPI/GetLogInPage', async (request, response) => {
-    let s = await TwitchNewAPI.getLogInHTMLPage(request.body.scopes);
+//TwitchNewAPI - LoginPage 
+app.post('/api/TwitchNewAPI/GetLogInPageCode', (request, response) => {
+    
+    if (!request.body.scopes) {
+        response.json({
+            status: CONSTANTS.STATUS_FAILED,
+            req: request.body,
+            err: "SCOPES NOT DEFINED"
+        });
+
+        return;
+    }
+
+    let s = TwitchNewAPI.getLogInHTMLPageCode(request.body.scopes);
+    
+    response.send(s);
+});
+
+//TwitchNewAPI - LoginPage 
+app.post('/api/TwitchNewAPI/GetLogInPageToken', (request, response) => {
+
+    if (!request.body.scopes) {
+        response.json({
+            status: CONSTANTS.STATUS_FAILED,
+            req: request.body,
+            err: "SCOPES NOT DEFINED"
+        });
+
+        return;
+    }
+
+    let s = TwitchNewAPI.getLogInHTMLPageToken(request.body.scopes);
 
     response.send(s);
+});
+
+//Packages - AllInfos
+app.get('/api/Packages/', (request, response) => {
+
+    let id = 1;
+
+    let out = {
+        Packages: {
+
+        }
+    };
+
+    for (let pack of Object.getOwnPropertyNames(INSTALLED_PACKAGES)) {
+        out.Packages[pack] = INSTALLED_PACKAGES[pack].Object.getDetails();
+        out.Packages[pack].UID = id;
+        id++;
+    }
+
+    response.json({
+        status: CONSTANTS.STATUS_SUCCESS,
+        req: request.body,
+        data: out
+    });
 });
 
 //INIT PACKAGES/TWITCHCHAT/NEWAPI/ AND PACKAGE API AFTER BOT API AND BEFORE NOT FOUND ENDPOINT
@@ -340,6 +437,8 @@ function onConnectedHandler(addr, port) {
 }
 function onDisconnectedHandler(reason) {
     console.log("Bot got disconnected from TwitchIRC: " + reason);
+    //try to reconnect
+    TwitchChat.Connect();
 }
 
 /*

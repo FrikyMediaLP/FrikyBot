@@ -1,0 +1,75 @@
+#grid #content {
+    margin: 0 !important;
+    background-color: #e3e3e3 !important;
+}
+
+    #grid #content h1 {
+        margin: 0;
+        padding: 10px;
+        background-color: white;
+        text-align: center;
+        grid-area: header;
+    }
+
+    #grid #content #login {
+        margin-top: 30px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, auto);
+        grid-template-rows: auto;
+        grid-template-areas: ". login .";
+    }
+
+        #grid #content #login #login_center {
+            grid-area: login;
+            padding: 0 70px 20px 70px;
+            background-color: white;
+        }
+
+    #grid #content input {
+        margin: 0 auto;
+        height: 2em;
+        width: 100%;
+        outline: none;
+        border: 1px solid black;
+    }
+
+    #grid #content #sendButton {
+        margin-top: 10px;
+        width: 60px;
+        height: 35px;
+        background-color: #19a3ff;
+        border: none;
+        cursor: pointer;
+        color: white;
+        float: right;
+    }
+
+        #grid #content #sendButton:hover {
+            background-color: #028deb;
+        }
+
+    #grid #content #twitchLogin {
+        margin-top: 50px;
+        padding: 5px;
+        background-color: #6441a5;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, auto);
+        grid-template-areas: ". img head .";
+    }
+
+        #grid #content #twitchLogin #header {
+            grid-area: head;
+            color: white;
+        }
+
+        #grid #content #twitchLogin img {
+            align-self: center;
+            margin: 0 auto;
+            grid-area: img;
+            height: 40px;
+            filter: invert(100%);
+        }
+
+        #grid #content #twitchLogin #noFilter {
+            filter: none;
+        }

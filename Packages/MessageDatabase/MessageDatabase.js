@@ -13,7 +13,24 @@ const proto = {
 class MessageDatabase extends require('./../PackageBase.js').PackageBase {
 
     constructor(config, app, twitchIRC, twitchNewApi) {
-        super(config, app, twitchIRC, twitchNewApi, "MessageDatabase");
+
+        //Create Details
+        let det = {
+            Description: "Collects Chat Messages and tracks activities and display them in user friendly ways!",
+            Capabilities: {
+                Chat: {
+                    title: "Collects User-Chat-Data! ONLY Data from the Twitch IRC Connection is collected!"
+                },
+                Stats: {
+                    title: "Displays Collected data in user friendly ways!"
+                }
+            },
+            Settings: {
+                enabled: ((config.enabled == undefined || config.enabled == true) ? true : false)
+            }
+        };
+        
+        super(config, app, twitchIRC, twitchNewApi, "MessageDatabase", det);
 
         this.InitAPIEndpoints();
 
@@ -21,6 +38,9 @@ class MessageDatabase extends require('./../PackageBase.js').PackageBase {
             console.log('Data collection file does not exists. Creating new ...');
             super.writeFile(config.Raw_File, JSON.stringify(proto, null, 4));
         }
+
+
+        this.CurrentCollection = [];
     }
 
     InitAPIEndpoints() {
@@ -37,7 +57,9 @@ class MessageDatabase extends require('./../PackageBase.js').PackageBase {
             response.json({
                 status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
                 req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                data: this.name                     //Name
+                data: {                             //Details
+                    [this.name]: this.details
+                }
             });
         }, false);
     }
@@ -45,10 +67,9 @@ class MessageDatabase extends require('./../PackageBase.js').PackageBase {
     MessageHandler(message) {
         console.log("[" + message.getTime() + "] " + message.toString());
 
-        let temp = JSON.parse(super.readFile(this.config.Raw_File));
-        temp.Messages.push(message.toJSON());
+        this.CurrentCollection.push(message.toJSON());
 
-        super.writeFile(this.config.Raw_File, JSON.stringify(temp, null, 4));
+        super.writeFile(this.config.Raw_File, JSON.stringify(this.CurrentCollection, null, 4));
     }
 }
 

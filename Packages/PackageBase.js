@@ -1,12 +1,32 @@
 const fs = require('fs');
 const path = require('path');
 
+/*
+ *  ----------------------------------------------------------
+ *                   DETAILS TEMPLATE
+ *  ----------------------------------------------------------
+ *  
+ *  {
+ *      Description: "bla bla bla",
+ *      Capabilities: {
+ *          HTML: {
+ *              html: "path",
+ *              title: "hover title"
+ *          },
+ *          ...
+ *      },
+ *      Settings: {
+ *          enabled: true/false
+ *      }
+ *  }
+ */
 
 class PackageBase {
-    constructor(config, app, twitchIRC, twitchNewApi, name) {
+    constructor(config, app, twitchIRC, twitchNewApi, name, details) {
         this.config = config;
         this.app = app;
         this.name = name
+        this.details = details;
 
         this.htmlName;
 
@@ -224,8 +244,22 @@ class PackageBase {
         }
     }
 
+    arrayShiftUp(arr) {
+        let temp = [];
+
+        for (let i = 1; i < arr.length; i++) {
+            temp.push(arr[i]);
+        }
+
+        return temp;
+    }
+
     getName() {
         return this.name;
+    }
+
+    getDetails() {
+        return this.details;
     }
 }
 

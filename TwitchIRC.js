@@ -23,16 +23,28 @@ class TwitchIRC {
             console.log("Fill in User, Password AND Channel!");
             return;
         }
+
+        if (Array.isArray(this.Channel)) {
+            this.client = new tmi.client({
+                identity: {
+                    username: this.Username,
+                    password: this.Passwort
+                },
+                channels: this.Channel
+            });
+        } else {
+            this.client = new tmi.client({
+                identity: {
+                    username: this.Username,
+                    password: this.Passwort
+                },
+                channels: [
+                    this.Channel
+                ]
+            });
+        }
+
         
-        this.client = new tmi.client({
-            identity: {
-                username: this.Username,
-                password: this.Passwort
-            },
-            channels: [
-                this.Channel
-            ]
-        });
 
         //Handle Ping - Pong  (does automatically)
         //client.on('ping', () => { client.ping(); console.log("PING PONG"); });
@@ -48,15 +60,25 @@ class TwitchIRC {
                 this.Passwort = pw;
                 this.Channel = channel;
 
-                this.client = new tmi.client({
-                    identity: {
-                        username: this.Username,
-                        password: this.Passwort
-                    },
-                    channels: [
-                        this.Channel
-                    ]
-                });
+                if (Array.isArray(this.Channel)) {
+                    this.client = new tmi.client({
+                        identity: {
+                            username: this.Username,
+                            password: this.Passwort
+                        },
+                        channels: this.Channel
+                    });
+                } else {
+                    this.client = new tmi.client({
+                        identity: {
+                            username: this.Username,
+                            password: this.Passwort
+                        },
+                        channels: [
+                            this.Channel
+                        ]
+                    });
+                }
             } else {
                 console.log("Fill in User, Password AND Channel to change one of them!");
                 return;
@@ -79,9 +101,34 @@ class TwitchIRC {
         }
     }
 
+    //only one channel - uses first in array
     send(message) {
         if (this.client) {
-            this.client.say(this.Channel, message.toString())
+
+            if (Array.isArray(this.Channel)) {
+                this.client.say(this.Channel[0], message.toString())
+                    .then((data) => {
+                        //console.log(data);
+                    }).catch((err) => {
+                        //console.log(err);
+                    });
+            } else {
+                this.client.say(this.Channel, message.toString())
+                    .then((data) => {
+                        //console.log(data);
+                    }).catch((err) => {
+                        //console.log(err);
+                    });
+            }
+        } else {
+            console.log("Client not defined! Client init went wrong or client disconnected?");
+        }
+    }
+
+    //multy channel
+    say(channel, message) {
+        if (this.client) {
+            this.client.say(channel, message.toString())
                 .then((data) => {
                     //console.log(data);
                 }).catch((err) => {
@@ -188,6 +235,10 @@ class Message {
     }
 
     hasBadge(badgeName) {
+
+        if (!this.userstate.badges)
+            return false;
+
         return this.userstate.badges[badgeName] ? true : false;
     }
 }

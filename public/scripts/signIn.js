@@ -39,7 +39,7 @@ function test() {
 
     console.log(options);
 
-    fetch("api/TwitchNewAPI/GetLogInPage", options)
+    fetch("api/TwitchNewAPI/GetLogInPageCode", options)
         .then(data => data.text())
         .then(text => {
             console.log(text);

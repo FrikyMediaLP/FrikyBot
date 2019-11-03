@@ -1,8 +1,15 @@
+let once = false;
+
 function init() {
 
     fetch("/api/TwitchNewAPI/GetBot")
         .then(data => data.json())
         .then(json => {
+
+            if (json == {}) {
+                document.getElementById("headTitle").innerHTML = "Hmmm site loaded to fast? Can you reload pls? :)";
+                return;
+            }
 
             document.getElementById("profile_pic").src = json.profile_image_url;
             document.getElementById("headTitle").innerHTML = "Bot Logged in to Twitch!";
@@ -20,10 +27,10 @@ function init() {
             s = "";
 
             for (i = 1; i < Math.trunc(json.view_count / 100); i++) {
-                s += "<div class='view' style='background-color: lightgreen' title='" + addDots(i * 100) +" Views'></div>";
+                s += "<div class='view' style='background-color: lightgreen' title='" + addDots(i * 100) + " Views'></div>";
             }
 
-            s += "<div class='view' style='background-color: rgb(" + Math.trunc((100 - json.view_count % 100) * 2.55) + "," + Math.trunc((json.view_count % 100) * 2.55) + "," + "0);' title='" + addDots(i * 100 + json.view_count % 100) +" Views'></div>";
+            s += "<div class='view' style='background-color: rgb(" + Math.trunc((100 - json.view_count % 100) * 2.55) + "," + Math.trunc((json.view_count % 100) * 2.55) + "," + "0);' title='" + addDots((i-1) * 100 + json.view_count % 100) + " Views'></div>";
 
             for (let j = i; j < (document.getElementById("viewcount").clientWidth / 13); j++) {
                 s += "<div class='view' style='background-color: lightgray;' title='" + addDots(j * 100) + " Views'></div>";

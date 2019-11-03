@@ -11,9 +11,12 @@
     <script src="scripts/packages.js"></script>
     <script src="scripts/standard.js"></script>
 
+    <script src="../scripts/libraries/p5.js"></script>
+    <script src="../scripts/libraries/p5.dom.js"></script>
+
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
 </head>
-<body onload="Standard_Page_Init(); getBotStatus();">
+<body onload="Standard_Page_Init();">
     <!-- MAIN GRID -->
     <div id="grid">
         <!-- NAVI HEADER -->
@@ -121,9 +124,9 @@
                 </div>
 
                 <div id="SignIn_Bot_Navi" class="caption">
-                    <a href="Bot">
+                    <a href="login">
                         <img src="images/icons/twitch.svg" />
-                        <span>Bot Status</span>
+                        <span>Log in</span>
                     </a>
                 </div>
             </div>
@@ -132,7 +135,10 @@
 
         <!-- ACTUAL CONTENT -->
         <div class="cellM" id="content">
+            <h1>All Packages</h1>
+            <div id="master">
 
+            </div>
         </div>
     </div>
 </body>

@@ -111,7 +111,7 @@ class TwitchNewAPI {
         this.checkAppAccess(true);
         this.checkUserAccess(true);
 
-        //this.test(NewAPIEndpoints.GetBannedEvents, ["38921745"]);
+        //this.test(NewAPIEndpoints.test, ["38921745"]);
     }
 
     //API STUFF
@@ -124,17 +124,19 @@ class TwitchNewAPI {
 
         let URL = endpoint.URL;
 
-        for (let i = 0; i < endpoint.replace_param.length; i++) {
+        if (endpoint.replace_param) {
+            for (let i = 0; i < endpoint.replace_param.length; i++) {
 
-            let start = URL.indexOf(endpoint.replace_param[i]);
-            if (start < 0)
-                return;
-            let end = URL.indexOf("?", start);
+                let start = URL.indexOf(endpoint.replace_param[i]);
+                if (start < 0)
+                    return;
+                let end = URL.indexOf("?", start);
 
-            if (end < 0) {
-                URL = URL.substring(0, start) + parameters[i];
-            } else {
-                URL = URL.substring(0, start) + parameters[i] + URL.substring(end);
+                if (end < 0) {
+                    URL = URL.substring(0, start) + parameters[i];
+                } else {
+                    URL = URL.substring(0, start) + parameters[i] + URL.substring(end);
+                }
             }
         }
 
@@ -178,6 +180,20 @@ class TwitchNewAPI {
         this.request(URL, options, json => console.log(json));
     }
 
+    //OLD AF KRAKEN PLS SWITCH IT TO KNEW WTF IS WRONG WITH YOU TWITCH?!?!
+    //OAUTH NOT SAVED ON SERVER - JUST USED TO GET THE OBJ
+    async getUserDetailsByOAuth(OAUTH) {
+        return await this.request("http://api.twitch.tv/kraken/user", {
+            method: "GET",
+            headers: {
+                'Accept': 'application/vnd.twitchtv.v5+json',
+                "Content-Type": "application/json",
+                'Authorization': 'OAuth ' + OAUTH,
+                'Client-ID': this.config.Client_ID
+            }
+        }, json => { return json; });
+    }
+    
     //TWTICH NEW API ENDPOINTS
     async getUserDetails(login) {
 
@@ -185,7 +201,22 @@ class TwitchNewAPI {
             return;
         }
 
-        return await this.request("https://api.twitch.tv/helix/users?login=" + login, {
+        let params = "";
+
+        if (Array.isArray(login)) {
+            for (let log of login) {
+                params += "&login=" + log;
+            }
+
+            params = params.substring(1);
+
+        } else {
+            params = "login=" + login;
+        }
+
+        console.log(login);
+
+        return await this.request("https://api.twitch.tv/helix/users?" + params, {
             headers: {
                 'Authorization': 'Bearer ' + this.UserAccessToken.access_token
             }
@@ -193,10 +224,21 @@ class TwitchNewAPI {
     }
 
     async getBotUserDetails() {
-        return (await this.getUserDetails(this.twitchChat.Username)).data[0];
+
+        let x = await this.getUserDetails(this.twitchChat.Username);
+
+        if (x) {
+            return x.data[0];
+        } else {
+            return {
+                err: "Could not connect to Twitch API"
+            };
+        }
     }
 
-    getLogInHTMLPage(scopes) {
+    getLogInHTMLPageCode(scopes) {
+
+        if (!scopes) return "";
 
         let scopesOut = "";
 
@@ -215,7 +257,29 @@ class TwitchNewAPI {
         return query;
     }
 
-    //TOKENS STUFF
+    getLogInHTMLPageToken(scopes) {
+
+        if (!scopes) return "";
+
+        let scopesOut = "";
+
+        for (let scope of scopes) {
+            scopesOut += scope + "+";
+        }
+
+        scopesOut = scopesOut.substring(0, scopesOut.length - 1);
+
+        let query = "https://id.twitch.tv/oauth2/authorize"
+        query += "?client_id=" + this.config.Client_ID;
+        query += "&redirect_uri=" + this.config.Client_Redirect_Uri;
+        query += "&response_type=token";
+        query += "&force_verify=true";
+        if (scopesOut != "") query += "&scope=" + scopesOut;
+
+        return query;
+    }
+
+    //TOKENS STUFF / TWICH AUTHENTICATION
     //AppAccess
     updateAppAccessToken() {
 
@@ -379,6 +443,12 @@ class TwitchNewAPI {
         } else {
             return true;
         }
+    }
+
+    async revoke(token) {
+        return await this.request("https://id.twitch.tv/oauth2/revoke?client_id=" + this.config.Client_ID + "&token=" + token, {
+            method: "POST"
+        }, json => { return json; });
     }
 
     //API REQUEST

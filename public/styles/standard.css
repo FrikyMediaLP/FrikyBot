@@ -1,9 +1,21 @@
-﻿body, html {
+﻿/* 
+    ////////////////////////////////////
+                GENERAL CSS
+    ////////////////////////////////////
+*/
+
+body, html {
     height: 100%;
     width: 100%;
     margin: 0;
     padding: 0;
 }
+
+/* 
+    ////////////////////////////////////
+                Main Grid
+    ////////////////////////////////////
+*/
 
 #grid {
     height: 100%;
@@ -13,14 +25,27 @@
     grid-template-areas: "naviHeader contentHeader" "navi content";
 }
 
+    /* 
+    ////////////////////////////////////
+            MAIN GRID NAVIHEADER
+    ////////////////////////////////////
+    */
+
     #grid #naviHeader {
         grid-area: naviHeader;
-        height: 44px;
+        height: 100%;
         width: 100%;
         padding-top: 6px;
         background-color: #028deb;
         font-family: 'Roboto', sans-serif;
         font-size: 30px;
+
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
     }
 
         #grid #naviHeader a {
@@ -34,12 +59,19 @@
             font-weight: 400;
         }
 
+    /* 
+    ////////////////////////////////////
+              MAIN GRID NAVI
+    ////////////////////////////////////
+    */
+
     #grid #navi {
         grid-area: navi;
         background-color: #2b353b;
         display: grid;
         grid-template-columns: auto;
         grid-template-rows: 100px auto;
+        position: relative;
     }
 
         #grid #navi #statusHeader {
@@ -47,7 +79,7 @@
             font-family: 'Roboto', sans-serif;
             margin: 0;
             position: absolute;
-            top: 64px;
+            top: 8px;
             left: 45px;
 
             width: 180px;
@@ -121,11 +153,22 @@
                 color: white;
             }
 
+    /* 
+    ////////////////////////////////////
+          MAIN GRID CONTENTHEADER
+    ////////////////////////////////////
+    */
+
     #grid #contentHeader {
         grid-area: contentHeader;
-        height: 100%;
         background-color: #19a3ff;
     }
+
+    /* 
+    ////////////////////////////////////
+            MAIN GRID CONTENT
+    ////////////////////////////////////
+    */
 
     #grid #content {
         grid-area: content;
@@ -133,3 +176,134 @@
         padding: 10px;
         font-family: 'Roboto', sans-serif;
     }
+
+/* 
+    ////////////////////////////////////
+           COOKIE NOTIFICATION
+    ////////////////////////////////////
+*/
+
+#COOKIE_NOTIFICATION {
+    height: 100%;
+    background-color: yellow;
+    padding: 5px;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+    font-size: 15px;
+}
+
+    #COOKIE_NOTIFICATION #hover {
+        cursor: pointer;
+        color: red;
+    }
+
+    #COOKIE_NOTIFICATION button {
+        margin: 5px;
+        color: white;
+        background-color: yellow;
+        padding: 5px 10px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 15px;
+        border: none;
+        cursor: pointer;
+        background-color: green;
+    }
+
+    #COOKIE_NOTIFICATION button:hover {
+        background-color: forestgreen;
+    }
+
+
+/* 
+    ////////////////////////////////////
+                PROFILE
+    ////////////////////////////////////
+*/
+
+#Profile {
+    position: absolute;
+    right: 0;
+    margin: 3px;
+    height: 44px;
+    width: auto;
+    border-radius: 10px 10px 10px 10px;
+    background-color: rgba(0,0,0, 0.3);
+}
+
+    #Profile a {
+        display: grid;
+        height: 50px;
+        grid-template-rows: auto 44px;
+        grid-template-areas: "name img";
+        text-decoration: none;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    #Profile p {
+        grid-area: name;
+        padding: 5px;
+        padding-right: 0;
+        padding-left: 0;
+        margin: 0;
+        max-width: 0 !important;
+        font-size: 30px;
+        font-family: 'Roboto', sans-serif;
+        font-weight: 400;
+        text-transform: uppercase;
+        color: white;
+        overflow: hidden;
+        animation-name: ProfileFadeOut;
+        animation-duration: 1s;
+        animation-fill-mode: forwards;
+    }
+
+    #Profile img {
+        grid-area: img;
+        border-radius: 10px 10px 10px 10px;
+        height: 44px;
+    }
+
+    #Profile a:hover p {
+        animation-name: ProfileFadeIn;
+        animation-duration: 2s;
+        animation-fill-mode: forwards;
+    }
+
+@keyframes ProfileFadeIn {
+    0% {
+        padding-right: 0;
+        padding-left: 0;
+        max-width: 0;
+    }
+
+    25% {
+        padding-right: 5px;
+        padding-left: 5px;
+    }
+
+    100% {
+        padding-right: 5px;
+        padding-left: 5px;
+        max-width: 500px;
+    }
+}
+
+@keyframes ProfileFadeOut {
+    0% {
+        padding-right: 5px;
+        padding-left: 5px;
+        max-width: 500px;
+    }
+
+    25% {
+        padding-right: 5px;
+        padding-left: 5px;
+    }
+
+    100% {
+        padding-right: 0;
+        padding-left: 0;
+        max-width: 0;
+    }
+}

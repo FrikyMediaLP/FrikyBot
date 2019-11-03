@@ -6,8 +6,9 @@
         "prefix": "!",
         "name": "game",
         "cooldown": "1m",
-        "output_string": "For Mods (with parameter): changing Game - For Others (Mods without Parameters too): Displays current Game",
-        "enabled": true
+        "output": "For Mods (with parameter): changing Game - For Others (Mods without Parameters too): Displays current Game",
+        "enabled": true,
+        "userlevel":  "Moderator"
       }
     ],
     "Custom": [
@@ -16,48 +17,54 @@
         "prefix": "!",
         "name": "DPS",
         "cooldown": "1m",
-        "output_string": "Friky ist grade $(OWRankName $(SR.Season18.DPS)) mit $(SR.Season18.DPS) SR als DPS!",
-        "enabled": true
+        "output": "Friky ist grade $(OWRankName $(SR.Season18.DPS)) mit $(SR.Season18.DPS) SR als DPS!",
+        "enabled": true,
+        "userlevel": "Subscriber"
       },
       {
         "uid": 1,
         "prefix": "!",
         "name": "TANK",
         "cooldown": "1m",
-        "output_string": "Friky ist grade $(OWRankName $(SR.Season18.Tank)) mit $(SR.Season18.Tank) SR als Tank!",
-        "enabled": true
+        "output": "Friky ist grade $(OWRankName $(SR.Season18.Tank)) mit $(SR.Season18.Tank) SR als Tank!",
+        "enabled": true,
+        "userlevel": "Subscriber"
       },
       {
         "uid": 2,
         "prefix": "!",
         "name": "SUPPORT",
         "cooldown": "1m",
-        "output_string": "Friky ist grade $(OWRankName $(SR.Season18.Support)) mit $(SR.Season18.Support) SR als Support!",
-        "enabled": true
+        "output": "Friky ist grade $(OWRankName $(SR.Season18.Support)) mit $(SR.Season18.Support) SR als Support!",
+        "enabled": true,
+        "userlevel": "Subscriber"
       },
       {
         "uid": 3,
         "prefix": "!",
         "name": "placementsBETA",
         "cooldown": "1m",
-        "output_string": "DPS: $(SR.BetaSeason.Placements.DPS.Record) -> $(SR.BetaSeason.Placements.DPS.SR) SR | TANK: $(SR.BetaSeason.Placements.Tank.Record) -> $(SR.BetaSeason.Placements.Tank.SR) SR | SUPPORT: $(SR.BetaSeason.Placements.Support.Record) -> $(SR.BetaSeason.Placements.Support.SR) SR",
-        "enabled": true
+        "output": "DPS: $(SR.BetaSeason.Placements.DPS.Record) -> $(SR.BetaSeason.Placements.DPS.SR) SR | TANK: $(SR.BetaSeason.Placements.Tank.Record) -> $(SR.BetaSeason.Placements.Tank.SR) SR | SUPPORT: $(SR.BetaSeason.Placements.Support.Record) -> $(SR.BetaSeason.Placements.Support.SR) SR",
+        "enabled": true,
+        "userlevel": "Moderator"
       },
       {
         "uid": 4,
         "prefix": "!",
         "name": "placements18",
         "cooldown": "1m",
-        "output_string": "DPS: $(SR.Season18.Placements.DPS.Record) -> $(SR.Season18.Placements.DPS.SR) SR | TANK: $(SR.Season18.Placements.Tank.Record) -> $(SR.Season18.Placements.Tank.SR) SR | SUPPORT: $(SR.Season18.Placements.Support.Record) -> $(SR.Season18.Placements.Support.SR) SR",
-        "enabled": true
+        "output": "DPS: $(SR.Season18.Placements.DPS.Record) -> $(SR.Season18.Placements.DPS.SR) SR | TANK: $(SR.Season18.Placements.Tank.Record) -> $(SR.Season18.Placements.Tank.SR) SR | SUPPORT: $(SR.Season18.Placements.Support.Record) -> $(SR.Season18.Placements.Support.SR) SR",
+        "enabled": true,
+        "userlevel": "Moderator"
       },
       {
         "uid": 5,
         "prefix": "!",
         "name": "Skill",
         "cooldown": "1m",
-        "output_string": "$(toUser) hat heute $(random 0 100)% Skill! dhaluSkill",
-        "enabled": true
+        "output": "$(toUser) hat heute $(random 0 100)% Skill! dhaluSkill",
+        "enabled": true,
+        "userlevel": "Follower"
       }
     ]
   }

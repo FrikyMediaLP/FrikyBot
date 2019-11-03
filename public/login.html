@@ -1,0 +1,156 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Login - FrikyBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="styles/login.css" rel="stylesheet">
+    <link href="styles/standard.css" rel="stylesheet">
+    <script src="scripts/login.js"></script>
+    <script src="scripts/standard.js"></script>
+
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+</head>
+<body onload="Standard_Page_Init(); init();">
+    <!-- MAIN GRID -->
+    <div id="grid">
+        <!-- NAVI HEADER -->
+        <div class="cellM" id="naviHeader">
+            <a href="./">FRIKY<span>BOT</span></a>
+        </div>
+
+        <!-- CONTENT HEADER -->
+        <div class="cellM" id="contentHeader">
+            
+        </div>
+
+        <!-- NAVI -->
+        <div class="cellM" id="navi">
+            <div id="status">
+                <img src="images/icons/refresh.svg" onclick="getBotStatus();" />
+                <p id="statusHeader">Status</p>
+            </div>
+
+            <!--
+            ////////////////////////////////
+                        MAIN
+            ////////////////////////////////
+            -->
+
+            <div id="mainNavi">
+                <div id="mainNaviHeader">
+                    <span>MAIN NAVIGATION</span>
+                </div>
+
+                <div class="caption">
+                    <a href="./">
+                        <img src="images/icons/home.svg" />
+                        <span>Homepage</span>
+                    </a>
+                </div>
+
+                <div class="caption">
+                    <a href="/Commands">
+                        <img src="images/icons/command.svg" />
+                        <span>Commands</span>
+                    </a>
+                </div>
+
+                <div class="caption">
+                    <a href="ChatStats">
+                        <img src="images/icons/cup.svg" />
+                        <span>Chat Stats</span>
+                    </a>
+                </div>
+
+                <div class="caption">
+                    <a href="CustomChat">
+                        <img src="images/icons/chat.svg" />
+                        <span>Custom Chat</span>
+                    </a>
+                </div>
+
+                <!--
+                ////////////////////////////////
+                            PACKAGES
+                ////////////////////////////////
+                -->
+
+                <div id="mainNaviHeader">
+                    <span>PACKAGES</span>
+                </div>
+
+                <div class="caption">
+                    <a href="/OverwatchLeague">
+                        <img src="images/icons/OWL.png" />
+                        <span>Overwatch League</span>
+                    </a>
+                </div>
+
+                <div class="caption">
+                    <a href="Voting">
+                        <img src="images/icons/poll.svg" />
+                        <span>Voting / Polls</span>
+                    </a>
+                </div>
+
+                <div class="caption">
+                    <a href="packages">
+                        <img src="images/icons/packages.svg" />
+                        <span>Other Packages</span>
+                    </a>
+                </div>
+
+                <!--
+                ////////////////////////////////
+                            SETTINGS
+                ////////////////////////////////
+                -->
+
+                <div id="mainNaviHeader">
+                    <span>SETTINGS</span>
+                </div>
+
+                <div class="caption">
+                    <a href="options">
+                        <img src="images/icons/gear.svg" />
+                        <span>Options</span>
+                    </a>
+                </div>
+
+                <div id="SignIn_Bot_Navi" class="caption">
+                    <a href="login">
+                        <img src="images/icons/twitch.svg" />
+                        <span>Log in</span>
+                    </a>
+                </div>
+            </div>
+            <div id="license"> - <a href="https://fontawesome.com/license" target="_blank">Icon license</a> - </div>
+        </div>
+
+        <!-- ACTUAL CONTENT -->
+        <div class="cellM" id="content">
+            <div id="login">
+                <div id="login_center">
+                    <h2>Staff Login:</h2>
+                    <p>Username:</p>
+                    <input type="text" id="usernameInput" onkeydown="onInput(this);" />
+                    <p>Password:</p>
+                    <input type="password" id="passwordInput" onkeydown="onInput(this);" />
+                    <br />
+                    <input type="submit" value="LOGIN" id="sendButton" onclick="send();" />
+                </div>
+            </div>
+
+            <a id="twitchLoginA" href="" style="text-decoration: none;">
+                <div id="twitchLogin">
+                    <img src="images/icons/twitch.svg" />
+                    <h3 id="header">Login with Twitch.tv</h3>
+                </div>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

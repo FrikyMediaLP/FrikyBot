@@ -1,0 +1,169 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Custom Chat - FrikyBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="html_styles/index.css" rel="stylesheet">
+    <script src="html_scripts/index.js"></script>
+
+    <script src="../scripts/standard.js"></script>
+    <link href="../styles/standard.css" rel="stylesheet">
+
+    <script src="../scripts/libraries/p5.js"></script>
+    <script src="../scripts/libraries/p5.dom.js"></script>
+
+    <script src="//gitcdn.xyz/repo/tmijs/cdn/master/latest/1.x/tmi.min.js"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="../images/favicon.png" />
+
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+</head>
+<body onload="Standard_Page_Init();">
+    <!-- MAIN GRID -->
+    <div id="grid">
+        <!-- NAVI HEADER -->
+        <div class="cellM" id="naviHeader">
+            <a href="../">FRIKY<span>BOT</span></a>
+        </div>
+
+        <!-- CONTENT HEADER -->
+        <div class="cellM" id="contentHeader">
+
+        </div>
+
+        <!-- NAVI -->
+        <div class="cellM" id="navi">
+            <div id="status">
+                <img src="../images/icons/refresh.svg" onclick="getBotStatus();" />
+                <p id="statusHeader">Status</p>
+            </div>
+
+            <!--
+            ////////////////////////////////
+                        MAIN
+            ////////////////////////////////
+            -->
+
+            <div id="mainNavi">
+                <div id="mainNaviHeader">
+                    <span>MAIN NAVIGATION</span>
+                </div>
+
+                <div class="caption">
+                    <a href="../">
+                        <img src="../images/icons/home.svg" />
+                        <span>Homepage</span>
+                    </a>
+                </div>
+
+                <div class="caption">
+                    <a href="../Commands">
+                        <img src="../images/icons/command.svg" />
+                        <span>Commands</span>
+                    </a>
+                </div>
+
+                <div class="caption">
+                    <a href="../ChatStats">
+                        <img src="../images/icons/cup.svg" />
+                        <span>Chat Stats</span>
+                    </a>
+                </div>
+
+                <div class="caption">
+                    <a href="../CustomChat">
+                        <img src="../images/icons/chat.svg" />
+                        <span>Custom Chat</span>
+                    </a>
+                </div>
+
+                <!--
+                ////////////////////////////////
+                            PACKAGES
+                ////////////////////////////////
+                -->
+
+                <div id="mainNaviHeader">
+                    <span>PACKAGES</span>
+                </div>
+
+                <div class="caption">
+                    <a href="../OverwatchLeague">
+                        <img src="../images/icons/OWL.png" />
+                        <span>Overwatch League</span>
+                    </a>
+                </div>
+
+                <div class="caption">
+                    <a href="../Voting">
+                        <img src="../images/icons/poll.svg" />
+                        <span>Voting / Polls</span>
+                    </a>
+                </div>
+
+                <div class="caption">
+                    <a href="../packages">
+                        <img src="../images/icons/packages.svg" />
+                        <span>Other Packages</span>
+                    </a>
+                </div>
+
+                <!--
+                ////////////////////////////////
+                            SETTINGS
+                ////////////////////////////////
+                -->
+
+                <div id="mainNaviHeader">
+                    <span>SETTINGS</span>
+                </div>
+
+                <div class="caption">
+                    <a href="../options">
+                        <img src="../images/icons/gear.svg" />
+                        <span>Options</span>
+                    </a>
+                </div>
+
+                <div id="SignIn_Bot_Navi" class="caption">
+                    <a href="../login">
+                        <img src="../images/icons/twitch.svg" />
+                        <span>Log in</span>
+                    </a>
+                </div>
+            </div>
+            <div id="license"> - <a href="https://fontawesome.com/license" target="_blank">Icon license</a> - </div>
+        </div>
+
+        <!-- ACTUAL CONTENT -->
+        <div class="cellM" id="content">
+            <h1 id="chatHeader">Chat</h1>
+            <div id="master">
+
+            </div>
+            <div id="messageSendingDiv">
+                <textarea id="messageIN" placeholder="Send a message" onkeydown="messageInKey(event)"></textarea>
+
+                <div id="messageSendButtonsDiv">
+
+                    <button id="messageSend" onclick="sendMessage()" title="Sending Messages produces A LOT of Error-Message in the console. Just ignore them, its TMI.js´s fault, not mine! LUL">Chat</button>
+
+                    <div id="messageSendChannelSelectDiv">
+                        <button id="messageSendChannelSelector">
+                            ^
+                        </button>
+                        <div id="dropdown-content">
+                        </div>
+                    </div>
+                </div>
+                <a id="HighlightSet" onclick="setHighlighted()">set Highlighted words</a>
+                <a id="ClearChatBtn" onclick="clearChat()">clear Chat</a>
+                <a id="AutoScrollBtn" onclick="autoScrollEnable(true)">enable Autoscroll</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
