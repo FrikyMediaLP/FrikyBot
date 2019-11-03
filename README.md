@@ -1,4 +1,4 @@
-﻿# FrikyBot 
+# FrikyBot 
 My new main Twitch Bot build with the New Twitch API (helix is the new kraken :D )
 
 ## Getting Started
