@@ -1,4 +1,4 @@
-let TEMP_SRC = "images/temp_images/"
+﻿let TEMP_SRC = "images/temp_images/"
 
 let BADGES = {
 
@@ -19,8 +19,10 @@ let Hierarchy = {
     Regular: 0
 };
 let Commands = [];
+let HCCommands = [];
 
-let iconSelect;
+let perPage = 5;
+let currentPage = 0;
 let BadgeSelectionDiv = "";
 
 let change = [false, false, false, false, false];
@@ -36,18 +38,84 @@ async function setup() {
     await fetch("/api/CommandHandler/Commands")
         .then(data => data.json())
         .then(json => {
+
+            //TEMP TILL CommandHandler.js is updated
+            json.data = {
+                "Hardcoded": [
+                    {
+                        "uid": -1,
+                        "name": "!game",
+                        "cooldown": "1m",
+                        "output": {
+                            "Moderator": "MACHT ALLES GEIL POGCHAMP"
+                        },
+                        "enabled": true
+                    }
+                ],
+                "Custom": [
+                    {
+                        "uid": 0,
+                        "name": "!DPS",
+                        "cooldown": "1s",
+                        "output": "Friky ist grade $(OWRankName $(SR.Season18.DPS)) mit $(SR.Season18.DPS) SR als DPS!",
+                        "enabled": true,
+                        "userlevel": "Subscriber"
+                    },
+                    {
+                        "uid": 1,
+                        "name": "!TANK",
+                        "cooldown": "5m",
+                        "output": "Friky ist grade $(OWRankName $(SR.Season18.Tank)) mit $(SR.Season18.Tank) SR als Tank!",
+                        "enabled": true,
+                        "userlevel": "Subscriber"
+                    },
+                    {
+                        "uid": 2,
+                        "name": "!SUPPORT",
+                        "cooldown": "5s",
+                        "output": "Friky ist grade $(OWRankName $(SR.Season18.Support)) mit $(SR.Season18.Support) SR als Support!",
+                        "enabled": true,
+                        "userlevel": "Subscriber"
+                    },
+                    {
+                        "uid": 3,
+                        "name": "!placementsBETA",
+                        "cooldown": "20s",
+                        "output": "DPS: $(SR.BetaSeason.Placements.DPS.Record) -> $(SR.BetaSeason.Placements.DPS.SR) SR | TANK: $(SR.BetaSeason.Placements.Tank.Record) -> $(SR.BetaSeason.Placements.Tank.SR) SR | SUPPORT: $(SR.BetaSeason.Placements.Support.Record) -> $(SR.BetaSeason.Placements.Support.SR) SR",
+                        "enabled": true,
+                        "userlevel": "Moderator"
+                    },
+                    {
+                        "uid": 4,
+                        "name": "!placements18",
+                        "cooldown": "1h",
+                        "output": "DPS: $(SR.Season18.Placements.DPS.Record) -> $(SR.Season18.Placements.DPS.SR) SR | TANK: $(SR.Season18.Placements.Tank.Record) -> $(SR.Season18.Placements.Tank.SR) SR | SUPPORT: $(SR.Season18.Placements.Support.Record) -> $(SR.Season18.Placements.Support.SR) SR",
+                        "enabled": true,
+                        "userlevel": "Moderator"
+                    },
+                    {
+                        "uid": 5,
+                        "name": "!Skill",
+                        "cooldown": "1s",
+                        "output": "$(toUser) hat heute $(random 0 100)% Skill! dhaluSkill",
+                        "enabled": true,
+                        "userlevel": "Follower"
+                    }
+                ]
+            };
+
+
             if (json.status == "SUCCESS") {
                 if (json.data) {
                     if (json.data.Hardcoded) {
+                        let i = 0;
                         for (let cmd of json.data.Hardcoded) {
-                            cmd.type = "Hardcoded";
-                            Commands.push(cmd);
+                            addHCContent(cmd, i++);
                         }
                     }
 
                     if (json.data.Custom) {
                         for (let cmd of json.data.Custom) {
-                            cmd.type = "Custom";
                             Commands.push(cmd);
                         }
                     }
@@ -56,9 +124,38 @@ async function setup() {
         })
         .catch(err => console.log(err));
 
-    Commands.sort(sortByHType);
+    Commands.sort(sortByUIDDEC);
+    updateTable();
+}
 
-    updateTable(Commands);
+//Hardcoded
+function toggleShow() {
+    if (select("#Hardcoded").height == 60) {
+        select("#Hardcoded").elt.style.height = "auto";
+        select("#HCarrow").html("▲");
+    } else {
+        select("#Hardcoded").elt.style.height = "60px";
+        select("#HCarrow").html("▼");
+    }
+}
+function addHCContent(obj, id) {
+
+    let s = '<div class="HardcodedName">' + obj.name + '</div>';
+    s += '<div class="HarcodedDetails">';
+
+    let output = "";
+
+    s += output;
+    s += '</div>';
+    s += '<div>';
+    s += '<span>Enabled:</span>';
+    s += '<div class="switchButtonOnOff ' + (obj.enabled ? 'switchButtonOn' : 'switchButtonOff') + '" onclick="switchButton(this)" disabled>';
+    s += '<div class="switchButtonSlider">';
+    s += '</div>';
+    s += '</div>';
+    s += '</div>';
+
+    select("#contentHC").html(select("#contentHC").html() + s);
 }
 
 //Table
@@ -72,14 +169,14 @@ function updateTable() {
     s += '<div class="name" id="nameHeader">Command</div>';
     s += '<div class="output" id="outputHeader">Output</div>';
     s += '<div class="userlevel" id="userlevelHeader">Userlevel</div>';
-    s += '<div class="type" id="typeHeader">Type</div>';
+    s += '<div class="cooldown" id="cooldownHeader">Cooldown</div>';
     s += '<div class="settings" id="settingsHeader">Settings</div>';
 
     s += '</div>';
     
     select("#CommandGridMaster").html(s);
     
-    for (let i = 0; i < Commands.length; i++){
+    for (let i = (currentPage * perPage); i < Commands.length && i < (currentPage * perPage) + perPage; i++){
         addRow(Commands[i], i, select("#CommandGrid"));
     }
 
@@ -95,7 +192,8 @@ function updateTable() {
 
     max += 12;
 
-    select("#CommandGrid").elt.style.gridTemplateColumns = max + "px auto minmax(85px, 100px) 50px minmax(75px, 110px)";
+    select("#CommandGrid").elt.style.gridTemplateColumns = max + "px auto minmax(85px, 100px) 90px minmax(75px, 110px)";
+    select("#currentPageLabel").html((currentPage + 1) + "/" + ceil(Commands.length / perPage));
 }
 function addRow(row, idx, parent) {
 
@@ -121,19 +219,9 @@ function addRow(row, idx, parent) {
     div.class("userlevel row" + idx);
     div.parent(parent);
 
-    //Type
-    let type = "";
-
-    if (row.type == "Custom") {
-        type = '<img src="../images/icons/pencil-ruler-solid.svg" title="Custom Command"/>';
-    } else if (row.type == "Hardcoded") {
-        type = '<img src="../images/icons/hdd-regular.svg" title="Hardcoded Command"/>';
-    } else {
-        type = '-';
-    }
-
-    div = createDiv("<center>" + type + "</center>");
-    div.class("type row" + idx);
+    //Cooldown
+    div = createDiv("<center>" + row.cooldown + "</center>");
+    div.class("cooldown row" + idx);
     div.parent(parent);
 
     //Settings
@@ -142,6 +230,45 @@ function addRow(row, idx, parent) {
     div.parent(parent);
 
     return true;
+}
+
+//UI
+function perPageChange(x) {
+    perPage = x.value;
+
+    if (currentPage >= ceil(Commands.length / perPage)) {
+        lastPage();
+        return;
+    }
+
+    updateTable();
+}
+function firstPage() {
+    currentPage = 0;
+    updateTable();
+}
+function nextPage() {
+    currentPage++;
+
+    if (currentPage >= ceil(Commands.length / perPage)) {
+        lastPage();
+        return;
+    }
+
+    updateTable();
+}
+function prevPage() {
+    currentPage--;
+    if (currentPage < 0) {
+        firstPage();
+        return;
+    }
+
+    updateTable();
+}
+function lastPage() {
+    currentPage = ceil(Commands.length / perPage)-1;
+    updateTable();
 }
 
 //EDIT/INFO
@@ -203,6 +330,8 @@ function exitEDITINFO() {
     for (let btn of allBtns) {
         btn.removeAttribute("disabled");
     }
+
+    change = [false, false, false, false, false];
 }
 function blurStuff() {
     select("#masterWrapper").class("blur");
@@ -767,29 +896,42 @@ function sliderInputInverse(value) {
         return null;
     }
 }
+function compareCD(a, b) {
+
+    if(!a || !b) return 0;
+
+    let qA = a.substring(a.length - 1);
+    let qB = b.substring(b.length - 1);
+
+    let qs = {
+        "s": 1,
+        "m": 60,
+        "h": 3600,
+    };
+
+    if (!qs[qA] || !qs[qB]) {
+        return 0;
+    }
+
+    let valueA = qs[qA] * parseInt(a.substring(0, a.length - 1));
+    let valueB = qs[qB] * parseInt(b.substring(0, b.length - 1));
+    
+    return valueA - valueB;
+}
 
 //Sort
-function sortByHType(a, b) {
-    if (a.type == "Hardcoded" && b.type == "Custom") {
-        return -1;
-    }
-
-    if (a.type == "Custom" && b.type == "Hardcoded") {
-        return 1;
-    }
-
-    return 0;
+function sortByUIDACC(a, b) {
+    return b.uid - a.uid;
 }
-function sortByCType(a, b) {
-    if (a.type == "Hardcoded" && b.type == "Custom") {
-        return 1;
-    }
+function sortByUIDDEC(a, b) {
+    return a.uid - b.uid;
+}
 
-    if (a.type == "Custom" && b.type == "Hardcoded") {
-        return -1;
-    }
-
-    return 0;
+function sortByCDACC(a, b) {
+    return compareCD(a.cooldown, b.cooldown);
+}
+function sortByCDDEC(a, b) {
+    return compareCD(b.cooldown, a.cooldown);
 }
 
 function sortByUserlevelDEC(a, b) {

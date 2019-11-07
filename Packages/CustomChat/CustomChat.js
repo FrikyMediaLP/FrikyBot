@@ -27,7 +27,7 @@ class CustomChat extends require('./../PackageBase.js').PackageBase{
         
         this.LoginNames = ["FrikyMediaLP", "FitzyHere"];
         this.ChannelDetails = {};
-
+        
         this.updateStreamerData();
     }
 
@@ -52,7 +52,7 @@ class CustomChat extends require('./../PackageBase.js').PackageBase{
         }, false);
 
         super.AddAPIEndpoint('GET', '/MetaData', (request, response) => {
-
+            
             let data = {
                 Channel: this.ChannelDetails,
                 Live: false

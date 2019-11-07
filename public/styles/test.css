@@ -3,10 +3,15 @@
     padding: 5px !important;
 }
 
+#grid #content h2{
+    margin-left: 5px;
+}
+
 #masterWrapper {
     background-color: #f0f0f0 !important;
     position: relative !important;
     padding: 1px;
+    padding-bottom: 21px;
 }
 
     #masterWrapper h1 {
@@ -26,70 +31,130 @@
         height: 15px;
     }
 
-    /*
-      -----------------------------
-              CommandGrid
-      -----------------------------
-    */
+/*-----------------------------
+          Hardcoded
+-----------------------------*/
 
+#Hardcoded {
+    width: 100%;
+    background-color: #e8e8e8;
+    height: 60px;
+    overflow: hidden;
+}
 
-    #CommandGridMaster #CommandGrid {
-        border-right: 1px solid #bdbdbd;
-        border-top: 1px solid #bdbdbd;
-        display: grid;
-        grid-template-rows: 30px auto;
-        grid-template-columns: 100px auto minmax(85px, 100px) 50px minmax(75px, 110px);
-        font-family: sans-serif;
+    #Hardcoded #Title{
+        padding: 10px;
+        font-size: 25px;
+        font-weight: bold;
+        position: relative;
+        cursor: pointer;
     }
+
+        #Hardcoded #Title #HCarrow {
+            position: absolute;
+            right: 0;
+        }
+
+    #Hardcoded #contentHC {
+
+        border-top: 1px solid black;
+
+        display: grid;
+        grid-template-columns: minmax(50px, 200px) auto 100px;
+        grid-template-rows: auto;
+    }
+
+        #Hardcoded #contentHC > div {
+            padding: 10px;
+            border-left: 1px solid #d1d1d1;
+            border-bottom: 1px solid #d1d1d1;
+        }
+
+            #Hardcoded #contentHC > div:nth-child(3n+3) {
+                border-right: 1px solid #d1d1d1;
+            }
+
+            #Hardcoded #contentHC > div:nth-child(6n+1), #Hardcoded #contentHC > div:nth-child(6n+2), #Hardcoded #contentHC > div:nth-child(6n+3) {
+                background-color: white;
+            }
+
+            #Hardcoded #contentHC > div:nth-child(6n+4), #Hardcoded #contentHC > div:nth-child(6n+5), #Hardcoded #contentHC > div:nth-child(6n+6) {
+                background-color: #e8e8e8;
+            }
+
+    /*-----------------------------
+              CommandGrid
+      -----------------------------*/
+
+#masterWrapper #UIElements {
+    position: absolute;
+    right: 0;
+}
+
+    #masterWrapper #UIElements button{
+        border: 1px solid black;
+        height: 20px;
+        cursor: pointer;
+    }
+
+        #masterWrapper #UIElements button:hover {
+            background-color: lightgray;
+        }
+
+    #masterWrapper #UIElements label {
+        font-size: 16px;
+    }
+
+#CommandGridMaster #CommandGrid {
+    display: grid;
+    grid-template-rows: 30px auto;
+    grid-template-columns: 100px auto minmax(85px, 100px) 90px minmax(75px, 110px);
+    font-family: sans-serif;
+}
 
         #CommandGridMaster #CommandGrid > div {
             padding: 5px;
-            border-left: 1px solid #bdbdbd;
-            border-bottom: 1px solid #bdbdbd;
             color: #545454;
         }
 
             #CommandGridMaster #CommandGrid > div:nth-child(1), #CommandGridMaster #CommandGrid > div:nth-child(2), #CommandGridMaster #CommandGrid > div:nth-child(3), #CommandGridMaster #CommandGrid > div:nth-child(4), #CommandGridMaster #CommandGrid > div:nth-child(5) {
-                color: #545454;
+                color: white;
                 font-weight: bold;
-                border-bottom: 3px solid #bdbdbd;
-                background-color: #e8e8e8 !important;
+                background-color: #104875 !important;
+                border: none !important;
             }
 
             #CommandGridMaster #CommandGrid > div:nth-child(10n+6), #CommandGridMaster #CommandGrid > div:nth-child(10n+7), #CommandGridMaster #CommandGrid > div:nth-child(10n+8), #CommandGridMaster #CommandGrid > div:nth-child(10n+9), #CommandGridMaster #CommandGrid > div:nth-child(10n+10) {
                 background-color: #e8e8e8;
+                border-left: 1px solid #d1d1d1;
+                border-bottom: 1px solid #d1d1d1;
             }
 
             #CommandGridMaster #CommandGrid > div:nth-child(10n+1), #CommandGridMaster #CommandGrid > div:nth-child(10n+2), #CommandGridMaster #CommandGrid > div:nth-child(10n+3), #CommandGridMaster #CommandGrid > div:nth-child(10n+4), #CommandGridMaster #CommandGrid > div:nth-child(10n+5) {
                 background-color: #FFFFFF;
+                border-left: 1px solid #d1d1d1;
+                border-bottom: 1px solid #d1d1d1;
             }
 
+            #CommandGridMaster #CommandGrid > div:nth-child(5n+10) {
+                border-right: 1px solid #d1d1d1;
+            }
 
     .blur {
         filter: blur(4px);
     }
 
-    /*-----------------------------
-                    HEADERS
-          -----------------------------
-        */
-    #CommandGridMaster #CommandGrid #nameHeader {
+    /*
+     -----------------------------
+               HEADERS
+     -----------------------------
+    */
+
+    #CommandGridMaster #CommandGrid #nameHeader, #CommandGridMaster #CommandGrid #outputHeader, #CommandGridMaster #CommandGrid #userlevelHeader, #CommandGridMaster #CommandGrid #cooldownHeader {
         padding: 5px !important;
     }
 
-    #CommandGridMaster #CommandGrid #outputHeader {
-        padding: 5px !important;
-    }
-
-    #CommandGridMaster #CommandGrid #userlevelHeader {
-        padding: 5px !important;
-    }
-
-    #CommandGridMaster #CommandGrid #typeHeader {
-        padding: 5px !important;
-    }
-
-        #CommandGridMaster #CommandGrid #typeHeader img {
+        #CommandGridMaster #CommandGrid #cooldownHeader img {
             height: 18px;
             padding: 10px;
             background-color: none;
@@ -105,34 +170,28 @@
         */
 
     #CommandGridMaster #CommandGrid .name {
-        padding-top: 15px !important;
+        padding-top: 10px !important;
     }
 
     #CommandGridMaster #CommandGrid .output {
-        padding-top: 15px !important;
+        padding-top: 10px !important;
     }
 
     #CommandGridMaster #CommandGrid .userlevel {
-        padding-top: 15px !important;
+        padding-top: 10px !important;
     }
 
         #CommandGridMaster #CommandGrid .userlevel img {
             height: 18px;
         }
 
-    #CommandGridMaster #CommandGrid .type {
-        padding: 5px 0 0 0 !important;
+    #CommandGridMaster #CommandGrid .cooldown {
+        padding: 10px 0 0 0 !important;
     }
 
-        #CommandGridMaster #CommandGrid .type img {
-            height: 18px;
-            padding: 10px;
-            background-color: none;
-        }
-
-            #CommandGridMaster #CommandGrid .type img:hover {
-                background-color: rgba(0,0,0, 0.1);
-            }
+    #CommandGridMaster #CommandGrid .settings {
+        padding-top: 0 !important;
+    }
 
     #CommandGridMaster #CommandGrid .settings button {
         margin: 8px 0 0 0;

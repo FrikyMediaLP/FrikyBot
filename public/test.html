@@ -139,14 +139,35 @@
 
                 <h1>FrikyBot Commands</h1>
 
-                <p>Commands are split into 2 Categories: Hardcoded (<img src="../images/icons/hdd-regular.svg"/>) and Custom(<img src="../images/icons/pencil-ruler-solid.svg"/>).</p>
-                <h3>Hardcoded Commands:</h3>
-                <p>Harcoded Commands are default commands that use higher level Twitch Inegrations that normal commands cant have access too. Some commands work very different than normal command to make them even more usefull! The Edit Options for those are very limited because of these reasons!</p>
-                
+                <div id="Hardcoded">
+                    <div id="Header" onclick="toggleShow()">
+                        <p id="Title">HARDCODED COMMANDS <span id="HCarrow">▼</span></p>
+                    </div>
+                    <div id="contentHC">
+                        
+                    </div>
+                </div>
+
                 <h2>Command List:</h2>
-                
+                <label>
+                    <select name="perPage" onchange="perPageChange(this)">
+                        <option>5</option>
+                        <option>10</option>
+                        <option>15</option>
+                        <option>20</option>
+                        <option>25</option>
+                    </select>
+                     Per Page
+                </label>
                 <div id="CommandGridMaster">
 
+                </div>
+                <div id="UIElements">
+                    <button onclick="firstPage()">first</button>
+                    <button onclick="prevPage()">pref</button>
+                    <label id="currentPageLabel">1</label>
+                    <button onclick="nextPage()">next</button>
+                    <button onclick="lastPage()">last</button>
                 </div>
             </div>
         </div>

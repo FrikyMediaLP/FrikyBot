@@ -85,7 +85,7 @@ Endpoints can be set to be password protected (not yet implemented tho)
 
 ## Updates
 
-Take a look at the [Trello]() Page to see upcomming Features and Updates
+Take a look at the [Trello](https://trello.com/b/yjQ75foa/frikybot) Page or the official [Twitter](https://twitter.com/FrikyBot) Account to see upcomming Features and Updates
  
 ## Built With
 * [Node.js](https://nodejs.org) - Server

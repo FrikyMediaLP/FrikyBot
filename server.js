@@ -438,7 +438,7 @@ function onConnectedHandler(addr, port) {
 function onDisconnectedHandler(reason) {
     console.log("Bot got disconnected from TwitchIRC: " + reason);
     //try to reconnect
-    TwitchChat.Connect();
+    //TwitchChat.Connect();
 }
 
 /*
