@@ -40,6 +40,8 @@ This Twitch Bot is big, complex and combines all my old versions from .3 and .5 
 * [TwitchNewAPI](#twitchnewapi) - The New Twitch API (helix)
 * [Packages](#packages) - Additional Features in a compact form
 * [API](#api) - API to controll/access Bot Data 
+* [More Detailed Features](Features.md) - Features/Packages that Users will be able to use. Actuall purpose Features of the Bot
+
 
 ## Website
 The hosted Website is main interface of this Twitch Bot. URL: ``http://localhost:1337/``
