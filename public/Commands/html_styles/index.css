@@ -1,104 +1,496 @@
-body {
-    background-color: lightgray;
+#grid #content {
+    position: relative !important;
+    padding: 5px !important;
 }
 
-#content {
-    padding: 0 !important;
+#grid #content h2{
+    margin-left: 5px;
 }
 
-#master {
+#masterWrapper {
+    background-color: #f0f0f0 !important;
+    position: relative !important;
+    padding: 1px;
+    padding-bottom: 21px;
+}
+
+    #masterWrapper h1 {
+        margin: 5px;
+    }
+
+    #masterWrapper h3 {
+        margin-top: 15px !important;
+        font-weight: 600;
+    }
+
+    #masterWrapper h3, #masterWrapper p{
+        margin: 5px;
+    }
+
+    #masterWrapper>p img{
+        height: 15px;
+    }
+
+/*-----------------------------
+          Hardcoded
+-----------------------------*/
+
+#Hardcoded {
+    width: 100%;
+    background-color: #e8e8e8;
+    height: 60px;
+    overflow: hidden;
+}
+
+    #Hardcoded #Title{
+        padding: 10px;
+        font-size: 25px;
+        font-weight: bold;
+        position: relative;
+        cursor: pointer;
+    }
+
+        #Hardcoded #Title #HCarrow {
+            position: absolute;
+            right: 0;
+        }
+
+    #Hardcoded #contentHC {
+
+        border-top: 1px solid black;
+
+        display: grid;
+        grid-template-columns: minmax(50px, 200px) auto 100px;
+        grid-template-rows: auto;
+    }
+
+        #Hardcoded #contentHC > div {
+            padding: 10px;
+            border-left: 1px solid #d1d1d1;
+            border-bottom: 1px solid #d1d1d1;
+        }
+
+            #Hardcoded #contentHC > div:nth-child(3n+3) {
+                border-right: 1px solid #d1d1d1;
+            }
+
+            #Hardcoded #contentHC > div:nth-child(6n+1), #Hardcoded #contentHC > div:nth-child(6n+2), #Hardcoded #contentHC > div:nth-child(6n+3) {
+                background-color: white;
+            }
+
+            #Hardcoded #contentHC > div:nth-child(6n+4), #Hardcoded #contentHC > div:nth-child(6n+5), #Hardcoded #contentHC > div:nth-child(6n+6) {
+                background-color: #e8e8e8;
+            }
+
+    /*-----------------------------
+              CommandGrid
+      -----------------------------*/
+
+#masterWrapper #commandAddButton {
+    position: absolute;
+    right: 0px;
+    background-color: #19a3ff;
+    padding: 4px;
+    width: 37px;
+    border: 1px solid #001d2e;
+    border-radius: 4px;
+    color: white;
+    font-size: 25px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+    #masterWrapper #commandAddButton:hover {
+        background-color: #028deb;
+    }
+
+#masterWrapper #UIElements {
+    position: absolute;
+    right: 0;
+}
+
+    #masterWrapper #UIElements button{
+        border: 1px solid black;
+        height: 20px;
+        cursor: pointer;
+    }
+
+        #masterWrapper #UIElements button:hover {
+            background-color: lightgray;
+        }
+
+    #masterWrapper #UIElements label {
+        font-size: 16px;
+    }
+
+#CommandGridMaster #CommandGrid {
     display: grid;
-    grid-template-columns: auto;
-    grid-template-rows: repeat( auto-fit, minmax(50px, auto));
+    grid-template-rows: 30px auto;
+    grid-template-columns: 100px auto minmax(85px, 100px) 90px minmax(75px, 110px);
+    font-family: sans-serif;
 }
 
-.row {
-    display: grid;
-    grid-template-columns: 30px 100px auto;
-    grid-template-rows: auto;
-    grid-template-areas: "IDX NAME DESCRIPTION";
-    min-height: 50px;
-}
+        #CommandGridMaster #CommandGrid > div {
+            padding: 5px;
+            color: #545454;
+        }
 
-    .row:nth-child(even) {
-        background-color: lavender;
+            #CommandGridMaster #CommandGrid > div:nth-child(1), #CommandGridMaster #CommandGrid > div:nth-child(2), #CommandGridMaster #CommandGrid > div:nth-child(3), #CommandGridMaster #CommandGrid > div:nth-child(4), #CommandGridMaster #CommandGrid > div:nth-child(5) {
+                color: white;
+                font-weight: bold;
+                background-color: #104875 !important;
+                border: none !important;
+            }
+
+            #CommandGridMaster #CommandGrid > div:nth-child(10n+6), #CommandGridMaster #CommandGrid > div:nth-child(10n+7), #CommandGridMaster #CommandGrid > div:nth-child(10n+8), #CommandGridMaster #CommandGrid > div:nth-child(10n+9), #CommandGridMaster #CommandGrid > div:nth-child(10n+10) {
+                background-color: #e8e8e8;
+                border-left: 1px solid #d1d1d1;
+                border-bottom: 1px solid #d1d1d1;
+            }
+
+            #CommandGridMaster #CommandGrid > div:nth-child(10n+1), #CommandGridMaster #CommandGrid > div:nth-child(10n+2), #CommandGridMaster #CommandGrid > div:nth-child(10n+3), #CommandGridMaster #CommandGrid > div:nth-child(10n+4), #CommandGridMaster #CommandGrid > div:nth-child(10n+5) {
+                background-color: #FFFFFF;
+                border-left: 1px solid #d1d1d1;
+                border-bottom: 1px solid #d1d1d1;
+            }
+
+            #CommandGridMaster #CommandGrid > div:nth-child(5n+10) {
+                border-right: 1px solid #d1d1d1;
+            }
+
+    .blur {
+        filter: blur(4px);
     }
 
-    .row:nth-child(odd) {
-        background-color: whitesmoke;
+    /*
+     -----------------------------
+               HEADERS
+     -----------------------------
+    */
+
+    #CommandGridMaster #CommandGrid #nameHeader, #CommandGridMaster #CommandGrid #outputHeader, #CommandGridMaster #CommandGrid #userlevelHeader, #CommandGridMaster #CommandGrid #cooldownHeader {
+        padding: 5px !important;
     }
 
-    .row p {
-        display: table-cell;
-        vertical-align: middle;
-        text-align: center;
+        #CommandGridMaster #CommandGrid #cooldownHeader img {
+            height: 18px;
+            padding: 10px;
+            background-color: none;
+        }
+
+    #CommandGridMaster #CommandGrid #settingsHeader {
+        padding: 5px !important;
     }
 
+    /*-----------------------------
+                    CONTENT
+          -----------------------------
+        */
 
-/*
- *   HEADER
- */
-
-#row {
-    display: grid;
-    grid-template-columns: 30px 100px auto;
-    grid-template-rows: auto;
-    grid-template-areas: "IDX NAME DESCRIPTION";
-    background-color: whitesmoke;
-}
-
-    #row p {
-        display: table-cell;
-        vertical-align: middle;
-        text-align: center;
+    #CommandGridMaster #CommandGrid .name {
+        padding-top: 10px !important;
     }
 
-#command_index {
-    grid-area: IDX;
-    display: table;
-    height: 100%;
-    margin: 0;
-    border-right: 1px dashed gray;
-}
+    #CommandGridMaster #CommandGrid .output {
+        padding-top: 10px !important;
+    }
 
-#command_name {
-    grid-area: NAME;
-    display: table;
-    height: 100%;
-    margin: 0;
-    border-right: 1px dashed gray;
-}
+    #CommandGridMaster #CommandGrid .userlevel {
+        padding-top: 10px !important;
+    }
 
-#command_description {
-    grid-area: DESCRIPTION;
-    display: table;
-    height: 100%;
-    margin: 0;
-}
+        #CommandGridMaster #CommandGrid .userlevel img {
+            height: 18px;
+        }
 
-/*
- *   CONTENT
- */
+    #CommandGridMaster #CommandGrid .cooldown {
+        padding: 10px 0 0 0 !important;
+    }
 
-.command_index {
-    grid-area: IDX;
-    display: table;
-    height: 100%;
-    margin: 0;
-    border-right: 1px dashed gray;
-}
+    #CommandGridMaster #CommandGrid .settings {
+        padding-top: 0 !important;
+    }
 
-.command_name {
-    grid-area: NAME;
-    display: table;
-    height: 100%;
-    margin: 0;
-    border-right: 1px dashed gray;
-}
+    #CommandGridMaster #CommandGrid .settings button {
+        margin: 8px 0 0 0;
+        border: 1px solid gray;
+        background-color: lightgray;
+        cursor: pointer;
+    }
 
-.command_description {
-    grid-area: DESCRIPTION;
-    display: table;
-    height: 100%;
-    padding: 10px;
-}
+        #CommandGridMaster #CommandGrid .settings button:hover {
+            border: 1px solid black;
+            background-color: dimgrey;
+        }
+
+
+
+    /*
+      -----------------------------
+              EDIT  / INFO / ADD
+      -----------------------------
+    */
+
+    #grid #content #EDIT, #grid #content #INFO, #grid #content #ADD {
+        min-height: 60px;
+        height: 80%;
+        width: 70%;
+        max-width: 500px;
+        position: absolute;
+        top: 10%;
+        right: 15%;
+        background-color: rgba(255,255,255, 0.8);
+        box-shadow: 5px 5px 5px 5px rgba(0,0,0, 0.3);
+    }
+
+        #grid #content #EDIT #ExitButton, #grid #content #INFO #ExitButton, #grid #content #ADD #ExitButton {
+            float: right;
+            margin: 10px;
+            padding: 5px;
+            width: 35px;
+            font-size: 30px;
+            border-radius: 200px;
+            border: 1px solid rgba(0,0,0, 0.1);
+            background-color: none;
+            cursor: pointer;
+        }
+
+            #grid #content #EDIT #ExitButton:hover, #grid #content #INFO #ExitButton:hover, #grid #content #ADD #ExitButton:hover {
+                background-color: rgba(0,0,0, 0.1);
+            }
+
+        #grid #content #EDIT h3, #grid #content #INFO h3, #grid #content #ADD h3 {
+            margin-left: 20px;
+        }
+
+        #grid #content #EDIT #Options, #grid #content #INFO #Options, #grid #content #ADD #Options {
+            margin-left: 20px;
+            width: 100%;
+            position: relative;
+        }
+
+            #grid #content #EDIT #Options .Header, #grid #content #INFO #Options .Header {
+                font-weight: bold;
+                margin-bottom: 0px;
+            }
+
+            #grid #content #EDIT #Options #VariableLink, #grid #content #INFO #Options #VariableLink {
+                font-size: 12px;
+                margin-top: 0;
+            }
+
+            #grid #content #EDIT #Options input, #grid #content #EDIT #Options textarea, #grid #content #INFO #Options input, #grid #content #INFO #Options textarea {
+                padding: 5px;
+                width: 80%;
+                max-width: 80%;
+            }
+
+            /*-----------------------------
+                    USERLEVEL SELECTOR
+              -----------------------------
+            */
+
+            #grid #content #EDIT #Options #UserlevelSelector, #grid #content #INFO #Options #UserlevelSelector {
+                display: grid;
+                grid-template-columns: 30px auto;
+                grid-template-rows: 45px;
+                grid-column-gap: 5px;
+            }
+
+                #grid #content #EDIT #Options #UserlevelSelector #NameInfo, #grid #content #INFO #Options #UserlevelSelector #NameInfo {
+                    padding-top: 4px;
+                }
+
+                #grid #content #EDIT #Options #UserlevelSelector .plus, #grid #content #INFO #Options #UserlevelSelector .plus {
+                    font-size: 20px;
+                    font-weight: bold;
+                    max-width: 31px;
+                    position: relative;
+                }
+
+                #grid #content #EDIT #Options #UserlevelSelector .plus, #grid #content #INFO #Options #UserlevelSelector .plus {
+                    background-color: rgb(222, 222, 222);
+                    height: 28px;
+                    border: 1px solid black;
+                }
+
+                    #grid #content #EDIT #Options #UserlevelSelector .plus img, #grid #content #INFO #Options #UserlevelSelector .plus img {
+                        height: 28px;
+                    }
+
+                    #grid #content #EDIT #Options #UserlevelSelector .plus:hover, #grid #content #INFO #Options #UserlevelSelector .plus:hover {
+                        filter: brightness(90%);
+                    }
+
+            #grid #content #EDIT #Options #UserlevelInfo, #grid #content #INFO #Options #UserlevelInfo {
+                color: red;
+                margin-top: 0;
+                font-size: 12px;
+                margin-right: 40px;
+            }
+
+            /*
+              -----------------------------
+                       COOLDOWN
+              -----------------------------
+            */
+
+            #grid #content #EDIT #Options #cooldownSlider, #grid #content #INFO #Options #cooldownSlider {
+                width: 80%;
+            }
+
+                #grid #content #EDIT #Options #cooldownSlider #cooldownSliderHeader, #grid #content #INFO #Options #cooldownSlider #cooldownSliderHeader {
+                    margin-top: 0;
+                    margin-bottom: 0;
+                    font-weight: bold;
+                }
+
+                    #grid #content #EDIT #Options #cooldownSlider #cooldownSliderHeader span, #grid #content #INFO #Options #cooldownSlider #cooldownSliderHeader span {
+                        font-weight: normal;
+                    }
+
+    /*-----------------------------
+                  Hierarchy
+      -----------------------------
+    */
+
+    #grid #content #Info_Hierarchy_Wrapper {
+        position: absolute;
+        bottom: 0px;
+        width: 100%;
+    }
+
+    #grid #content #Info_Hierarchy_Header {
+        padding: 5px;
+        background-color: #bdbdbd !important;
+        border: 2px solid black;
+        border-bottom: none;
+    }
+
+    #grid #content #Info_Hierarchy {
+        border: 2px solid black;
+        padding: 3px;
+        background-color: #bdbdbd !important;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+        #grid #content #Info_Hierarchy .Wrapper {
+            padding: 5px;
+        }
+
+        #grid #content #Info_Hierarchy .Badge {
+            position: relative;
+            padding: 5px 14px;
+        }
+
+            #grid #content #Info_Hierarchy .Badge:hover {
+                background-color: rgba(0,0,0, 0.3);
+            }
+
+        #grid #content #Info_Hierarchy img {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+        }
+
+        #grid #content #Info_Hierarchy .Wrapper:hover {
+            background-color: rgba(0,0,0, 0.3);
+        }
+
+        #grid #content #Info_Hierarchy .Wrapper .Badge {
+            pointer-events: none;
+        }
+
+    /*-----------------------------
+                  EDIT
+      -----------------------------
+    */
+    /*-----------------------------
+                    USERLEVEL SELECTOR
+              -----------------------------
+            */
+
+    #grid #content #EDIT #Options #UserlevelSelector .plus {
+        cursor: pointer;
+    }
+
+    #grid #content #EDIT #Options #UserlevelSelector .Selector {
+        position: relative;
+    }
+
+        #grid #content #EDIT #Options #UserlevelSelector .Selector .Selection {
+            visibility: hidden;
+        }
+
+    #grid #content #EDIT #Options #UserlevelSelector .showSelection .Selection {
+        visibility: visible !important;
+        z-index: 5;
+        min-width: 40px;
+    }
+
+    #grid #content #EDIT #Options #UserlevelSelector .Selection {
+        position: absolute;
+        top: 50px;
+        background-color: rgba(227, 227, 227, 0.8);
+        width: 200px;
+        height: 200px;
+        overflow-y: scroll;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, 20px);
+        grid-template-rows: repeat(auto-fill, 20px);
+        grid-column-gap: 2px;
+        grid-row-gap: 5px;
+        padding: 5px;
+        border: 1px solid black;
+        resize: both;
+    }
+
+        #grid #content #EDIT #Options #UserlevelSelector .Selection img {
+            height: 18px;
+            margin: 2px;
+        }
+
+            #grid #content #EDIT #Options #UserlevelSelector .Selection img:hover {
+                border: 1px solid red;
+                margin: 0px;
+                background-color: rgba(255, 100,100, 0.5);
+            }
+
+    /*-----------------------------
+                       BUTTONS
+              -----------------------------
+            */
+    #grid #content #EDIT #Options #Buttons {
+        position: absolute;
+        bottom: -50px;
+    }
+
+        #grid #content #EDIT #Options #Buttons button {
+            border: none;
+            margin: 5px;
+            padding: 5px;
+            min-width: 60px;
+            cursor: pointer;
+        }
+
+        #grid #content #EDIT #Options #Buttons #Save {
+            background-color: rgb(39, 242, 79);
+        }
+
+        #grid #content #EDIT #Options #Buttons button:hover {
+            filter: brightness(90%);
+        }
+
+    /*-----------------------------
+                  INFO
+      -----------------------------
+    */
+
+    #grid #content #INFO #Options #UserlevelSelector .plus {
+        cursor: default;
+    }

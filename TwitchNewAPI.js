@@ -3,6 +3,77 @@ const FETCH = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
 
+const NEW = {
+    GetStreams: {
+        URL: "https://api.twitch.tv/helix/streams",
+        Authorization: "Client-ID",
+        Token: null,
+        method: "GET",
+        Required_Query_Type: null,
+        Required_Query: {
+
+        },
+        Optional_Query: {
+            after: {
+                type: "string"
+            },
+            before: {
+                type: "string"
+            },
+            first: {
+                type: "integer"
+            },
+            game_id: {
+                type: "string"
+            },
+            language: {
+                type: "string"
+            },
+            user_id: {
+                type: "string"
+            },
+            user_login: {
+                type: "string"
+            }
+        }
+    },
+    GetBroadcasterSubscriptions: {
+        URL: "https://api.twitch.tv/helix/subscriptions",
+        Authorization: "Bearer",
+        Token: CONSTANTS.AppAccess,
+        method: "GET",
+        Required_Query_Type: "OR",
+        Required_Query: {
+            broadcaster_id: {
+                type: "string"
+            }
+        },
+        Optional_Query: {
+            user_id: {
+                type: "string"
+            }
+        }
+    },
+    GetGames: {
+        URL: "https://api.twitch.tv/helix/games",
+        Authorization: "Client-ID",
+        Token: null,
+        method: "GET",
+        Required_Query_Type: "OR",
+        Required_Query: {
+            id: {
+                type: "string"
+            },
+            name: {
+                type: "string"
+            }
+        },
+        Optional_Query: {
+
+        }
+    }
+};
+
 const NewAPIEndpoints = {
     GetBitsLeaderboard: {
         URL: "https://api.twitch.tv/helix/bits/leaderboard",
@@ -60,6 +131,32 @@ const NewAPIEndpoints = {
     GetModeratorEvents: {
 
     },
+    GetStreams: {
+        game_id: {
+            URL: "https://api.twitch.tv/helix/streams?user_id=<GAMEID>",
+            Authorization: "Client-ID",
+            replace_param: ["<GAMEID>"],
+            Token: CONSTANTS.AppAccess
+        },
+        language: {
+            URL: "https://api.twitch.tv/helix/streams?language=<LANG>",
+            Authorization: "Client-ID",
+            replace_param: ["<LANG>"],
+            Token: CONSTANTS.AppAccess
+        },
+        user_id: {
+            URL: "https://api.twitch.tv/helix/streams?user_id=<USERID>",
+            Authorization: "Client-ID",
+            replace_param: ["<USERID>"],
+            Token: CONSTANTS.AppAccess
+        },
+        user_login: {
+            URL: "https://api.twitch.tv/helix/streams?user_login=<LOGINNAME>",
+            Authorization: "Client-ID",
+            replace_param: ["<LOGINNAME>"],
+            Token: CONSTANTS.AppAccess
+        }
+    },
     GetStreamsMetadata: {
 
     },
@@ -111,90 +208,151 @@ class TwitchNewAPI {
         this.checkAppAccess(true);
         this.checkUserAccess(true);
 
-        //this.test(NewAPIEndpoints.test, ["38921745"]);
-    }
-
-    //API STUFF
-    //Parameter array must match contents of endpoint.replace_param
-    test(endpoint, parameters) {
-
-        if (!endpoint) {
-            return;
-        }
-
-        let URL = endpoint.URL;
-
-        if (endpoint.replace_param) {
-            for (let i = 0; i < endpoint.replace_param.length; i++) {
-
-                let start = URL.indexOf(endpoint.replace_param[i]);
-                if (start < 0)
-                    return;
-                let end = URL.indexOf("?", start);
-
-                if (end < 0) {
-                    URL = URL.substring(0, start) + parameters[i];
-                } else {
-                    URL = URL.substring(0, start) + parameters[i] + URL.substring(end);
-                }
-            }
-        }
-
-        let options = {
-            headers: {
-
-            }
-        };
-
-        if (endpoint.Authorization) {   
-            if (endpoint.Authorization == "Client-ID") {            //use Client ID
-                options.headers["Client-ID"] = this.config.Client_ID;
-            } else if (endpoint.Authorization == "Bearer") {        //use Access Tokens
-                if (endpoint.Token == CONSTANTS.AppAccess) {
-                    if (this.AppAccessToken)
-                        options.headers.Authorization = "Bearer " + this.AppAccessToken.access_token;
-                    else
-                        return;
-                } else if (endpoint.Token == CONSTANTS.UserAccess) {
-                    if (this.UserAccessToken)
-                        options.headers.Authorization = "Bearer " + this.UserAccessToken.access_token;
-                    else
-                        return;
-                } else if (endpoint.Token == CONSTANTS.IDAccess) {
-                    //unused
-                    return;
-                }else{
-                    return;
-                }
-            } else {
-                return;
-            }
-        }
-
-        if (endpoint.method) {
-            options.method = endpoint.method;
-        }
-
-        console.log(URL);
-
-        this.request(URL, options, json => console.log(json));
-    }
-
-    //OLD AF KRAKEN PLS SWITCH IT TO KNEW WTF IS WRONG WITH YOU TWITCH?!?!
-    //OAUTH NOT SAVED ON SERVER - JUST USED TO GET THE OBJ
-    async getUserDetailsByOAuth(OAUTH) {
-        return await this.request("http://api.twitch.tv/kraken/user", {
-            method: "GET",
-            headers: {
-                'Accept': 'application/vnd.twitchtv.v5+json',
-                "Content-Type": "application/json",
-                'Authorization': 'OAuth ' + OAUTH,
-                'Client-ID': this.config.Client_ID
-            }
-        }, json => { return json; });
+        //this.AccessNewAPI(NEW.GetGames, { id: 497451})
+        //    .then(data => console.log(data))
+        //    .catch(err => console.log(err));
     }
     
-    //TWTICH NEW API ENDPOINTS
+    //////////////////////////////////////////////////////////////////////
+    //                   TWTICH NEW API - HELIX
+    //////////////////////////////////////////////////////////////////////
+    //MAIN
+    async AccessNewAPI(endpoint, parameters) {
+        return new Promise(async (resolve, reject) => {
+            if (!endpoint) {
+                reject(new Error("No Endpoint found!"));
+            }
+
+            let URL = endpoint.URL;
+            let add = (URL.indexOf('?') >= 0 ? "&" : "?");
+
+            let QUERY_PARAMS = ["Required_Query", "Optional_Query"];
+            let minPresent = false;
+
+            //ADD Query Parameters
+            for (let paramType of QUERY_PARAMS) {
+                for (let i = 0; i < Object.getOwnPropertyNames(endpoint[paramType]).length; i++) {
+
+                    let key = Object.getOwnPropertyNames(endpoint[paramType])[i];
+
+                    if (!minPresent && paramType == "Required_Query" && (!parameters || (!parameters[key] && i == Object.getOwnPropertyNames(endpoint[paramType]) - 1))) {
+                        reject(new Error("Required Query Parameters not met!"));
+                    }
+
+                    if (paramType == "Required_Query" && endpoint.Required_Query_Type == "OR") {
+                        minPresent = true;
+                    } else if (paramType == "Required_Query" && !parameters[key]) {
+                        continue;
+                    }
+
+                    //Multiple Values for one parameter
+                    if (Array.isArray(parameters[key])) {
+                        for (let elt of parameters[key]) {
+                            if (endpoint[paramType][key].type == "integer") {
+                                try {
+                                    add += key + "=" + parseInt(elt);
+                                } catch (err) {
+                                    reject(new Error("Parameter '" + elt + "' in '" + key + "' is not the right format!"));
+                                }
+                            } else {
+                                add += key + '=' + elt + "&";
+                            }
+                        }
+                    } else {    //single Value for one parameter
+                        if (parameters[key]) {
+                            if (endpoint[paramType][key].type == "integer") {
+                                try {
+                                    add += key + "=" + parseInt(parameters[key]);
+                                } catch (err) {
+                                    reject(new Error("Parameter '" + key + "' is not the right format!"));
+                                }
+                            } else {
+                                add += key + '=' + parameters[key] + "&";
+                            }
+                        }
+                    }
+                }
+            }
+
+            //remove last char (? - when nothing added / & - when stuff added) from add
+            URL += add.substring(0, add.length - 1);
+            console.log(URL);
+            let options = {
+                headers: {
+
+                }
+            };
+
+            //Authorization Check
+            if (endpoint.Authorization) {
+                if (endpoint.Authorization == "Client-ID") {            //use Client ID
+                    options.headers["Client-ID"] = this.config.Client_ID;
+                } else if (endpoint.Authorization == "Bearer") {        //use Access Tokens
+                    if (endpoint.Token == CONSTANTS.AppAccess) {
+                        if (this.AppAccessToken)
+                            options.headers.Authorization = "Bearer " + this.AppAccessToken.access_token;
+                        else
+                            reject(new Error("App Access Token invalid!"));
+                    } else if (endpoint.Token == CONSTANTS.UserAccess) {
+                        if (this.UserAccessToken)
+                            options.headers.Authorization = "Bearer " + this.UserAccessToken.access_token;
+                        else
+                            reject(new Error("User Access Token invalid!"));
+                    } else if (endpoint.Token == CONSTANTS.IDAccess) {
+                        //unused
+                        reject(new Error("(Internal) ID Access Tokens not Supported!"));
+                    } else {
+                        reject(new Error("(Internal) Access Token Type not found!"));
+                    }
+                } else {
+                    reject(new Error("(Internal) Authorization Type not found!"));
+                }
+            }
+
+            if (endpoint.method) {
+                options.method = endpoint.method;
+            }
+
+            let out = null;
+
+            //FETCH
+            await this.request(URL, options, json => out = json);
+
+            if (out)
+                resolve(out);
+            else
+                reject(new Error("[TWITCH API] Fetching Error!"));
+        });
+    }
+    
+    //UTIL - FINAL
+    async isLive(params) {
+        /*
+         *  - returns BOOL
+         *  - Gets live status from the GetStreams API Endpoint by:
+         *      -> (a or more) user_id(s)/user_login(s)/language(s)/game_id(s)
+         *      -> (after / before) pagination: not yet supported
+         *      -> (first) max objects: not yet supported -> default: 20
+         *  
+         *  => GET api.twitch.tv/helix/streams
+         */
+
+        return new Promise(async (resolve, reject) => {
+            if (params) {
+
+            } else {
+                //Use Default:
+                let getStream = await this.AccessNewAPI(NEW.GetStreams, { user_login: "jake_ow" });
+                if (getStream && getStream.data && getStream.data[0] && getStream.data[0].type == "live") {
+                    resolve(true);
+                }
+                resolve(false);
+            }
+            reject(new Error("UNKNOWN ERROR: isLive"));
+        });
+    }
+
+    //General - TEMP
     async getUserDetails(login) {
 
         if (!this.UserAccessToken) {
@@ -214,15 +372,12 @@ class TwitchNewAPI {
             params = "login=" + login;
         }
 
-        console.log(login);
-
         return await this.request("https://api.twitch.tv/helix/users?" + params, {
             headers: {
                 'Authorization': 'Bearer ' + this.UserAccessToken.access_token
             }
         }, json => { return json; });
     }
-
     async getBotUserDetails() {
 
         let x = await this.getUserDetails(this.twitchChat.Username);
@@ -235,7 +390,6 @@ class TwitchNewAPI {
             };
         }
     }
-
     getLogInHTMLPageCode(scopes) {
 
         if (!scopes) return "";
@@ -256,7 +410,6 @@ class TwitchNewAPI {
 
         return query;
     }
-
     getLogInHTMLPageToken(scopes) {
 
         if (!scopes) return "";
@@ -279,7 +432,45 @@ class TwitchNewAPI {
         return query;
     }
 
-    //TOKENS STUFF / TWICH AUTHENTICATION
+    //////////////////////////////////////////////////////////////////////
+    //                    TWITCH API v5 - KRAKEN
+    //////////////////////////////////////////////////////////////////////
+
+    //OAUTH NOT SAVED ON SERVER - JUST USED TO GET THE OBJ
+    async getUserDetailsByOAuth(OAUTH) {
+        return await this.request("http://api.twitch.tv/kraken/user", {
+            method: "GET",
+            headers: {
+                'Accept': 'application/vnd.twitchtv.v5+json',
+                "Content-Type": "application/json",
+                'Authorization': 'OAuth ' + OAUTH,
+                'Client-ID': this.config.Client_ID
+            }
+        }, json => { return json; });
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    //              STUFF OTHER THAN KRAKEN AND HELIX
+    //////////////////////////////////////////////////////////////////////
+
+    //Badges
+    async getBadges() {
+        return new Promise(async (resolve, reject) => {
+            let output = null;
+            try {
+                let data = await this.request("https://badges.twitch.tv/v1/badges/global/display?language=en", {}, json => {
+                    output = json.badge_sets;
+                });
+                resolve(output);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    //                  TWTICH AUTHORIZATION
+    //////////////////////////////////////////////////////////////////////
     //AppAccess
     updateAppAccessToken() {
 
@@ -497,7 +688,6 @@ function writeFile(path, data) {
 
     return null;
 }
-
 function readFile(path) {
     try {
         //File/Path present/valid ?

@@ -1,0 +1,21 @@
+{
+    "name": "",
+    "display-name": null,
+    "bio": null,
+    "ID": 0,
+    "messages": {
+        "total": 0,
+        "curve": {},
+        "raw": []
+    },
+    "emotes": {
+        "total": 0,
+        "raw": {}
+    },
+    "commands": {
+        "total": 0,
+        "raw": {}
+    },
+    "createdAt": 1573760966778,
+    "username": "frikybot"
+}

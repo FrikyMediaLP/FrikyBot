@@ -67,6 +67,10 @@
         font-weight: 400;
     }
 
+        #grid #content #master .SUB > span > span {
+            color: lightgray;
+        }
+
     #grid #content #master .SUB>img{
         height: 18px;
     }

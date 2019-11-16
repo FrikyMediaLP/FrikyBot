@@ -1,72 +1,72 @@
 {
-  "SR": {
-  "CurrentSeason": 19,
-  "Season19": {
-      "Placements": {
-        "DPS": {
-          "SR": 3631,
-          "Record": "2-3"
+    "SR": {
+        "CurrentSeason": "19",
+        "Season19": {
+            "Placements": {
+                "DPS": {
+                    "SR": 3631,
+                    "Record": "2-3"
+                },
+                "Support": {
+                    "SR": 0,
+                    "Record": "1-0"
+                },
+                "Tank": {
+                    "SR": 0,
+                    "Record": "0-0"
+                }
+            },
+            "High": {
+                "DPS": "3631",
+                "Support": "0",
+                "Tank": "0"
+            },
+            "DPS": "3631",
+            "Support": "0",
+            "Tank": "0"
         },
-        "Support": {
-          "SR": 0,
-          "Record": "1-0"
+        "Season18": {
+            "Placements": {
+                "DPS": {
+                    "SR": 3649,
+                    "Record": "2-3"
+                },
+                "Support": {
+                    "SR": 3642,
+                    "Record": "1-4"
+                },
+                "Tank": {
+                    "SR": 3982,
+                    "Record": "2-3"
+                }
+            },
+            "High": {
+                "DPS": "3815",
+                "Support": "3714",
+                "Tank": "4031"
+            },
+            "DPS": "3616",
+            "Support": "3674",
+            "Tank": "4018"
         },
-        "Tank": {
-          "SR": 0,
-          "Record": "0-0"
+        "BetaSeason": {
+            "Placements": {
+                "DPS": {
+                    "SR": 3922,
+                    "Record": "2-3"
+                },
+                "Support": {
+                    "SR": 3841,
+                    "Record": "4-1"
+                },
+                "Tank": {
+                    "SR": 3719,
+                    "Record": "5-0"
+                }
+            },
+            "DPS": "",
+            "Support": "",
+            "Tank": ""
         }
-      },
-	  "High": {
-		"DPS": "0",
-		"Support": "0",
-		"Tank": "0"
-	  },
-      "DPS": "0",
-      "Support": "0",
-      "Tank": "0"
-    },
-    "Season18": {
-      "Placements": {
-        "DPS": {
-          "SR": 3649,
-          "Record": "2-3"
-        },
-        "Support": {
-          "SR": 3642,
-          "Record": "1-4"
-        },
-        "Tank": {
-          "SR": 3982,
-          "Record": "2-3"
-        }
-      },
-	  "High": {
-		"DPS": "3815",
-		"Support": "3714",
-		"Tank": "4031"
-	  },
-      "DPS": "3616",
-      "Support": "3674",
-      "Tank": "4018"
-    },
-    "BetaSeason": {
-      "Placements": {
-        "DPS": {
-          "SR": 3922,
-          "Record": "2-3"
-        },
-        "Support": {
-          "SR": 3841,
-          "Record": "4-1"
-        },
-        "Tank": {
-          "SR": 3719,
-          "Record": "5-0"
-        }
-      },
-      "DPS": "",
-      "Support": "",
-      "Tank": ""
     }
-  }
 }

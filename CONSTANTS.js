@@ -3,12 +3,16 @@ const CONSTANTS = {
     STATUS_SUCCESS: "SUCCESS",         //Indicades Successfull Api Request
     STATUS_FAILED: "FAILED",           //Indicades Failed Api Request
     UserLevel: {                       //Twitch User Levels
-        Staff: 7,
-        Admin: 6,
-        Broadcaster: 5,
-        Moderator: 4,
-        VIP: 3,
-        Subscriber: 2,
+        Admin: 10,
+        Staff: 9,
+        Broadcaster: 8,
+        Global_Mod: 7,
+        Moderator: 7,
+        VIP: 6,
+        Founder: 5,
+        Subscriber: 4,
+        Partner: 3,
+        Other: 2,
         Follower: 1,
         Regular: 0
     },
@@ -16,6 +20,9 @@ const CONSTANTS = {
         AppAccess: 0,
         UserAccess: 1,
         IDAccess: 2
+    },
+    BADGES: {
+
     }
 };
 

@@ -1,18 +1,9 @@
 const CONSTANTS = require('./../../CONSTANTS.js');
 const fs = require('fs');
 
-const proto = {
-    Messages: [
-        
-    ],
-    MetaData: {
-        Date: Date.now()
-    }
-};
-
 class MessageDatabase extends require('./../PackageBase.js').PackageBase {
 
-    constructor(config, app, twitchIRC, twitchNewApi) {
+    constructor(config, app, twitchIRC, twitchNewApi, datacollection) {
 
         //Create Details
         let det = {
@@ -30,17 +21,9 @@ class MessageDatabase extends require('./../PackageBase.js').PackageBase {
             }
         };
         
-        super(config, app, twitchIRC, twitchNewApi, "MessageDatabase", det);
+        super(config, app, twitchIRC, twitchNewApi, "MessageDatabase", det, datacollection);
 
         this.InitAPIEndpoints();
-
-        if (!fs.existsSync(config.Raw_File)) {
-            console.log('Data collection file does not exists. Creating new ...');
-            super.writeFile(config.Raw_File, JSON.stringify(proto, null, 4));
-        }
-
-
-        this.CurrentCollection = [];
     }
 
     InitAPIEndpoints() {
@@ -67,9 +50,8 @@ class MessageDatabase extends require('./../PackageBase.js').PackageBase {
     MessageHandler(message) {
         console.log("[" + message.getTime() + "] " + message.toString());
 
-        this.CurrentCollection.push(message.toJSON());
-
-        super.writeFile(this.config.Raw_File, JSON.stringify(this.CurrentCollection, null, 4));
+        if (this.DataCollection)
+            this.DataCollection.addMessage(message);
     }
 }
 

@@ -56,6 +56,10 @@ let TwitchChat;
 const TWITCHNEWAPI = require('./TwitchNewAPI.js');
 let TwitchNewAPI;
 
+//DataCollection
+const DATACOLLECTION_MODULE = require('./DataCollection');
+let DataCollection;
+
 //BOT DATA COLLECTION - PACKAGES
 let INSTALLED_PACKAGES = {
 
@@ -299,7 +303,7 @@ function INIT() {
     //CONFIG READ / CREATE
     loadConfig();
     loadPackages();
-
+    
     //removeOldPackageStuff
     removeOldPackageFiles("public");
 
@@ -308,13 +312,19 @@ function INIT() {
 
     //Twitch New API
     Twitch_NEW_API_Init();
-
+    
+    //Update Constants
+    updateBadges();
 
     //DataCollection
+    if (CONFIG.DataCollection) {
+        DataCollection = new DATACOLLECTION_MODULE.DataCollection(CONFIG.DataCollection, TwitchNewAPI);
+    }
+
     //init all Loaded/Installed Packages by there Class and save Object nack in the INSTALLED_PACKAGES Object
     for (let pack of Object.getOwnPropertyNames(INSTALLED_PACKAGES)) {
         let packClass = INSTALLED_PACKAGES[pack].Class;
-        INSTALLED_PACKAGES[pack].Object = new packClass(CONFIG.Packages[pack], app, TwitchChat, TwitchNewAPI);
+        INSTALLED_PACKAGES[pack].Object = new packClass(CONFIG.Packages[pack], app, TwitchChat, TwitchNewAPI, DataCollection);
     }
 }
 
@@ -378,6 +388,72 @@ function loadPackages() {
     }
 }
 
+async function updateBadges() {
+    let ownBadges = {
+        Other: {
+            versions: {
+                1: {
+                    title: "Every Other Badge",
+                    description: "Every Other Regular Twitch Badge",
+                    image_url_1x: "../images/Badges/" + "Other.png",
+                    image_url_2x: "../images/Badges/" + "Other.png",
+                    image_url_4x: "../images/Badges/" + "Other.png",
+                    last_updated: null,
+                    click_action: "none",
+                    click_url: ""
+                }
+            }
+        },
+        Unknown: {
+            versions: {
+                1: {
+                    title: "Unknown Badge",
+                    description: "Idk why, but we could find that Badge!",
+                    image_url_1x: "../images/Badges/" + "Unknown.png",
+                    image_url_2x: "../images/Badges/" + "Unknown.png",
+                    image_url_4x: "../images/Badges/" + "Unknown.png",
+                    last_updated: null,
+                    click_action: "none",
+                    click_url: ""
+                }
+            }
+        },
+        Follower: {
+            versions: {
+                1: {
+                    title: "Followers",
+                    description: "Followers Badge/Userlevel",
+                    image_url_1x: "../images/Badges/" + "Follow.png",
+                    image_url_2x: "../images/Badges/" + "Follow.png",
+                    image_url_4x: "../images/Badges/" + "Follow.png",
+                    last_updated: null,
+                    click_action: "none",
+                    click_url: ""
+                }
+            }
+        },
+        Regular: {
+            versions: {
+                1: {
+                    title: "Regular User",
+                    description: "Regular Users Badge",
+                    image_url_1x: "../images/Badges/" + "Regular.png",
+                    image_url_2x: "../images/Badges/" + "Regular.png",
+                    image_url_4x: "../images/Badges/" + "Regular.png",
+                    last_updated: null,
+                    click_action: "none",
+                    click_url: ""
+                }
+            }
+        }
+    };
+
+    CONSTANTS.BADGES = await TwitchNewAPI.getBadges();
+
+    for (let own in ownBadges) {
+        CONSTANTS.BADGES[own] = ownBadges[own];
+    }
+}
 /*
  *  ----------------------------------------------------------
  *                 TWITCH IRC | EVENTHANDLERS
@@ -486,6 +562,8 @@ function onRaidedHandler(channel, username, viewers) {
 
 function onJoinHandler(channel, username, self) {
     console.log(username + " joined!");
+    if (DataCollection)
+        DataCollection.initViewer(username);
 }
 function onPartHandler(channel, username, self) {
 

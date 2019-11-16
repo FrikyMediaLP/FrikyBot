@@ -6,14 +6,13 @@
     <title>Commands - FrikyBot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="html_styles/index.css" rel="stylesheet">
-    <script src="html_scripts/index.js"></script>
-
-    <script src="../scripts/standard.js"></script>
-    <link href="../styles/standard.css" rel="stylesheet">
-
     <script src="../scripts/libraries/p5.js"></script>
     <script src="../scripts/libraries/p5.dom.js"></script>
+
+    <link href="html_styles/index.css" rel="stylesheet">
+    <link href="../styles/standard.css" rel="stylesheet">
+    <script src="html_scripts/index.js"></script>
+    <script src="../scripts/standard.js"></script>
 
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
 </head>
@@ -22,7 +21,7 @@
     <div id="grid">
         <!-- NAVI HEADER -->
         <div class="cellM" id="naviHeader">
-            <a href="../">FRIKY<span>BOT</span></a>
+            <a href="./">FRIKY<span>BOT</span></a>
         </div>
 
         <!-- CONTENT HEADER -->
@@ -38,10 +37,10 @@
             </div>
 
             <!--
-        ////////////////////////////////
-                    MAIN
-        ////////////////////////////////
-        -->
+            ////////////////////////////////
+                        MAIN
+            ////////////////////////////////
+            -->
 
             <div id="mainNavi">
                 <div id="mainNaviHeader">
@@ -77,10 +76,10 @@
                 </div>
 
                 <!--
-            ////////////////////////////////
-                        PACKAGES
-            ////////////////////////////////
-            -->
+                ////////////////////////////////
+                            PACKAGES
+                ////////////////////////////////
+                -->
 
                 <div id="mainNaviHeader">
                     <span>PACKAGES</span>
@@ -108,10 +107,10 @@
                 </div>
 
                 <!--
-            ////////////////////////////////
-                        SETTINGS
-            ////////////////////////////////
-            -->
+                ////////////////////////////////
+                            SETTINGS
+                ////////////////////////////////
+                -->
 
                 <div id="mainNaviHeader">
                     <span>SETTINGS</span>
@@ -125,9 +124,9 @@
                 </div>
 
                 <div id="SignIn_Bot_Navi" class="caption">
-                    <a href="../Bot">
+                    <a href="../login">
                         <img src="../images/icons/twitch.svg" />
-                        <span>Bot Status</span>
+                        <span>Log in</span>
                     </a>
                 </div>
             </div>
@@ -136,8 +135,45 @@
 
         <!-- ACTUAL CONTENT -->
         <div class="cellM" id="content">
-            <div id="master">
+            <div id="masterWrapper">
 
+                <h1>FrikyBot Commands</h1>
+
+                <div id="Hardcoded">
+                    <div id="Header" onclick="toggleShow()">
+                        <p id="Title">HARDCODED COMMANDS <span id="HCarrow">▼</span></p>
+                    </div>
+                    <div id="contentHC">
+
+                    </div>
+                </div>
+
+                <h2>Command List:</h2>
+
+                <button id="commandAddButton" onclick="createAdd()"> + </button>
+                <br />
+                <label>
+                    <select name="perPage" onchange="perPageChange(this)">
+                        <option>5</option>
+                        <option>10</option>
+                        <option>15</option>
+                        <option>20</option>
+                        <option>25</option>
+                    </select>
+                    Per Page
+                </label>
+
+                <div id="CommandGridMaster">
+
+                </div>
+
+                <div id="UIElements">
+                    <button onclick="firstPage()">first</button>
+                    <button onclick="prevPage()">pref</button>
+                    <label id="currentPageLabel">1</label>
+                    <button onclick="nextPage()">next</button>
+                    <button onclick="lastPage()">last</button>
+                </div>
             </div>
         </div>
     </div>

@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const CONSTANTS = require('./../CONSTANTS.js');
 
 /*
  *  ----------------------------------------------------------
@@ -22,11 +23,12 @@ const path = require('path');
  */
 
 class PackageBase {
-    constructor(config, app, twitchIRC, twitchNewApi, name, details) {
+    constructor(config, app, twitchIRC, twitchNewApi, name, details, datacollection) {
         this.config = config;
         this.app = app;
         this.name = name
         this.details = details;
+        this.DataCollection = datacollection;
 
         this.htmlName;
 
@@ -41,10 +43,12 @@ class PackageBase {
         this.placeHTML("public/" + (this.config.htmlName ? this.config.htmlName : this.name), "Packages/" + this.name + "/html");
     }
 
+    //EventHandlers
     MessageHandler(message) {
 
     }
 
+    //API CAPABILITY
     AddAPIEndpoint(type, endpoint, callback, pwProtected) {
 
         //Use Config name(if used) or regular Package name
@@ -68,7 +72,17 @@ class PackageBase {
             this.API_PW_PROTECTED_ENDPOINTS.push(endpoint);
         }
     }
+    isPWProtected(endpoint) {
+        for (let pwProtected of this.API_PW_PROTECTED_ENDPOINTS) {
+            if (pwProtected.path == endpoint.path && pwProtected.type == endpoint.type) {
+                return true;
+            }
+        }
 
+        return false;
+    }
+
+    //HTML / WEBSITE CAPABILITY
     removeHTML(blankPath) {
         let publicDir = path.resolve(blankPath);
 
@@ -85,7 +99,6 @@ class PackageBase {
             fs.rmdirSync(publicDir);
         }
     }
-
     placeHTML(publicDir, packageDir) {
 
         try {
@@ -119,6 +132,40 @@ class PackageBase {
         }
     }
 
+    //File System
+    writeFile(path, data) {
+        let fd;
+
+        try {
+            fd = fs.openSync(path, 'w');
+            fs.writeSync(fd, data);
+        } catch (err) {
+            /* Handle the error */
+            console.log(err);
+            return err;
+        } finally {
+            if (fd !== undefined) {
+                fs.closeSync(fd);
+            } else {
+                return "fd was undefinded";
+            }
+        }
+
+        return null;
+    }
+    readFile(path) {
+        try {
+            //File/Path present/valid ?
+            fs.accessSync(path, fs.constants.F_OK);
+
+            //read File
+            return fs.readFileSync(path);
+
+        } catch (err) {
+            console.log("ERROR: " + err);
+            return "ERROR: " + err;
+        }
+    }
     copyFile(file, dir2) {
 
         //gets file name and adds it to dir2
@@ -130,16 +177,7 @@ class PackageBase {
         source.on('error', function (err) { console.log(err); });
     }
 
-    isPWProtected(endpoint) {
-        for (let pwProtected of this.API_PW_PROTECTED_ENDPOINTS) {
-            if (pwProtected.path == endpoint.path && pwProtected.type == endpoint.type) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-    
+    //Object/Array/... UTIL
     checkForCompletion(source, template, required) {
 
     //go threw template
@@ -177,17 +215,7 @@ class PackageBase {
         }
     }
     return "COMPLETE";
-}
-
-    StringContains(string, array) {
-        for (let element of array) {
-            if (string.indexOf(element) != -1) {
-                return true;
-            }
-        }
-        return false;
     }
-
     ReplaceObjectContents(object, path, value) {
         if (path == "") {
             return value;
@@ -208,42 +236,14 @@ class PackageBase {
             return object;
         }
     }
-
-    writeFile(path, data) {
-        let fd;
-
-        try {
-            fd = fs.openSync(path, 'w');
-            fs.writeSync(fd, data);
-        } catch (err) {
-            /* Handle the error */
-            console.log(err);
-            return err;
-        } finally {
-            if (fd !== undefined) {
-                fs.closeSync(fd);
-            } else {
-                return "fd was undefinded";
+    StringContains(string, array) {
+        for (let element of array) {
+            if (string.indexOf(element) != -1) {
+                return true;
             }
         }
-
-        return null;
+        return false;
     }
-
-    readFile(path) {
-        try {
-            //File/Path present/valid ?
-            fs.accessSync(path, fs.constants.F_OK);
-
-            //read File
-            return fs.readFileSync(path);
-
-        } catch (err) {
-            console.log("ERROR: " + err);
-            return "ERROR: " + err;
-        }
-    }
-
     arrayShiftUp(arr) {
         let temp = [];
 
@@ -254,12 +254,32 @@ class PackageBase {
         return temp;
     }
 
+    //Pachage abstract stuff
     getName() {
         return this.name;
     }
-
     getDetails() {
         return this.details;
+    }
+
+    //Constants Overall Stuff
+    getRealUserlevel(name) {
+        //Is in Hirachy
+        for (let key in CONSTANTS.UserLevel) {
+            if (key == name || key.toLowerCase() == name.toLowerCase()) {
+                return CONSTANTS.UserLevel[key];
+            }
+        }
+
+        if (name.lastIndexOf(":") >= 0) {
+            name = name.substring(0, name.lastIndexOf(":"));
+        }
+
+        if (CONSTANTS.BADGES[name] || CONSTANTS.BADGES[name.toLowerCase()]) {
+            return CONSTANTS.UserLevel["Other"];
+        }
+
+        return -1;
     }
 }
 

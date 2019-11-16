@@ -1,0 +1,10 @@
+{
+  "name": "Emote",
+  "description": "All used Emotes, sorted by their number of uses!",
+  "data": {
+    "PogChamp": {
+      "count": 2,
+      "id": "88"
+    }
+  }
+}

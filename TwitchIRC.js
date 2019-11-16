@@ -5,7 +5,7 @@ class TwitchIRC {
     
     constructor(user, pw, channel) {
         console.log("Twitch IRC Connection init...");
-
+        
         //User settings
         this.Username = undefined;
         this.Passwort = undefined;
@@ -52,7 +52,6 @@ class TwitchIRC {
 
     //use this to Connect to Twitch Chat
     Connect(user, pw, channel) {
-
         //Change Login settings?
         if (user || pw || channel) {
             if (user && pw && channel) {
@@ -138,7 +137,6 @@ class TwitchIRC {
             console.log("Client not defined! Client init went wrong or client disconnected?");
         }
     }
-
 }
 
 class Message {
@@ -147,33 +145,22 @@ class Message {
         this.channel = channel;
         this.userstate = userstate;
 
-        if (this.hasBadge("staff")) {
-            this.userLevel = CONSTANTS.UserLevel.Staff;
-        } else if (this.hasBadge("admin")) {
-            this.userLevel = CONSTANTS.UserLevel.Admin;
-        } else if (this.hasBadge("broadcaster")) {
-            this.userLevel = CONSTANTS.UserLevel.Broadcaster;
-        } else if (this.hasBadge("global_mod")) {
-            this.userLevel = CONSTANTS.UserLevel.GlobalMod;
-        } else if (this.hasBadge("moderator") || userstate.mod == 1) {
-            this.userLevel = CONSTANTS.UserLevel.Moderator;
-        } else if (this.hasBadge("vip")) {
-            this.userLevel = CONSTANTS.UserLevel.VIP;
-        } else if (this.hasBadge("subscriber")) {
-            this.userLevel = CONSTANTS.UserLevel.Subscriber;
-        } else {
-            this.userLevel = CONSTANTS.UserLevel.Regular;
+        //set Userlevel
+        this.userLevel = CONSTANTS.UserLevel.Regular;
+
+        for (let badge in userstate.badges) {
+            let tempUL = getRealUserlevel(badge);
+
+            if (tempUL > this.userLevel) {
+                this.userLevel = tempUL;
+            }
         }
     }
 
-    getDisplayName() {
-        return (this.userstate['display-name'] && this.userstate['display-name'] != "" ? this.userstate['display-name'] : this.userstate.username);
-    }
-
+    //transform to
     toString() {
         return this.userstate['display-name'] + " : " + this.message;
     }
-
     toJSON() {
 
         let temp = this.userstate;
@@ -190,14 +177,16 @@ class Message {
         return temp;
     }
 
+    //GET
+    getDisplayName() {
+        return (this.userstate['display-name'] && this.userstate['display-name'] != "" ? this.userstate['display-name'] : this.userstate.username);
+    }
     getUser() {
         return userstate;
     }
-
     getMessage() {
         return this.message;
     }
-
     getTime() {
         let t = new Date(parseInt(this.userstate["tmi-sent-ts"]));
 
@@ -215,7 +204,6 @@ class Message {
 
         return s;
     }
-
     getMessageDetails() {
         return {
             emotes: this.userstate.emotes,
@@ -225,15 +213,14 @@ class Message {
             message: this.message
         };
     }
-
     getUserLevel() {
         return this.userLevel;
     }
-
     getUserLevelAsText() {
        return Object.getOwnPropertyNames(CONSTANTS.UserLevel)[Object.getOwnPropertyNames(CONSTANTS.UserLevel).length - 1 - this.userLevel];
     }
 
+    //Checker
     hasBadge(badgeName) {
 
         if (!this.userstate.badges)
@@ -241,8 +228,32 @@ class Message {
 
         return this.userstate.badges[badgeName] ? true : false;
     }
+    matchUserleve(realUserlevelToCheck) {
+        if (this.userLevel >= realUserlevelToCheck) {
+            return true;
+        }
+        return false;
+    }
 }
 
+function getRealUserlevel(name) {
+    //Is in Hirachy
+    for (let key in CONSTANTS.UserLevel) {
+        if (key == name || key.toLowerCase() == name.toLowerCase()) {
+            return CONSTANTS.UserLevel[key];
+        }
+    }
+
+    if (name.lastIndexOf(":") >= 0) {
+        name = name.substring(0, name.lastIndexOf(":"));
+    }
+
+    if (CONSTANTS.BADGES[name] || CONSTANTS.BADGES[name.toLowerCase()]) {
+        return CONSTANTS.UserLevel["Other"];
+    }
+
+    return -1;
+}
 
 module.exports.TwitchIRC = TwitchIRC;
 module.exports.Message = Message;

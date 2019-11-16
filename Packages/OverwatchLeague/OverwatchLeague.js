@@ -2,7 +2,7 @@
 
 class OverwatchLeague extends require('./../PackageBase.js').PackageBase {
 
-    constructor(config, app, twitchIRC, twitchNewApi) {
+    constructor(config, app, twitchIRC, twitchNewApi, datacollection) {
 
         //Create Details
         let det = {
@@ -24,7 +24,7 @@ class OverwatchLeague extends require('./../PackageBase.js').PackageBase {
             }
         };
         
-        super(config, app, twitchIRC, twitchNewApi, "OverwatchLeague", det);
+        super(config, app, twitchIRC, twitchNewApi, "OverwatchLeague", det, datacollection);
 
         this.InitAPIEndpoints();
     }

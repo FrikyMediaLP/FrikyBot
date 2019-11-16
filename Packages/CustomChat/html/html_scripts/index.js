@@ -1005,6 +1005,10 @@ async function update() {
             let temp = [];
 
             for (let chan of Object.getOwnPropertyNames(json.data.Channel)) {
+                if (chan == "FFZ_DATA") {
+                    FFZ_EMOTES = json.data.Channel[chan];
+                    continue;
+                }
                 temp.push("#" + json.data.Channel[chan].login);
             }
 
@@ -1061,8 +1065,7 @@ async function updateUI() {
    
     await loadSubBadges(streamerNames, ids);
 
-    //Load FFZ / BTTV of Channel
-    await loadFFZ(currentChannels);
+    //Load BTTV of Channel
     await loadBTTV(currentChannels);
 
     Promise.resolve();
@@ -1090,7 +1093,7 @@ function connect_to_Twitch(username, password, channels) {
 
     CLIENT.on("message", (channel, userstate, message, self) => {
         
-        //if (!thistime && self) { return; } // Ignore messages from the bot
+        if (!thistime && self) { return; } // Ignore messages from the bot
         
         thistime = false;
 
@@ -1140,7 +1143,7 @@ function connect_to_Twitch(username, password, channels) {
     });
 
     CLIENT.on("subscription", (channel, username, method, message, userstate) => {
-        let div = createSubChatMessage(channel, username, method, message, userstate);
+        let div = createSubChatMessage(channel, username, method, message, userstate).parent(select("#master"));
 
         console.log("");
         console.log("SUB");
@@ -1156,6 +1159,41 @@ function connect_to_Twitch(username, password, channels) {
         //null
 
         console.log(userstate);
+
+        LAST = div;
+
+        if (autoScrollStatus) {
+            if (document.getElementById('bottom')) {
+                document.getElementById('bottom').id = "";
+            }
+
+            div.id("bottom");
+            document.getElementById('bottom').scrollIntoView();
+        }
+    });
+
+    CLIENT.on("resub", (channel, username, months, message, userstate, methods) => {
+        let cumulativeMonths = ~~userstate["msg-param-cumulative-months"];
+        let showCum = userstate["msg-param-should-share-streak"];
+        let div = createSubChatMessage(channel, username, methods, message, userstate, months, cumulativeMonths).parent(select("#master"));
+
+        console.log("");
+        console.log("RESUB");
+        console.log(channel);
+        //#fitzyhere
+
+        console.log(username);
+        //LordWhiskey713
+
+        console.log(methods);
+
+        console.log(message);
+        //null
+
+        console.log(months);
+
+        console.log(showCum);
+        console.log(cumulativeMonths);
 
         LAST = div;
 
@@ -1324,15 +1362,15 @@ function createMessageSpan(msgObj) {
 }
 
 //PrintSub
-function createSubChatMessage(channel, username, method, message, userstate) {
+function createSubChatMessage(channel, username, method, message, userstate, months, cummonths) {
     
     let top = "";
     let bottom = "";
 
     if (method.prime && method.plan == "Prime") {
-        top = username + " just subscribed to " + channel.substring(1) + " with Twitch Prime!";
+        top = username + " <span>just subscribed to " + channel.substring(1) + " with Twitch Prime!" + (cummonths ? " User is " + cummonths + " Months Subscribed!</span>" : "</span>");
     } else {
-        top = username + " just subscribed to " + channel.substring(1) + "!";
+        top = username + " <span>just subscribed to " + channel.substring(1) + "!" + (months ? " User is " + cummonths + " Months Subscribed!</span>" : "</span>");
         console.log(method);
     }
 
@@ -1451,28 +1489,6 @@ function replaceWitTTV(src) {
 }
 
 //FFZ
-async function loadFFZ(channels) {
-
-    if (!Array.isArray(channels)) {
-        channels = [channels];
-    }
-
-    for (let channel of channels) {
-        await fetch("https://api.frankerfacez.com/v1/room/" + channel.substring(1))
-            .then(data => data.json())
-            .then(json => {
-                if (!json.error) {
-                    for (let set of Object.getOwnPropertyNames(json.sets)) {
-                        for (let emote of json.sets[set].emoticons) {
-                            FFZ_EMOTES[emote.name] = emote;
-                        }
-                    }
-                }
-            })
-            .catch(err => console.log(err));
-    }
-    Promise.resolve();
-}
 function replaceWithFFZ(htmlMessage) {
     if (!FFZ_EMOTES) return htmlMessage;
 
