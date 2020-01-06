@@ -163,7 +163,7 @@ class Message {
     }
     toJSON() {
 
-        let temp = this.userstate;
+        let temp = JSON.parse(JSON.stringify(this.userstate));
         temp.Message = this.message;
 
         //Attributes to remove

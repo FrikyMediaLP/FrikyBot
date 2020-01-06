@@ -117,24 +117,11 @@ function createOtherDiv(pack) {
     } else {
         div += "DISABLED";
     }
-
-    div += '<div class="enableButton" onclick="switchButton(this);"><div class="';
-
-    if (pack.Settings.enabled == true) {
-        div += 'enabled"';
-    } else {
-        div += 'disabled"';
-    }
-
-    div += '"><div class="'
-
-    if (pack.Settings.enabled == true) {
-        div += 'enabledBox"';
-    } else {
-        div += 'disabledBox"';
-    }
-
-    div += '"></div ></div ></div> <br />';
+    
+    div += '<div class="switchButtonOnOff ' + (pack.Settings.enabled == true ? 'switchButtonOn' : 'switchButtonOff') + '" onclick="switchButton(this)">';
+    div += '<div class="switchButtonSlider">';
+    div += '</div>';
+    div += '</div> <br />';
 
     if (pack.Capabilities.HTML) {
         div += '<a href = "' + pack.Capabilities.HTML.html + '"> Other Settings</a>';

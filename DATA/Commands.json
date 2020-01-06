@@ -86,7 +86,7 @@
       },
       {
         "uid": 5,
-        "name": "2?",
+        "name": "2",
         "cooldown": "1s",
         "output": "2?",
         "enabled": true,

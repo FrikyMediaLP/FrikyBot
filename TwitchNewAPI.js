@@ -207,10 +207,6 @@ class TwitchNewAPI {
 
         this.checkAppAccess(true);
         this.checkUserAccess(true);
-
-        //this.AccessNewAPI(NEW.GetGames, { id: 497451})
-        //    .then(data => console.log(data))
-        //    .catch(err => console.log(err));
     }
     
     //////////////////////////////////////////////////////////////////////
@@ -325,7 +321,7 @@ class TwitchNewAPI {
         });
     }
     
-    //UTIL - FINAL
+    //UTIL - FINAL  (STILL USES THE "NEW" Object- change that)
     async isLive(params) {
         /*
          *  - returns BOOL
@@ -342,13 +338,60 @@ class TwitchNewAPI {
 
             } else {
                 //Use Default:
-                let getStream = await this.AccessNewAPI(NEW.GetStreams, { user_login: "jake_ow" });
+                let getStream = await this.AccessNewAPI(NEW.GetStreams, { user_login: this.twitchChat.Channel });
                 if (getStream && getStream.data && getStream.data[0] && getStream.data[0].type == "live") {
                     resolve(true);
                 }
                 resolve(false);
             }
             reject(new Error("UNKNOWN ERROR: isLive"));
+        });
+    }
+    async getStream() {
+        /*
+       *  - returns the Stream Object of the IRC Connected Channel
+       *  => GET api.twitch.tv/helix/streams
+       */
+
+        return new Promise(async (resolve, reject) => {
+            try {
+                let getStreams = await this.AccessNewAPI(NEW.GetStreams, { user_login: this.twitchChat.Channel });
+                if (getStreams && getStreams.data && getStreams.data[0]) {
+                    resolve(getStreams.data[0]);
+                } else {
+                    resolve(null);
+                }
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+    async getStreams(params) {
+        /*
+        *  - returns an Object
+        *  - Gets Twitch Stream Object. options paramer can have:
+        *      -> (a or more) user_id(s)/user_login(s)/language(s)/game_id(s)
+        *      -> (after / before) pagination: not yet supported
+        *      -> (first) max objects: not yet supported -> default: 20
+        *  
+        *  => GET api.twitch.tv/helix/streams
+        */
+
+        return new Promise(async (resolve, reject) => {
+            if (!params) {
+                params = { user_login: this.twitchChat.Channel };
+            }
+
+            try {
+                let getStreams = await this.AccessNewAPI(NEW.GetStreams, params);
+                if (getStreams && getStreams.data) {
+                    resolve(getStreams.data);
+                } else {
+                    resolve(null);
+                }
+            } catch (err) {
+                reject(err);
+            }
         });
     }
 

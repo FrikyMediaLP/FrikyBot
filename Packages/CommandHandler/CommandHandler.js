@@ -44,6 +44,8 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
         this.loadCommands();
         this.loadCommandVariables();
         this.loadVariables();
+
+        this.onCooldown = {};
     }
     InitAPIEndpoints() {
 
@@ -82,53 +84,76 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
         }, false);
     }
 
-    MessageHandler(messageObj) {
-        let detectedCmds = this.checkMessage(messageObj);
-        let lastEnd = 0;
+    async MessageHandler(messageObj) {
+        return new Promise(async (resolve, reject) => {
+            let detectedCmds = this.checkMessage(messageObj);
+            let lastEnd = 0;
 
-        //Check All Commands
-        for (let i = 0; i < detectedCmds.length; i++) {
-            
-            let checkedMsgObj = detectedCmds[i];
-            let commandObj = checkedMsgObj.command;
-            let parameters = messageObj.message;
+            let successfullCommands = [];
 
-            //get limited Parameters
-            if (i < detectedCmds.length - 1) {
-                let next = parameters.indexOf(detectedCmds[i + 1].command.name, lastEnd);
-                parameters = parameters.substring(lastEnd, next-1);
-                lastEnd = next;
-            } else {
-                parameters = parameters.substring(lastEnd);
-            }
+            //Check All Commands
+            for (let i = 0; i < detectedCmds.length; i++) {
 
-            //Detection Type CHECK - Block NOW
-            if (commandObj.detection_type == "beginning_only_detection" || commandObj.detection_type == "multi_detection") {     //beginning_only_detection OR multi_detection -> cur command Name at index = 0
-                if (messageObj.message.indexOf(commandObj.name) != 0) {
-                    continue;
+                let checkedMsgObj = detectedCmds[i];
+                let commandObj = checkedMsgObj.command;
+                let parameters = messageObj.message;
+                let success = false;
+
+                //get limited Parameters
+                if (i < detectedCmds.length - 1) {
+                    let next = parameters.indexOf(detectedCmds[i + 1].command.name, lastEnd);
+                    parameters = parameters.substring(lastEnd, next - 1);
+                    lastEnd = next;
+                } else {
+                    parameters = parameters.substring(lastEnd);
                 }
-            }
 
-            //Split by type
-            if (checkedMsgObj.type == "HARDCODED") {
-                if (this.checkHCEnvironment(commandObj, messageObj)) {
-                    this.executeHCCommand(commandObj, messageObj, parameters);
+                //Detection Type CHECK - Block NOW
+                if (commandObj.detection_type == "beginning_only_detection" || commandObj.detection_type == "multi_detection") {     //beginning_only_detection OR multi_detection -> cur command Name at index = 0
+                    if (messageObj.message.indexOf(commandObj.name) != 0) {
+                        continue;
+                    }
                 }
-            } else if (checkedMsgObj.type == "CUSTOM") {
-                if (this.checkCuEnvironment(commandObj, messageObj)) {
-                    this.executeCuCommand(commandObj, messageObj, parameters);
+
+                //Execute Command
+                //Split by type
+                if (checkedMsgObj.type == "HARDCODED") {
+                    if (this.checkHCEnvironment(commandObj, messageObj)) {
+                        success = this.executeHCCommand(commandObj, messageObj, parameters);
+                    }
+                } else if (checkedMsgObj.type == "CUSTOM") {
+                    if (this.checkCuEnvironment(commandObj, messageObj)) {
+                        success = this.executeCuCommand(commandObj, messageObj, parameters);
+                    }
+                }
+
+                //Add to Cooldown / Datacollection Array
+                if (success) {
+                    this.onCooldown[checkedMsgObj.command.name] = Date.now();
+
+                    let tempDataColComd = JSON.parse(JSON.stringify(commandObj));
+                    tempDataColComd.params = parameters;
+
+                    successfullCommands.push(tempDataColComd);
+                }
+
+                //Detection Type CHECK - Block NEXT
+                if (success && commandObj.detection_type != "multi_detection" && commandObj.detection_type != "multi_inline_detection") {       //NO multi_detection AND NO multi_inline_detection -> block following Cmds
+                    break;
                 }
             }
 
             //DATACOLLECTION
-            if (this.DataCollection)
-                this.DataCollection.addCommand(messageObj.userstate.username, commandObj, parameters);
-
-            //Detection Type CHECK - Block NEXT
-            if (commandObj.detection_type != "multi_detection" && commandObj.detection_type != "multi_inline_detection") {       //NO multi_detection AND NO multi_inline_detection -> block following Cmds
-                break;
+            if (this.DataCollection) {
+                try {
+                    await this.DataCollection.addCommand(messageObj.userstate.username, successfullCommands);
+                } catch (err) {
+                    console.log(err);
+                }
             }
-        }
+
+            resolve();
+        });
     }
 
     //Check for All Commands 
@@ -166,6 +191,15 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
         if (!this.checkUserlevel(messageObj, super.getRealUserlevel(commandObj.userlevel))) {
             return false;
         }
+
+        //On Cooldown?
+        if (this.onCooldown[commandObj.name]){
+            if (this.onCooldown[commandObj.name] - Date.now() + this.parseCooldownString(commandObj.cooldown) < 0) {
+                return false;
+            } else {
+                delete this.onCooldown[commandObj.name];
+            }
+        }
         
         return true;
     }
@@ -174,27 +208,77 @@ class CommandHandler extends require('./../PackageBase.js').PackageBase{
         if (!this.checkUserlevel(messageObj, super.getRealUserlevel(commandObj.userlevel))) {
             return false;
         }
+
+        //On Cooldown?
+        if (this.onCooldown[commandObj.name]) {
+            if (this.onCooldown[commandObj.name] - Date.now() + this.parseCooldownString(commandObj.cooldown) > 0) {
+                return false;
+            } else {
+                delete this.onCooldown[commandObj.name];
+            }
+        }
+
         return true;
     }
     checkUserlevel(messageObj, commandLevel) {
         return messageObj.matchUserleve(commandLevel);
     }
+    parseCooldownString(cooldownString) {
+
+        let pos = 1;
+        let numb = 0;
+        let out = 0;
+
+        for (let letter of cooldownString) {
+
+            let fact = 1;
+
+            switch (letter) {
+                case "h":
+                    fact *= 60;
+                case "m":
+                    fact *= 60;
+                case "s":
+                    fact *= 1000;
+                    out += fact * numb;
+                    pos = 1;
+                    numb = 0;
+                    break;
+                default:
+                    try {
+
+                        numb += pos * parseInt(letter);
+                    }
+                    catch {
+                        return -1;
+                    }
+                    pos *= 10;
+            }
+        }
+
+        return out;
+    }
 
     //Execute
     executeHCCommand(commandObj, messageObj, parameters) {
         if (commandObj.name == "!game") {
-            this.game(messageObj, parameters);
+            return this.game(messageObj, parameters);
         } else if (commandObj.name == "!resetData") {
-            this.resetData(messageObj, parameters);
+            return this.resetData(messageObj, parameters);
         }
+        return false;
     }
     executeCuCommand(commandObj, messageObj, parameters) {
         let out = this.fillCommandVariables(commandObj, messageObj, parameters);
         
-        if (typeof out == "string")
+
+        if (typeof out == "string") {
             this.twitchIRC.send(out);
-        else
+            return true;
+        }else {
             console.log("ERROR: No Command Execution");
+            return false;
+        }
     }
     
     //Command Variables

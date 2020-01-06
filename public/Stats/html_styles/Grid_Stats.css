@@ -1,0 +1,148 @@
+/* 
+    ////////////////////////////////////
+                GRID: STATS
+    ////////////////////////////////////
+
+    * This CSS File designs the Grid wrapping around the content!
+    * Grid Foundation(css too) required!
+    * _____________________________
+    * | NaviHeader | ContenHeader |
+    * |____________|______________|
+    * |    Navi    |   Content    |
+    * |____________|______________|
+*/
+
+/* 
+    ////////////////////////////////////
+            MAIN GRID NAVIHEADER
+    ////////////////////////////////////
+*/
+
+#grid #naviHeader {
+    height: 100%;
+    width: 100%;
+    padding-top: 3px;
+    background-color: orange;
+    font-family: 'Roboto', sans-serif;
+    /* DISABLE SELECT */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+    #grid #naviHeader a {
+        text-decoration: none;
+    }
+
+    #grid #naviHeader p {
+        margin: 0;
+        padding: 0;
+    }
+
+    #grid #naviHeader #BackTo {
+        font-size: 15px;
+        margin-left: 42px;
+        font-weight: 300;
+        color: white !important;
+    }
+
+    #grid #naviHeader #FrikyBot {
+        font-size: 25px;
+        margin-left: 42px;
+        font-weight: 300;
+        color: white !important;
+    }
+
+/* 
+    ////////////////////////////////////
+             MAIN GRID NAVI
+    ////////////////////////////////////
+*/
+
+#grid #navi {
+    border-right: 1px solid lightgray;
+    background-color: #f7f7f7;
+}
+
+    #grid #navi #innerGrid {
+        padding: 10px;
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: auto;
+        grid-row-gap: 10px;
+    }
+
+    #grid #navi .Stats, #grid #navi .Title {
+        color: black;
+        font-weight: 200;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    #grid #navi .Stats {
+        background-color: white;
+        padding: 5px;
+        border: 1px solid lightgray;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        /* DISABLE SELECT */
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+        #grid #navi .Stats:hover {
+            color: white;
+            background-color: orange;
+        }
+
+    #grid #navi .Highlighted {
+        background-color: #ffcc00;
+        border-color: gold;
+    }
+
+    #grid #navi .Highlighted:hover {
+        background-color: #ffbb00;
+        color: black;
+    }
+
+#grid #navi .Title {
+    background-color: none;
+    border-bottom: 1px solid lightgray;
+    padding: 0;
+}
+
+/* 
+    ////////////////////////////////////
+          MAIN GRID CONTENTHEADER
+    ////////////////////////////////////
+ */
+    #grid #contentHeader {
+        background-color: #ffbb00;
+    }
+
+    #grid #contentHeader input {
+        margin: 10px;
+        margin-right: 0px;
+        height: 20px;
+        width: 200px;
+    }
+
+    #grid #contentHeader button {
+        height: 25px;
+    }
+
+/* 
+    ////////////////////////////////////
+            MAIN GRID CONTENT
+    ////////////////////////////////////
+*/
+
+#grid #content {
+    background-color: #f7f7f7;
+    width: 100%;
+}

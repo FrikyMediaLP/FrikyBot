@@ -44,8 +44,10 @@ class PackageBase {
     }
 
     //EventHandlers
-    MessageHandler(message) {
-
+    async MessageHandler(messageObj) {
+        return new Promise(async (resolve, reject) => {
+            resolve();
+        });
     }
 
     //API CAPABILITY

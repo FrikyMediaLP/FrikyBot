@@ -25,7 +25,7 @@ class CustomChat extends require('./../PackageBase.js').PackageBase{
 
         this.InitAPIEndpoints();
         
-        this.LoginNames = ["FrikyMediaLP", "Flocke"];
+        this.LoginNames = ["Dhalucard"];
         this.ChannelDetails = {};
         
         this.updateStreamerData();
@@ -64,10 +64,6 @@ class CustomChat extends require('./../PackageBase.js').PackageBase{
                 data: data                          //Metadata of current Streamers and their IDS (if found/supplied)
             });
         }, false);
-    }
-
-    MessageHandler(message) {
-
     }
 
     async updateStreamerData() {

@@ -523,18 +523,22 @@ function onDisconnectedHandler(reason) {
  *  ----------------------------------------------------------
  */
 
-function onMessageHandler(channel, userstate, message, self) {
-    if (self) { return; } // Ignore messages from the bot
-
-    let msg = new TWITCHIRC.Message(channel, userstate, message);
-
-    for (let pack of Object.getOwnPropertyNames(INSTALLED_PACKAGES)) {
-        let packObject = INSTALLED_PACKAGES[pack].Object;
-
-        if (packObject) {
-            packObject.MessageHandler(msg);
+async function onMessageHandler(channel, userstate, message, self) {
+    return new Promise(async (resolve, reject) => {
+        let msg = new TWITCHIRC.Message(channel, userstate, message);
+        for (let pack of Object.getOwnPropertyNames(INSTALLED_PACKAGES)) {
+            let packObject = INSTALLED_PACKAGES[pack].Object;
+            
+            if (packObject) {
+                try {
+                    await packObject.MessageHandler(msg);
+                } catch (err) {
+                    console.log(err);
+                }
+            }
         }
-    }
+        resolve();
+    });
 }
 function onMessagedeletedHandler(channel, username, deletedMessage, userstate) {
 
@@ -563,7 +567,7 @@ function onRaidedHandler(channel, username, viewers) {
 function onJoinHandler(channel, username, self) {
     console.log(username + " joined!");
     if (DataCollection)
-        DataCollection.initViewer(username);
+        DataCollection.USERJOIN(username);
 }
 function onPartHandler(channel, username, self) {
 

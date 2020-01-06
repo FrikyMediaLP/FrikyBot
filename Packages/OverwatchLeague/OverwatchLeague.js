@@ -49,10 +49,6 @@ class OverwatchLeague extends require('./../PackageBase.js').PackageBase {
             });
         }, false);
     }
-
-    MessageHandler(message) {
-
-    }
 }
 
 module.exports.OverwatchLeague = OverwatchLeague;

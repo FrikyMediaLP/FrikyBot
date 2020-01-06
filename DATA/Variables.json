@@ -1,31 +1,55 @@
 {
     "SR": {
-        "CurrentSeason": "19",
-        "Season19": {
-            "Placements": {
-                "DPS": {
-                    "SR": 3631,
-                    "Record": "2-3"
-                },
-                "Support": {
-                    "SR": 0,
-                    "Record": "1-0"
-                },
-                "Tank": {
-                    "SR": 0,
-                    "Record": "0-0"
-                }
-            },
-            "High": {
-                "DPS": "3631",
-                "Support": "0",
-                "Tank": "0"
-            },
-            "DPS": "3631",
-            "Support": "0",
-            "Tank": "0"
+      "CurrentSeason": "20",
+      "Season20": {
+        "Placements": {
+          "DPS": {
+            "SR": 3759,
+            "Record": "5-0"
+          },
+          "Support": {
+            "SR": 4053,
+            "Record": "2-3"
+          },
+          "Tank": {
+            "SR": 3997,
+            "Record": "2-3"
+          }
         },
-        "Season18": {
+        "High": {
+          "DPS": "0",
+          "Support": "4053",
+          "Tank": "3997"
+        },
+        "DPS": "3683",
+        "Support": "4053",
+        "Tank": "4020"
+      },
+	  "Season19": {
+        "Placements": {
+          "DPS": {
+            "SR": 3631,
+            "Record": "2-3"
+          },
+          "Support": {
+            "SR": 4056,
+            "Record": "3-2"
+          },
+          "Tank": {
+            "SR": 4054,
+            "Record": "4-1"
+          }
+        },
+        "High": {
+          "DPS": "3739",
+          "Support": "4056",
+          "Tank": "4125"
+        },
+        "DPS": "3638",
+        "Support": "4056",
+        "Tank": "4014"
+      },
+      "Season18": {
             "Placements": {
                 "DPS": {
                     "SR": 3649,
@@ -49,7 +73,7 @@
             "Support": "3674",
             "Tank": "4018"
         },
-        "BetaSeason": {
+      "BetaSeason": {
             "Placements": {
                 "DPS": {
                     "SR": 3922,

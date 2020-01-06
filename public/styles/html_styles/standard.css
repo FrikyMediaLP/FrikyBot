@@ -1,0 +1,169 @@
+/* 
+    ////////////////////////////////////
+            MAIN GRID CONTENT
+    ////////////////////////////////////
+*/
+#grid #content {
+    overflow-x: hidden;
+}
+
+
+#grid #content > div {
+    margin: 10px;
+    font-family: 'Roboto', sans-serif;
+}
+
+/* 
+    ////////////////////////////////////
+            Wrapper: Horizontal_Half
+    ////////////////////////////////////
+*/
+
+.horizontal_half {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 50% 50%;
+    grid-template-rows: auto;
+}
+
+    .horizontal_half .horizontal_half_side {
+
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: repeat(auto-fit, auto);
+        grid-row-gap: 10px;
+    }
+
+    .horizontal_half .horizontal_half_side > div {
+        background-color: white;
+        padding: 10px;
+        overflow: hidden;
+    }
+
+        .horizontal_half .horizontal_half_side:nth-child(2) {
+            padding-left: 10px;
+            padding-right: 20px;
+        }
+/* 
+    ////////////////////////////////////
+            Wrapper: Horizontal_Full
+    ////////////////////////////////////
+*/
+        .horizontal_full {
+            padding: 10px;
+            background-color: white;
+        }
+
+/* 
+    ////////////////////////////////////
+            Content: Title
+    ////////////////////////////////////
+*/
+
+
+.Title {
+    border-bottom: 1px solid lightgray;
+}
+
+.BigTitle {
+    font-size: 30px;
+    border-bottom: 1px solid lightgray;
+}
+
+/* 
+    ////////////////////////////////////
+            Content: TopSelection
+    ////////////////////////////////////
+*/
+
+.TOP_Selection {
+    display: grid;
+    grid-template-columns: minmax(10px, 25px) auto 50px;
+    grid-template-rows: auto;
+    grid-column-gap: 5px;
+    font-weight: 200;
+}
+
+    .TOP_Selection #Index {
+        text-align: right;
+    }
+
+    .TOP_Selection #Name {
+    }
+
+    .TOP_Selection #Value {
+        text-align: right;
+    }
+
+
+/* 
+    ////////////////////////////////////
+            Content: CardSelection
+    ////////////////////////////////////
+*/
+
+.CardSelection {
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    grid-template-rows: auto;
+    grid-column-gap: 5px;
+    grid-row-gap: 5px;
+}
+
+    .CardSelection .Card {
+        background-color: white;
+        min-height: 50px;
+    }
+
+        .CardSelection .Card center:nth-child(1) {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .CardSelection .Card center:nth-child(2) {
+            font-size: 10px;
+            font-weight: 100;
+        }
+
+/* 
+    ////////////////////////////////////
+            Content: Chart
+    ////////////////////////////////////
+*/
+
+.Chart{
+    background-color: white;
+}
+
+.CHARTDIV {
+    position: relative;
+}
+
+/* 
+    ////////////////////////////////////
+            Content: StreamMini
+    ////////////////////////////////////
+*/
+
+.StreamMini{
+    padding: 5px;
+    background-color: white;
+}
+
+    .StreamMini a {
+        text-decoration: none;
+    }
+
+    .StreamMini .toFullPage {
+        padding: 5px;
+        border: 1px solid #ffbb00;
+        width: 140px;
+        background-color: #ffcc00;
+        color: black;
+        font-weight: 200;
+    }
+
+        .StreamMini .toFullPage:hover {
+            background-color: #ffbb00;
+            border: 1px solid #ffcc00;
+        }

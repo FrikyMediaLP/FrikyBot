@@ -1,0 +1,116 @@
+/* 
+    ////////////////////////////////////
+                SWITCH BUTTON
+    ////////////////////////////////////
+*/
+
+.switchButtonOnOff {
+    width: 50px;
+    height: 20px;
+    background-color: darkred;
+    border-radius: 40px;
+    border: 1px solid black;
+    cursor: pointer;
+}
+
+    .switchButtonOnOff .switchButtonSlider {
+        width: 16px;
+        height: 16px;
+        background-color: white;
+        border-radius: 40px;
+    }
+
+.switchButtonOn {
+    background-color: green;
+}
+
+    .switchButtonOn .switchButtonSlider {
+        margin-left: 31px;
+        border: 2px solid black;
+        border-right: 1px solid black;
+    }
+
+.switchButtonOff {
+    background-color: darkred;
+}
+
+    .switchButtonOff .switchButtonSlider {
+        border: 2px solid black;
+        border-left: 1px solid black;
+    }
+
+.switchButtonToOn {
+    animation-name: switchButtonOn;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+}
+
+    .switchButtonToOn .switchButtonSlider {
+        animation-name: switchButtonOn2;
+        animation-duration: 1s;
+        animation-fill-mode: forwards;
+    }
+
+@keyframes switchButtonOn {
+    0% {
+        background-color: darkred;
+    }
+
+    100% {
+        background-color: green;
+    }
+}
+
+@keyframes switchButtonOn2 {
+    0% {
+        margin-left: 0px;
+        border: 2px solid black;
+        border-left: 1px solid black;
+        border-right: 2px solid black;
+    }
+
+    100% {
+        margin-left: 31px;
+        border: 2px solid black;
+        border-left: 2px solid black;
+        border-right: 1px solid black;
+    }
+}
+
+.switchButtonToOff {
+    animation-name: switchButtonOff;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+}
+
+    .switchButtonToOff .switchButtonSlider {
+        animation-name: switchButtonOff2;
+        animation-duration: 1s;
+        animation-fill-mode: forwards;
+    }
+
+@keyframes switchButtonOff {
+    0% {
+        background-color: green;
+    }
+
+    100% {
+        background-color: darkred;
+    }
+}
+
+@keyframes switchButtonOff2 {
+    0% {
+        margin-left: 31px;
+        border: 2px solid black;
+        border-left: 2px solid black;
+        border-right: 1px solid black;
+    }
+
+    100% {
+        margin-left: 0px;
+        border: 2px solid black;
+        border-left: 1px solid black;
+        border-right: 2px solid black;
+    }
+}
