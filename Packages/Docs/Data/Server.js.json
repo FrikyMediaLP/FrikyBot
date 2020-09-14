@@ -1,0 +1,317 @@
+{
+  "Server": {
+    "description": "Main Function - Starting, Setup and maintaining the Bot.",
+    "modules": {
+      "express": "npm",
+      "fs": "NodeJS Module",
+      "path": "NodeJS Module",
+      "colors": "npm",
+      "CONSTANTS": "FrikyBot Module"
+    },
+    "variables": {
+      "express": {
+        "type": "Express Module",
+        "npm": "https://www.npmjs.com/package/express",
+        "description": "Express WebApp hosting the Website and API."
+      },
+      "fs": {
+        "type": "FileSystem Module",
+        "description": "NodeJS File System interface to the Operating File System."
+      },
+      "path": {
+        "type": "Path Module",
+        "description": "Path Module used for manipulating FileSystem Paths."
+      },
+      "colors": {
+        "type": "colors Module",
+        "npm": "https://www.npmjs.com/package/colors",
+        "description": "Path Module used for manipulating FileSystem Paths."
+      },
+      "CONSTANTS": {
+        "type": "CONSTANTS Module",
+        "description": "Bot Constants used to generalize Outputs and Settings."
+      },
+      "LOGGER": {
+        "type": "Logger Module",
+        "description": "Logger Module supporting the Logger Class."
+      },
+      "Logger": {
+        "type": "Logger",
+        "description": "Logger Class Formatted Console Output."
+      },
+      "TWITCHIRC": {
+        "type": "TWITCHIRC Module",
+        "description": "TwitchIRC Module supporting the TwitchIRC COnnection Class and Twitch Message Class."
+      },
+      "TwitchIRC": {
+        "type": "TWITCHIRC.TwitchIRC",
+        "description": "TwitchIRC Class used to connect to the Twitc Chat, read and write Chat Messages and execute Chat Commands."
+      },
+      "TWITCHAPI": {
+        "type": "TWITCHAPI Module",
+        "description": "TWITCHAPI Module supporting the TwitchAPI Class."
+      },
+      "TwitchAPI": {
+        "type": "TwitchAPI",
+        "description": "TwitchAPI Class giving access to the Twitch API Endpoints and Token Setup."
+      },
+      "DATACOLLECTION": {
+        "type": "DATACOLLECTION Module",
+        "description": "DATACOLLECTION Module supporting the DataCollection Class."
+      },
+      "DataCollection": {
+        "type": "DataCollection",
+        "description": "DataCollection Class handling and collecting Data from various Datapoints."
+      },
+      "Server_Status": {
+        "type": "Object",
+        "description": "Current Status of the Bot."
+      },
+      "INSTALLED_PACKAGES": {
+        "type": "Object",
+        "description": "All currently installed Bot Packages."
+      },
+      "CONFIG": {
+        "type": "Object",
+        "description": "CONFIG Settings controlling the Bot."
+      },
+      "CONFIG_SETUP_TEMPLATE": {
+        "type": "Object",
+        "description": "Default CONFIG Settings"
+      },
+      "app": {
+        "type": "Express",
+        "description": "Express WebApp, API and File Routing."
+      },
+      "server": {
+        "type": "Express Server",
+        "description": "Express Server Socket"
+      }
+    },
+    "functions": {
+      "SETUP": {
+        "params": null,
+        "is-async": true,
+        "description": "Sets up the Bot. Loads/Creates the Config and checks the File Structure."
+      },
+      "checkBotFileStructure": {
+        "params": [
+          {
+            "name": "go2create",
+            "type": "Boolean"
+          }
+        ],
+        "is-async": true,
+        "description": "Checks the File Structure for any missing Folder."
+      },
+      "Config_Setup_Wizard": {
+        "params": [
+          {
+            "name": "cfg",
+            "type": "Object"
+          }
+        ],
+        "is-async": true,
+        "description": "Creates the Config based on Console inputs."
+      },
+      "INIT": {
+        "params": null,
+        "is-async": true,
+        "description": "Initializing the Bot. Starting the WebServer, API and File Routing, Logging in to the Twitch IRC and API aswell as starting all installed Packages."
+      },
+      "INIT_Packages": {
+        "params": null,
+        "is-async": true,
+        "description": "Initializing the installed Packages previously loaded. Packages are only initilized with their Init()-Function any other setup is done seperatly!"
+      },
+      "POST_INIT": {
+        "params": null,
+        "is-async": true,
+        "description": "Interconnecting Packages and calling the Post_Init()-Functions of all Packages, also setting 404-API and 404-File Routing Endpoints and enabling console input Commands."
+      },
+      "loadConfig": {
+        "params": null,
+        "description": "Loading the Bot Config, combining any extern data and Checks any missing parts. returns true on success and false on failure."
+      },
+      "checkConfigContent": {
+        "params": [
+          {
+            "name": "config_content",
+            "type": "Object"
+          },
+          {
+            "name": "virtual_config",
+            "type": "Object"
+          }
+        ],
+        "description": "Checks the Bot Config for all requiered Content and updates the Config if necessary."
+      },
+      "combineConfigs": {
+        "params": [
+          {
+            "name": "config_content",
+            "type": "Object"
+          },
+          {
+            "name": "extern_config",
+            "type": "Object"
+          }
+        ],
+        "description": "Combines Contents of an extern config Object into a collective Config Object."
+      },
+      "ConsoleYN": {
+        "params": null,
+        "is-async": true,
+        "description": "Returns True or False, depending on the Console Input the User gave."
+      },
+      "ConsolePrompt": {
+        "params": null,
+        "is-async": true,
+        "description": "Returns an Line sent in the Console after hitting Enter."
+      },
+      "loadPackages": {
+        "params": null,
+        "description": "Loads Package details from the Bot Config and prepares them in the INSTALLED_PACKAGES Object for later initilization."
+      },
+      "shutdown": {
+        "params": [
+          {
+            "name": "timeS",
+            "type": "Number"
+          }
+        ],
+        "description": "Shutting down the Bot with Error Code 0. A Number in Seconds can be given to delay the shutdown."
+      }
+    },
+    "API": {
+      "ROOT": "frikybot.de/api/",
+      "Endpoints": [
+        {
+          "name": "Bot Status",
+          "endpoint": "/BotStatus",
+          "description": "Returns the current Bot Status/Errors/Outages/...",
+          "response": {
+            "Status.status": {
+              "type": "String",
+              "description": "Current Bot Status as Text."
+            },
+            "Status.errors.fatal": {
+              "type": "Object",
+              "description": "Current Bot Errors."
+            },
+            "Status.errors.outage": {
+              "type": "Object",
+              "description": "Current Bot Outages."
+            },
+            "Username": {
+              "type": "String",
+              "description": "Twitch Bot Username"
+            },
+            "Channel": {
+              "type": "String",
+              "description": "Twitch Channel the Bot is currently joined."
+            },
+            "Description": {
+              "type": "String",
+              "description": "Twitch Bot User Description"
+            },
+            "Type": {
+              "type": "String",
+              "description": "Twitch Bot User Type"
+            },
+            "Image": {
+              "type": "String",
+              "description": "Twitch Bot User Profile Image"
+            }
+          },
+          "request": null
+        },
+        {
+          "name": "Get Website Navigation",
+          "endpoint": "/Navi",
+          "description": "Returns the Website Side Navigation Data based on installed Packages and Bot Status.",
+          "request": null,
+          "response": {
+            "Main": {
+              "type": "Array",
+              "description": "Array containing Navigation Data for the Main Section."
+            },
+            "Packages": {
+              "type": "Array",
+              "description": "Array containing Navigation Data for the Packages Section."
+            },
+            "Settings": {
+              "type": "Array",
+              "description": "Array containing Navigation Data for the Settings Section."
+            }
+          }
+        },
+        {
+          "name": "Get Packages",
+          "endpoint": "/Packages",
+          "description": "Returns currently installed Packages.",
+          "restricted": "partial",
+          "request": null,
+          "response": {
+            "Packages": {
+              "type": "Object",
+              "description": "Object contains the Information Details of all currently installed Packages."
+            }
+          }
+        },
+        {
+          "name": "Get Cookie and LocalStorage Information",
+          "endpoint": "/Cookies",
+          "description": "Returns Cookie/LocalStorage information, uses and more.",
+          "request": null,
+          "response": {
+            "LocalStorage": {
+              "type": "Object",
+              "description": "Object containing all LocalStorage Keys with Parameters: Set By, When Set, When Removed and Used for"
+            },
+            "SessionStorage": {
+              "type": "Object",
+              "description": "Object containing all SessionStorage Keys with Parameters: Set By, When Set and Used for"
+            }
+          }
+        },
+        {
+          "name": "Endpoint not found",
+          "endpoint": "/*",
+          "description": "Returns a 404 Error Message. Is triggered at the end of any API Request on the main API Route.",
+          "request": null,
+          "response": {
+            "err": {
+              "type": "String",
+              "description": "contains the String \"404 - API Endpoint not found\""
+            }
+          }
+        }
+      ]
+    },
+    "FileHosting": {
+      "ROOT": "frikybot.de/",
+      "Static": "public",
+      "Routes": {
+        "/favicon.ico": {
+          "type": "redirect",
+          "description": "Redirects the standard favicon.icon request to the png version."
+        },
+        "/Twitch-redirect?": {
+          "type": "Analysis / redirect",
+          "restricted": "full",
+          "description": "Redirects after a Twitch Login to the Bot Page and creates a Bot User Access Token for the Twitch API."
+        },
+        "/Twitch-redirect": {
+          "type": "redirect",
+          "description": "Redirects back to the login Page."
+        },
+        "/Settings": {
+          "type": "redirect",
+          "restricted": "full",
+          "description": "Redirects to the settings Page after Authentication."
+        }
+      }
+    }
+  }
+}

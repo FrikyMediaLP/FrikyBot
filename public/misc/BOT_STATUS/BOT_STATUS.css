@@ -1,0 +1,155 @@
+/*
+    BOT STATUS Normal
+*/
+
+#BOT_STATUS_DETAILS_NORMAL {
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    min-width: 100px;
+    max-width: 500px;
+    border: 1px solid gray;
+    border-radius: 5px;
+    background-color: white;
+}
+
+    #BOT_STATUS_DETAILS_NORMAL #top {
+        padding: 15px;
+        display: grid;
+        grid-template-columns: auto 160px;
+        grid-template-rows: 160px;
+    }
+
+        #BOT_STATUS_DETAILS_NORMAL #top #left p {
+            font-size: 18px;
+        }
+
+        #BOT_STATUS_DETAILS_NORMAL #top #right {
+            padding: 5px;
+        }
+
+            #BOT_STATUS_DETAILS_NORMAL #top #right img {
+                height: 150px;
+                height: 150px;
+            }
+
+        #BOT_STATUS_DETAILS_NORMAL #top .Detail .top {
+            margin: 0;
+            color: gray;
+            font-size: 15px;
+            font-weight: lighter;
+        }
+
+        #BOT_STATUS_DETAILS_NORMAL #top .Detail .bottom {
+            margin: 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+    #BOT_STATUS_DETAILS_NORMAL #bottom {
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: 45px auto;
+        grid-template-areas: "title value" "bars bars";
+        border-top: 1px solid gray;
+    }
+
+        #BOT_STATUS_DETAILS_NORMAL #bottom p {
+            margin: 15px;
+            color: #525252;
+        }
+
+        #BOT_STATUS_DETAILS_NORMAL #bottom #Bot_Status_Bar {
+            grid-area: bars;
+            padding: 5px;
+            color: white;
+            background-color: gray;
+            position: relative;
+            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+
+            #BOT_STATUS_DETAILS_NORMAL #bottom #Bot_Status_Bar #Info {
+                display: none;
+            }
+
+            #BOT_STATUS_DETAILS_NORMAL #bottom #Bot_Status_Bar:hover #Info {
+                display: block;
+                z-index: 100;
+                padding: 5px;
+                position: absolute;
+                top: 45px;
+                left: 150px;
+                background-color: white;
+                border: 1px solid gray;
+                color: black;
+            }
+
+            #BOT_STATUS_DETAILS_NORMAL #bottom #Bot_Status_Bar:hover #tip {
+                width: 15px;
+                height: 15px;
+                transform: rotate(45deg);
+                z-index: -1;
+                position: absolute;
+                top: -9px;
+                left: 95px;
+                background-color: white;
+                border-left: 1px solid gray;
+                border-top: 1px solid gray;
+                color: black;
+            }
+
+
+
+/*
+    BOT STATUS Miniv
+*/
+
+#BOT_STATUS_DETAILS_MINI {
+    padding: 10px;
+    color: white;
+    font-family: 'Roboto', sans-serif;
+    font-size: 20px;
+}
+
+    #BOT_STATUS_DETAILS_MINI #BOT_STATUS_DETAILS_STATUS {
+        float: right;
+        text-decoration: none;
+        font-weight: 100;
+        color: gray;
+    }
+
+    #BOT_STATUS_DETAILS_MINI > div {
+        margin-top: 5px;
+        display: grid;
+        grid-template-columns: 60px auto;
+        grid-template-rows: auto;
+    }
+
+        #BOT_STATUS_DETAILS_MINI > div img {
+            height: 55px;
+            border-radius: 10px;
+        }
+
+    #BOT_STATUS_DETAILS_MINI #BOT_STATUS_DETAILS_MINI_TEXT {
+        padding-left: 5px;
+        padding-top: 5px;
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: auto auto;
+    }
+
+        #BOT_STATUS_DETAILS_MINI #BOT_STATUS_DETAILS_MINI_TEXT p:nth-child(1) {
+            font-size: 13px;
+            height: 15px;
+            margin: 0;
+            border-bottom: 1px dashed white;
+        }
+
+        #BOT_STATUS_DETAILS_MINI #BOT_STATUS_DETAILS_MINI_TEXT p:nth-child(2) {
+            margin: 0;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+        }

@@ -1,0 +1,362 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Options - FrikyBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- GENERAL CSS -->
+    <link href="styles/standard.css" rel="stylesheet">
+    <link href="styles/Grid/Grid_Foundation.css" rel="stylesheet">
+
+    <!-- PAGE CSS-->
+    <link href="styles/Grid/Grid_Default.css" rel="stylesheet">
+    <style>
+        #grid #content {
+            background-color: #f5f5f5;
+        }
+
+            #grid #content h1 {
+                font-weight: bold;
+                background-color: white;
+                margin: 0;
+            }
+
+        /*
+         ////////////////////////////////////////////////////////
+                            TTV LOGIN
+         ////////////////////////////////////////////////////////
+        */
+
+
+        #TTV_LOGIN {
+            margin-top: 50px;
+            padding-top: 1px;
+            background-color: white;
+        }
+
+            #TTV_LOGIN #Expand {
+                margin: 10px !important;
+                margin-top: 10px;
+                cursor: pointer;
+            }
+
+                #TTV_LOGIN #Expand center {
+                    border-bottom: 1px solid gray;
+                }
+
+            #TTV_LOGIN #TTV_LOGIN_SETTINGS {
+                display: grid;
+                grid-template-columns: 50% 50%;
+                padding: 0 15px 15px 15px;
+            }
+
+                #TTV_LOGIN #TTV_LOGIN_SETTINGS > div {
+                    display: grid;
+                    grid-template-columns: auto 60px;
+                    grid-template-rows: 30px 30px 30px 30px 30px 30px;
+                }
+
+
+                    #TTV_LOGIN #TTV_LOGIN_SETTINGS > div > div {
+                        padding-top: 5px;
+                        padding-bottom: 5px;
+                        border-top: 1px dashed black;
+                        height: 100%;
+                    }
+
+                    #TTV_LOGIN #TTV_LOGIN_SETTINGS > div:nth-child(1) {
+                        padding-right: 5px;
+                        border-right: 1px solid black;
+                    }
+
+                    #TTV_LOGIN #TTV_LOGIN_SETTINGS > div:nth-child(2) {
+                        margin-left: 5px;
+                    }
+
+
+                    #TTV_LOGIN #TTV_LOGIN_SETTINGS > div > div:nth-child(1), #TTV_LOGIN #TTV_LOGIN_SETTINGS > div > div:nth-child(2) {
+                        border-top: none;
+                    }
+
+                    #TTV_LOGIN #TTV_LOGIN_SETTINGS > div > div:nth-child(2n) {
+                        padding-top: 5px;
+                        border-top: 1px dashed black;
+                    }
+
+        #TTV_LOGIN_SETTINGS_CLAIMS {
+            filter: grayscale(0.9);
+        }
+
+
+        #TTV_LOGIN #twitchLogin {
+            padding: 5px;
+            background-color: #6441a5;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, auto);
+            grid-template-areas: ". img head .";
+        }
+
+            #TTV_LOGIN #twitchLogin #header {
+                grid-area: head;
+                color: white;
+            }
+
+            #TTV_LOGIN #twitchLogin img {
+                align-self: center;
+                margin: 0 auto;
+                grid-area: img;
+                height: 40px;
+                filter: invert(100%);
+                border-radius: 5px;
+            }
+
+            #TTV_LOGIN #twitchLogin #noFilter {
+                filter: none;
+            }
+    </style>
+
+    <!-- GENERAL JS-->
+    <script src="scripts/standard.js"></script>
+
+    <!-- MISC -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+
+    <script src="../misc/OUTPUT/OUTPUT.js"></script>
+    <link href="../misc/OUTPUT/OUTPUT.css" rel="stylesheet">
+
+    <script src="../misc/BOT_STATUS/BOT_STATUS.js"></script>
+    <link href="../misc/BOT_STATUS/BOT_STATUS.css" rel="stylesheet">
+
+    <script src="../misc/HoverProfile/HoverProfile.js"></script>
+    <link href="../misc/HoverProfile/HoverProfile.css" rel="stylesheet">
+
+    <script src="../misc/SwitchButton/SwitchButton.js"></script>
+    <link href="../misc/SwitchButton/SwitchButton.css" rel="stylesheet">
+</head>
+<body onload="init();">
+    <!-- MAIN GRID -->
+    <div id="grid">
+        <!-- NAVI HEADER -->
+        <div class="cellM" id="naviHeader">
+            <a href="./">FRIKY<span>BOT</span></a>
+        </div>
+
+        <!-- CONTENT HEADER -->
+        <div class="cellM" id="contentHeader">
+            
+        </div>
+
+        <!-- NAVI -->
+        <div class="cellM" id="navi">
+            <div id="BOT_STATUS_DETAILS_MINI">
+
+            </div>
+            <div id="mainNavi">
+
+            </div>
+            <div id="license"> - <a href="https://fontawesome.com/license" target="_blank">Icon license</a> - </div>
+        </div>
+
+        <script>
+            let TwitchScopes = {
+                "analytics:read:extensions	": {
+                    state: undefined,
+                    usage: "View analytics data for your extensions"
+                },
+                "analytics:read:games": {
+                    state: undefined,
+                    usage: "View analytics data for your games"
+                },
+                "bits:read": {
+                    state: undefined,
+                    usage: "View Bits information for your channel"
+                },
+                "channel:edit:commercial": {
+                    state: undefined,
+                    usage: "Run commercials on a channel"
+                },
+                "channel:read:subscriptions": {
+                    state: undefined,
+                    usage: "Get a list of all subscribers to your channel and check if a user is subscribed to your channel"
+                },
+                "clips:edit": {
+                    state: undefined,
+                    usage: "Manage a clip object"
+                },
+                "user:edit": {
+                    state: undefined,
+                    usage: "Manage a user object"
+                },
+                "user:edit:broadcast": {
+                    state: undefined,
+                    usage: "Edit your channel’s broadcast configuration, including extension configuration. (This scope implies user:read:broadcast capability.)"
+                },
+                "user:edit:follows": {
+                    state: undefined,
+                    usage: "Edit your follows"
+                },
+                "user:read:broadcast": {
+                    state: undefined,
+                    usage: "View your broadcasting configuration, including extension configurations"
+                },
+                "user:read:email": {
+                    state: undefined,
+                    usage: "Read authorized user’s email address"
+                }
+            };
+            let TwitchClaims = {
+                "email": {
+                    state: false,
+                    usage: "Email address of the authorizing user"
+                },
+                "email_verified": {
+                    state: false,
+                    usage: "Email verification state of the authorizing user"
+                },
+                "picture": {
+                    state: true,
+                    usage: "Profile image URL of the authorizing user"
+                },
+                "preferred_username": {
+                    state: true,
+                    usage: "Display name of the authorizing user"
+                },
+                "updated_at": {
+                    state: false,
+                    usage: "Date of the last update to the authorizing user’s profile"
+                }
+            };
+            SWITCH_BUTTON_SETTINGS.OnChange = (id, state) => {
+                if (id < Object.getOwnPropertyNames(TwitchScopes).length) {
+                    if (TwitchScopes[Object.getOwnPropertyNames(TwitchScopes)[id]]) {
+                        TwitchScopes[Object.getOwnPropertyNames(TwitchScopes)[id]].state = state;
+                    }
+                } else {
+                    id = id - Object.getOwnPropertyNames(TwitchScopes).length;
+                    if (TwitchClaims[Object.getOwnPropertyNames(TwitchClaims)[id]]) {
+                        TwitchClaims[Object.getOwnPropertyNames(TwitchClaims)[id]].state = state;
+                    }
+                }
+
+                //UPDATE LINK
+                createTTVLink();
+            };
+
+            async function init() {
+                OUTPUT_create();
+                Bot_Status_Details_Settings.ErrorOutput = OUTPUT_showError;
+
+
+                await Standard_Page_Init()
+                    .catch (err => console.log(err));
+                await fetch("/api/TwitchAPI/Scopes")
+                    .then(data => data.json())
+                    .then(json => {
+                        if (json.err) {
+                            console.error(json.err)
+                        } else {
+                            if (json.data && json.data.scopes) {
+                                for (let sc1 in TwitchScopes) {
+                                    for (let sc2 of json.data.scopes) {
+                                        if (sc1 == sc2) {
+                                            TwitchScopes[sc1].state = true;
+                                            break;
+                                        }
+                                    }
+                                    if (TwitchScopes[sc1].state != true)
+                                        TwitchScopes[sc1].state = false;
+                                }
+                            }
+                        }
+                    })
+                    .catch(err => console.log(err));
+
+                initTTVSettings();
+
+                let BotData = BOT_STATUS_DETAILS_getCookiesData();
+                if (BotData && BotData.Status && BotData.Status.errors && BotData.Status.errors.outage && BotData.Status.errors.outage.TwitchAPI != "No UserAccess.") {
+                    document.getElementById("twitchLoginA").removeAttribute("href");
+                    document.getElementById("twitchLoginA").childNodes[1].childNodes[1].src = BotData.Image;
+                    document.getElementById("twitchLoginA").childNodes[1].childNodes[1].id = "noFilter";
+                    document.getElementById("twitchLoginA").childNodes[1].childNodes[3].innerHTML = "Logged in to Channel <a href='http://twitch.tv/" + BotData.Channel + "' target='_blank'>" + BotData.Channel + "</a> as " + BotData.Username + "</a>";
+                    document.getElementById("twitchLoginA").childNodes[1].childNodes[3].style.fontWeight = "300";
+                    document.getElementById("twitchLoginA").childNodes[1].childNodes[3].childNodes[1].style.color = "white";
+                    return;
+                }
+                createTTVLink();
+            }
+
+            function expandTTV() {
+                document.getElementById("TTV_LOGIN_SETTINGS").style.display = "grid";
+            }
+            function initTTVSettings() {
+                let s = '<div id="TTV_LOGIN_SETTINGS_SCOPES"><b>SCOPES</b><span></span>';
+
+                for (let scope in TwitchScopes) {
+                    s += '<div>' + scope + '</div><div>' + SWITCH_BUTTON_CREATE(TwitchScopes[scope].state) + '</div>';
+                }
+
+                s += '<div>SOURCE: <a href="https://dev.twitch.tv/docs/authentication#scopes" target="_blank">TTV API DOCS</a></div><div></div></div>';
+
+                s += '<div id="TTV_LOGIN_SETTINGS_CLAIMS"><b>CLAIMS (UNUSED)</b><span></span>';
+
+                for (let claim in TwitchClaims) {
+                    s += '<div>' + claim + '</div><div>' + SWITCH_BUTTON_CREATE(TwitchClaims[claim].state, true) + '</div>';
+                }
+
+                s += '<div>SOURCE: <a href="https://dev.twitch.tv/docs/authentication/getting-tokens-oidc#claims" target="_blank">TTV API DOCS</a></div><div></div></div>';
+
+
+                document.getElementById("TTV_LOGIN_SETTINGS").innerHTML = s;
+            }
+            function createTTVLink() {
+                let scopes = [];
+                for (let scp in TwitchScopes) {
+                    if (TwitchScopes[scp].state)
+                        scopes.push(scp);
+                }
+
+                document.getElementById("twitchLoginA").href = "";
+                
+                fetch("/api/TwitchAPI/BotUserTTVLogInPage",
+                    {
+                        method: 'POST',
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ scopes: scopes})
+                    })
+                    .then(data => data.text())
+                    .then(text => document.getElementById("twitchLoginA").href = text)
+                    .catch(err => console.log(err));
+            }
+        </script>
+
+        <!-- ACTUAL CONTENT -->
+        <div class="cellM" id="content">
+            <center><h1>BOT SETTINGS</h1></center>
+
+            <div id="OUTPUT">
+
+            </div>
+
+            <div id="TTV_LOGIN">
+                <div id="Expand" onclick="expandTTV()">
+                    <center>EDIT LOGIN SETTINGS</center>
+                </div>
+                <div id="TTV_LOGIN_SETTINGS" style="display: none;">
+
+                </div>
+                <a id="twitchLoginA" href="" style="text-decoration: none;">
+                    <div id="twitchLogin">
+                        <img src="images/icons/twitch.svg" />
+                        <h3 id="header">Login with Twitch.tv</h3>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

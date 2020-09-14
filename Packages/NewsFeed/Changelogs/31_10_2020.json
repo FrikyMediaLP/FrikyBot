@@ -1,0 +1,294 @@
+{
+  "date": "31.09.2020",
+  "title": "BROADCASTER EDITION - TBD",
+  "version": "0.1",
+  "chapters": {
+    "Introduction": [
+      {
+        "type": "PLAIN",
+        "paragraphs": [
+          "FINALLY, the FrikyBot is READY! Included are now ChatModeration and Command Features.",
+          "Check the <a href=''>Documentation</a> for more details!"
+        ]
+      }
+    ],
+    "CORE MODULE CHANGES": [
+      {
+        "type": "CHANGES",
+        "module_type": "DATACOLLECTION",
+        "contents": [
+          {
+            "type": "HEADER",
+            "text": "General"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "CHANGED",
+                "text": "CHANGED EVERYTHING AGAIN!!!!!!"
+              },
+              {
+                "type": "ADDED",
+                "text": "Now using neDB Databases to store and collect Data!"
+              },
+              {
+                "type": "COMMENT",
+                "text": "DataCollection isn´t done yet and will probably be changed again :DD"
+              }
+            ]
+          },
+          {
+            "type": "HEADER",
+            "text": "Databases"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Users Database Added - Collects User Information"
+              },
+              {
+                "type": "ADDED",
+                "text": "Streams Database Added - Collects Stream Information"
+              },
+              {
+                "type": "ADDED",
+                "text": "Messages Database Added - Collects Raw Messages"
+              },
+              {
+                "type": "ADDED",
+                "text": "Events Database Added - Collects Chat Events (Moderation, Donation, … )"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "PACKAGE CHANGES": [
+      {
+        "type": "CHANGES",
+        "module_type": "PACKAGE",
+        "packagename": "COMMANDHANDLER",
+        "contents": [
+          {
+            "type": "HEADER",
+            "text": "Command Variables"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added Arguments (based on Nightbot)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added Channel (based on Nightbot)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added Count (based on Nightbot)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added Counterdown (based on Nightbot)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added Countup (based on Nightbot)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added Query (based on Nightbot)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added QueryString (based on Nightbot)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added OWRankName"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added Time (based on Nightbot)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added ToUser (based on Nightbot)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added Twitch (based on Nightbot)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added UrlFetch (based on Nightbot)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added User (based on Nightbot)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added User-ID (based on Nightbot)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added UserLevel (based on Nightbot)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added Custom"
+              },
+              {
+                "type": "CHANGED",
+                "text": "Changed Variable Detection/Execution/Settings. More details in the Docs!"
+              }
+            ]
+          },
+          {
+            "type": "HEADER",
+            "text": "Hardcoded Commands"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added !title - Change/Print/... current Channels Title."
+              },
+              {
+                "type": "ADDED",
+                "text": "Added !game - Change/Print/... current Channels Game."
+              },
+              {
+                "type": "ADDED",
+                "text": "Added !commands - Add/Edit/Remove/... Chat Commands"
+              },
+              {
+                "type": "CHANGED",
+                "text": "Hardcoded Command Parameters now include following commands. More details in the Docs!"
+              }
+            ]
+          },
+          {
+            "type": "HEADER",
+            "text": "Custom Commands"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added Strict-Levels for Userlevels. Allowing/Restricting Badgenames/Badgevalues from using Commands."
+              }
+            ]
+          },
+          {
+            "type": "HEADER",
+            "text": "HTML"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added /Commands -> Command Overview"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added /Commands/Edit -> Add/Edit/Remove/Rename/… Commands"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added /Variables -> Command Variables Overview"
+              }
+            ]
+          },
+          {
+            "type": "HEADER",
+            "text": "API"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "GET: POST: PUT: MOVE: DELETE: /Commands"
+              },
+              {
+                "type": "ADDED",
+                "text": "GET: /Variables"
+              },
+              {
+                "type": "ADDED",
+                "text": "GET: /Variables/Content"
+              }
+            ]
+          },
+          {
+            "type": "HEADER",
+            "text": "Bugfixes"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "CHANGED",
+                "text": "FIX: Unsuccessfull Non-Multidetection Commands now also block next Commands"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "CHANGES",
+        "module_type": "PACKAGE",
+        "packagename": "CHATMODERATION",
+        "contents": [
+          {
+            "type": "HEADER",
+            "text": "General"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Create Chat Moderation Filters to Timeout/Ban/… Spam/Links/Bad Word/…"
+              },
+              {
+                "type": "COMMENT",
+                "text": "Moderating the TwitchChat has gotten easier and easier, mostly because AutoMod was added, but some Features still are only provided by external Bots. The FrikyBot tries to combine most external Features and expand on their capabilities. Feedback is VERRY welcomed!"
+              }
+            ]
+          },
+          {
+            "type": "HEADER",
+            "text": "Filters"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added Spam Filter (CAPS, Emotes (including BTTV AND FFZ))"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added Word Filter (Blacklisted Words)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added Link Filter (Blacklisted / Whitelisted URLs, Domains and SubDomains)"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,91 @@
+[
+  {
+    "type": "section",
+    "name": "DOCUMENTATION",
+    "contents": [
+      {
+        "type": "icon",
+        "name": "Overview",
+        "href": "Docs",
+        "icon": "images/icons/home.svg"
+      }
+    ]
+  },
+  {
+    "name": "REFERENCE",
+    "type": "section",
+    "contents": [
+      {
+        "name": "Core Modules",
+        "type": "subsection",
+        "contents": [
+          {
+            "name": "Server",
+            "href": "Docs/Server"
+          },
+          {
+            "name": "TwitchAPI",
+            "href": "Docs/TwitchAPI"
+          },
+          {
+            "name": "TwitchIRC",
+            "href": "Docs/TwitchIRC"
+          },
+          {
+            "name": "DataCollection",
+            "href": "Docs/DataCollection"
+          }
+        ]
+      },
+      {
+        "name": "Packages",
+        "type": "subsection",
+        "contents": [
+          {
+            "name": "PackageBase",
+            "href": "Docs/PackageBase"
+          },
+          {
+            "name": "NewsFeed",
+            "href": "Docs/NewsFeed"
+          },
+          {
+            "name": "CommandHandler",
+            "href": "Docs/CommandHandler"
+          },
+          {
+            "name": "ChatModeration",
+            "href": "Docs/ChatModeration"
+          },
+          {
+            "name": "Docs",
+            "href": "Docs/Docs"
+          }
+        ]
+      },
+      {
+        "name": "Util",
+        "type": "subsection",
+        "contents": [
+          {
+            "name": "Logger",
+            "href": "Docs/Logger"
+          },
+          {
+            "name": "CONSTANTS",
+            "href": "Docs/CONSTANTS"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "GUIDE",
+    "type": "section",
+    "contents": [
+      {
+        "name": "soon™"
+      }
+    ]
+  }
+]

@@ -1,0 +1,113 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>FrikyBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- GENERAL CSS -->
+    <link href="../../styles/standard.css" rel="stylesheet">
+    <link href="../../styles/Grid/Grid_Foundation.css" rel="stylesheet">
+
+    <!-- PAGE CSS-->
+    <link href="../../styles/Grid/Grid_Default.css" rel="stylesheet">
+
+    <!-- GENERAL JS-->
+    <script src="../../scripts/standard.js"></script>
+
+    <!-- MISC -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+
+    <script src="../misc/NavigationV2/NavigationV2.js"></script>
+    <link href="../misc/NavigationV2/NavigationV2.css" rel="stylesheet">
+
+    <script src="../misc/OUTPUT/OUTPUT.js"></script>
+    <link href="../misc/OUTPUT/OUTPUT.css" rel="stylesheet">
+
+    <script src="../misc/BOT_STATUS/BOT_STATUS.js"></script>
+    <link href="../misc/BOT_STATUS/BOT_STATUS.css" rel="stylesheet">
+
+    <script src="../misc/HoverProfile/HoverProfile.js"></script>
+    <link href="../misc/HoverProfile/HoverProfile.css" rel="stylesheet">
+
+    <script src="../News/News_scripts"></script>
+    <link href="../News/News_styles" rel="stylesheet">
+</head>
+<body onload="Standard_Page_Init(); init();">
+    <!-- MAIN GRID -->
+    <div id="grid">
+        <!-- NAVI HEADER -->
+        <div class="cellM" id="naviHeader">
+            <a href="../../">FRIKY<span>BOT</span></a>
+        </div>
+
+        <!-- CONTENT HEADER -->
+        <div class="cellM" id="contentHeader">
+
+        </div>
+
+        <!-- NAVI -->
+        <div class="cellM" id="navi">
+            <div id="BOT_STATUS_DETAILS_MINI">
+
+            </div>
+            <div id="mainNavi">
+
+            </div>
+            <div id="license"> - <a href="https://fontawesome.com/license" target="_blank">Icon license</a> - </div>
+        </div>
+
+        <!-- ACTUAL CONTENT -->
+        <div class="cellM" id="content" style="background-color: #f5f5f5;">
+
+            <script>
+                let Feed_Pagination = "";
+
+                function init(pagination) {
+                    OUTPUT_create();
+                    Bot_Status_Details_Settings.ErrorOutput = OUTPUT_showError;
+
+                    if (window.location.pathname.toLowerCase() == "/news") {
+                        if (!document.getElementById("NEWS_FEED_Feed"))
+                            document.getElementById("DropItHere").innerHTML = '<div id="NEWS_FEED_Feed"></div>';
+
+                        let first = 5;
+
+                        NEWS_FEED_FETCH_Feed("latest", "first=" + first + (pagination ? "&pagination=" + pagination : ""), pagination ? false : true)
+                            .then(data => {
+                                Feed_Pagination = data.pagination;
+
+                                if (!document.getElementById("nextButton") && Feed_Pagination != "" && document.getElementsByClassName("News_Feed_News").length >= first)
+                                    document.getElementById("content").innerHTML += '<button id="nextButton" onclick="init(Feed_Pagination)">Load More</button>';
+                                else if (document.getElementById("nextButton") && pagination == Feed_Pagination) {
+                                    document.getElementById("nextButton").setAttribute("hidden", "true");
+                                }
+                            })
+                            .catch(err => ERROR_OUTPUT_showError(err.message));
+                    } else {
+                        if (!document.getElementById("NEWS_FEED_Feed"))
+                            document.getElementById("DropItHere").innerHTML = '<div id="NEWS_FEED_FullPage"></div>';
+
+                        document.getElementById("ALL_NEWS_HEADER").remove();
+
+                        NEWS_FEED_FETCH_FullPage(window.location.pathname.split("/")[2])
+                            .then(data => { })
+                            .catch(err => ERROR_OUTPUT_showError(err.message));
+                    }
+                }
+            </script>
+
+            <h1 id="ALL_NEWS_HEADER">ALL NEWS</h1>
+
+            <div id="OUTPUT">
+
+            </div>
+
+            <div id="DropItHere">
+
+            </div>
+        </div>
+    </div>
+</body>
+</html>

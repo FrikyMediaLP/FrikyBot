@@ -1,0 +1,30 @@
+.OUTPUT {
+    position: relative;
+}
+
+.OUTPUT > div{
+    cursor: pointer;
+    position: absolute;
+    right: 10px;
+}
+
+.INFO_OUTPUT {
+    color: #5ec200;
+    background-color: #deffbf;
+    border: 1px solid #d8fcb6;
+    padding: 5px;
+}
+
+.ERROR_OUTPUT {
+    color: #cc101d;
+    background-color: #ffcfd0;
+    border: 1px solid pink;
+    padding: 5px;
+}
+
+.WARN_OUTPUT {
+    color: #b3a400;
+    background-color: rgba(252, 255, 0, 0.4);
+    border: 1px solid #f0dc00;
+    padding: 5px;
+}

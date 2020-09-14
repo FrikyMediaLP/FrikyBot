@@ -1,0 +1,116 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Contact - FrikyBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- GENERAL CSS -->
+    <link href="styles/standard.css" rel="stylesheet">
+    <link href="styles/Grid/Grid_Foundation.css" rel="stylesheet">
+
+    <!-- PAGE CSS-->
+    <link href="styles/Grid/Grid_Default.css" rel="stylesheet">
+    <style>
+        #grid #content {
+            background-color: #f5f5f5;
+        }
+
+            #grid #content h1 {
+                margin: 0;
+                font-weight: 400;
+            }
+
+            #grid #content > h2 {
+                padding: 5px;
+                font-weight: 400;
+                text-align: center;
+                background-color: white;
+            }
+
+                #grid #content > h2 a {
+                    text-decoration: none;
+                    color: black;
+                }
+
+        .CenterImg {
+            max-height: 50px;
+            padding: 0px 10px;
+        }
+
+            .CenterImg:hover {
+                background-color: rgba(0, 0, 0, 0.1);
+            }
+
+        #content a {
+            color: #2ab89b;
+            font-size: 30px;
+            padding: 5px 10px;
+        }
+
+            #content a:hover {
+                background-color: rgba(0, 0, 0, 0.1);
+            }
+    </style>
+
+    <!-- GENERAL JS-->
+    <script src="scripts/standard.js"></script>
+
+    <!-- MISC -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+
+    <script src="misc/NavigationV2/NavigationV2.js"></script>
+    <link href="misc/NavigationV2/NavigationV2.css" rel="stylesheet">
+
+    <script src="misc/OUTPUT/OUTPUT.js"></script>
+    <link href="misc/OUTPUT/OUTPUT.css" rel="stylesheet">
+
+    <script src="misc/BOT_STATUS/BOT_STATUS.js"></script>
+    <link href="misc/BOT_STATUS/BOT_STATUS.css" rel="stylesheet">
+
+    <script src="misc/HoverProfile/HoverProfile.js"></script>
+    <link href="misc/HoverProfile/HoverProfile.css" rel="stylesheet">
+</head>
+<body onload="Standard_Page_Init();">
+    <!-- MAIN GRID -->
+    <div id="grid">
+        <!-- NAVI HEADER -->
+        <div class="cellM" id="naviHeader">
+            <a href="./">FRIKY<span>BOT</span></a>
+        </div>
+
+        <!-- CONTENT HEADER -->
+        <div class="cellM" id="contentHeader">
+
+        </div>
+
+        <!-- NAVI -->
+        <div class="cellM" id="navi">
+            <div id="BOT_STATUS_DETAILS_MINI">
+
+            </div>
+            <div id="mainNavi">
+                
+            </div>
+            <div id="license"> - <a href="https://fontawesome.com/license/free" target="_blank">Icon license</a> - </div>
+        </div>
+
+        <!-- ACTUAL CONTENT -->
+        <div class="cellM" id="content">
+
+            <h1>Contact Us/Me - FrikyBot</h1>
+
+            <div id="OUTPUT">
+
+            </div>
+
+            <h2>E - Mail</h2>
+            <center><img class="CenterImg" onclick="copyToClipboard('frikybot@gmail.com')" src="images/socials/tcatnoc.png" /></center>
+
+            <h2>Twitter</h2>
+            <center><a href="http://twitter.com/FrikyBot" target="_blank">FrikyBot Twitter Account</a></center>
+        </div>
+    </div>
+</body>
+</html>
