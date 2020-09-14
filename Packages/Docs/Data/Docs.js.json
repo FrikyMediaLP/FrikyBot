@@ -1,0 +1,188 @@
+{
+  "Docs": {
+    "description": "Docs Module serving Documentation for the entire Bot.",
+    "modules": {
+      "CONSTANTS": "FrikyBot Module",
+      "path": "NodeJS Module",
+      "express": "npm"
+    },
+    "variables": {
+      "CONSTANTS": {
+        "type": "CONSTANTS Module",
+        "description": "Bot Constants used to generalize Outputs and Settings."
+      },
+      "path": {
+        "type": "Path Module",
+        "description": "Path Module used for manipulating FileSystem Paths."
+      },
+      "express": {
+        "type": "Express Module",
+        "npm": "https://www.npmjs.com/package/express",
+        "description": "Express WebApp hosting the Website and API."
+      },
+      "SETTINGS_REQUIERED": {
+        "type": "Object",
+        "description": "Requiered Config Settings + Default Values."
+      }
+    },
+    "classes": {
+      "Docs": {
+        "modules": {
+          "PackageBase": "FrikyBot Module"
+        },
+        "description": "Documentation Package serving all Docs Data and HTML/CSS/JS Files.",
+        "constructor": {
+          "params": [
+            {
+              "name": "expressapp",
+              "type": "Express.js:Express"
+            },
+            {
+              "name": "twitchirc",
+              "opt": true,
+              "type": "TwitchIRC.js:TwitchIRC"
+            },
+            {
+              "name": "twitchapi",
+              "opt": true,
+              "type": "TwitchAPI.js:TwitchAPI"
+            },
+            {
+              "name": "datacollection",
+              "opt": true,
+              "type": "DataCollection.js:DataCollection"
+            },
+            {
+              "name": "startparameters",
+              "opt": true,
+              "type": "Object"
+            },
+            {
+              "name": "logger",
+              "opt": true,
+              "type": "Logger.js:Logger"
+            }
+          ],
+          "description": "Calls the Parent PackageBase class constructor."
+        },
+        "variables": {
+          "DOCS_NAV": {
+            "type": "Object",
+            "description": "Object containing the latest Navigation Data for the Website."
+          }
+        },
+        "functions": {
+          "Init": {
+            "params": null,
+            "is-async": true,
+            "description": "Sets the Express Routers."
+          },
+          "reload": {
+            "params": null,
+            "is-async": true,
+            "description": "Reloads the Package."
+          },
+          "CheckSettings": {
+            "params": [
+              {
+                "name": "settings",
+                "type": "Object"
+              }
+            ],
+            "description": "Checks the Settings for any missing Keys."
+          },
+          "getData": {
+            "params": [
+              {
+                "name": "module",
+                "type": "String"
+              }
+            ],
+            "description": "Gets the Docs Data, either though cacheing or the File System."
+          },
+          "getNavigation": {
+            "params": null,
+            "description": "Gets the Navigation Data, either though cacheing or the File System."
+          }
+        },
+        "API": {
+          "ROOT": "frikybot.de/Docs/api/",
+          "Endpoints": [
+            {
+              "name": "Get Module",
+              "endpoint": "/Data/:module",
+              "description": "Returns a Module by the given Name.",
+              "request": null,
+              "response": {
+                "data": {
+                  "type": "Object",
+                  "description": "The Module Data."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error Text, if something broke or no Data was found."
+                },
+                "code": {
+                  "type": "Number",
+                  "description": "Error Code, when a error was sent."
+                }
+              }
+            },
+            {
+              "name": "Get Class",
+              "endpoint": "/Data/:module/:class",
+              "description": "Returns a Class of a Module by the given Names.",
+              "request": null,
+              "response": {
+                "data": {
+                  "type": "Object",
+                  "description": "The Class Data."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error Text, if something broke or no Data was found."
+                },
+                "code": {
+                  "type": "Number",
+                  "description": "Error Code, when a error was sent."
+                }
+              }
+            },
+            {
+              "name": "Get Navigation",
+              "endpoint": "/Navigation",
+              "description": "Returns the Navigation Data.",
+              "request": null,
+              "response": {
+                "data": {
+                  "type": "Object",
+                  "description": "The Navigation Data based on NavigationV2 Syntax."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error Text, if something broke or no Data was found."
+                },
+                "code": {
+                  "type": "Number",
+                  "description": "Error Code, when a error was sent."
+                }
+              }
+            }
+          ]
+        },
+        "FileHosting": {
+          "ROOT": "frikybot.de/ChatModeration/",
+          "Static": "Data",
+          "Routes": {
+            "/*": {
+              "description": "Redirects to the Static File in the Data-Folder or back to the Main Index.html File."
+            }
+          }
+        }
+      }
+    },
+    "exports": {
+      "Docs": "Docs"
+    }
+  }
+}

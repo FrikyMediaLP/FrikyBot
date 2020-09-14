@@ -1,0 +1,119 @@
+.SWITCH_BUTTON{
+    background-color: white;
+    border-radius: 5px;
+    border: 1px solid gray;
+
+    width: 50px;
+    height: 20px;
+    position: relative;
+    cursor: pointer;
+}
+
+.SWITCH_BUTTON_DISABLED {
+    cursor: default !important;
+}
+
+    .SWITCH_BUTTON .SWITCH_BUTTON_CURSOR {
+        background-color: white;
+        border-radius: 5px;
+        border: 1px solid gray;
+        width: 20px;
+        height: 18px;
+        position: absolute;
+        top: 0;
+        left: 28px;
+    }
+
+.SWITCH_BUTTON_ON {
+    background-color: green;
+}
+
+    .SWITCH_BUTTON_ON .SWITCH_BUTTON_CURSOR {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+.SWITCH_BUTTON_OFF {
+    background-color: #d42828;
+}
+
+    .SWITCH_BUTTON_OFF .SWITCH_BUTTON_CURSOR {
+        position: absolute;
+        top: 0;
+        left: 28px;
+    }
+
+
+.SWITCH_BUTTON_TO_ON {
+    animation-name: SWITCH_BUTTON_ON;
+    animation-duration: 0.5s;
+    animation-fill-mode: forwards;
+}
+
+    .SWITCH_BUTTON_TO_ON .SWITCH_BUTTON_CURSOR {
+        animation-name: SWITCH_BUTTON_ON_CURSOR;
+        animation-duration: 0.5s;
+        animation-fill-mode: forwards;
+    }
+
+.SWITCH_BUTTON_TO_OFF {
+    animation-name: SWITCH_BUTTON_OFF;
+    animation-duration: 0.5s;
+    animation-fill-mode: forwards;
+}
+
+    .SWITCH_BUTTON_TO_OFF .SWITCH_BUTTON_CURSOR {
+        animation-name: SWITCH_BUTTON_OFF_CURSOR;
+        animation-duration: 0.5s;
+        animation-fill-mode: forwards;
+    }
+
+
+@keyframes SWITCH_BUTTON_ON {
+    0% {
+        background-color: #d42828;
+    }
+
+    100% {
+        background-color: green;
+    }
+}
+
+@keyframes SWITCH_BUTTON_ON_CURSOR {
+    0% {
+        position: absolute;
+        top: 0;
+        left: 28px;
+    }
+
+    100% {
+        position: absolute;
+        top: 0;
+        left: 0px;
+    }
+}
+
+@keyframes SWITCH_BUTTON_OFF {
+    0% {
+        background-color: green;
+    }
+
+    100% {
+        background-color: #d42828;
+    }
+}
+
+@keyframes SWITCH_BUTTON_OFF_CURSOR {
+    0% {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    100% {
+        position: absolute;
+        top: 0;
+        left: 28px;
+    }
+}

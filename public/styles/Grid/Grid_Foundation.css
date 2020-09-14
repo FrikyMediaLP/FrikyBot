@@ -1,0 +1,223 @@
+/* 
+    ////////////////////////////////////
+                GRID FOUNDATION
+    ////////////////////////////////////
+
+    * This CSS File placed the Grid wrapping around the content!
+    * Making this:
+    * _____________________________
+    * | NaviHeader | ContenHeader |
+    * |____________|______________|
+    * |    Navi    |   Content    |
+    * |____________|______________|
+    *
+    * Hint: File should be placed (in the head) BEFORE a Grid Design CSS File! (no !importants required)
+*/
+
+
+/*
+    Preping html, body
+*/
+body, html {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* 
+    ////////////////////////////////////
+                Main Grid
+    ////////////////////////////////////
+*/
+
+#grid {
+    min-width: 100%;
+    min-height: 100%;
+    height: 100%;
+    width: auto;
+    display: grid;
+    grid-template-columns: 230px 1fr !important; /* CHANGEABLE WIDTH */
+    grid-template-rows: 50px 1fr; /* CHANGEABLE HEIGHT */
+    grid-template-areas: "naviHeader contentHeader" "navi content";
+    overflow-y: hidden;
+}
+
+/* 
+    ////////////////////////////////////
+            MAIN GRID NAVIHEADER
+    ////////////////////////////////////
+*/
+
+    #grid #naviHeader {
+        grid-area: naviHeader;
+        padding-top: 6px;
+        min-width: 0;
+        min-height: 0;
+        height: 100%;
+        width: 100%;
+        font-family: 'Roboto', sans-serif;
+        font-size: 30px;
+        /* DISABLE SELECT */
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+        #grid #naviHeader a {
+            text-decoration: none;
+            margin-left: 42px;
+            font-weight: 300;
+            color: white !important;
+        }
+
+        #grid #naviHeader span {
+            font-weight: 400;
+        }
+
+/* 
+    ////////////////////////////////////
+             MAIN GRID NAVI
+    ////////////////////////////////////
+*/
+
+    #grid #navi {
+        grid-area: navi;
+        min-width: 0;
+        min-height: 0;
+        overflow-y: scroll;
+        overflow-x: hidden;
+
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: 105px auto 2px;
+    }
+
+
+
+        #grid #navi #mainNavi {
+            display: grid;
+            grid-template-columns: auto;
+            grid-template-rows: 40px 40px 40px 40px 40px 40px 40px 40px 40px 40px 40px 40px;
+        }
+
+            #grid #navi #mainNavi .mainNaviHeader {
+                background-color: #001d2e;
+                padding: 10px;
+            }
+
+            #grid #navi #mainNavi .UNLOADED {
+                background-color: dimgray !important;
+                height: 20px !important;
+                width: 180px !important;
+                border-radius: 5px;
+            }
+
+            #grid #navi #mainNavi .UNLOADED_S {
+                background-color: dimgray !important;
+                height: 20px !important;
+                width: 20px !important;
+                border-radius: 5px;
+            }
+
+            #grid #navi #mainNavi .mainNaviHeader span {
+                color: lightgray !important;
+                font-family: 'Roboto', sans-serif;
+                font-weight: 300;
+            }
+
+            #grid #navi #mainNavi .caption {
+                margin: 10px 0px 10px 10px;
+            }
+
+                #grid #navi #mainNavi .caption a {
+                    text-decoration: none;
+                    font-family: 'Roboto', sans-serif;
+                    font-weight: 300;
+                    font-size: 20px;
+                    color: white;
+                    position: relative;
+                }
+
+                    #grid #navi #mainNavi .caption a:hover {
+                        filter: invert(20%);
+                    }
+
+                #grid #navi #mainNavi .caption span {
+                    position: absolute;
+                    top: 0;
+                    left: 30px;
+                    width: 180px;
+                }
+
+                #grid #navi #mainNavi .caption img {
+                    filter: invert(100%);
+                    width: 25px;
+                    position: absolute;
+                    top: 0px;
+                }
+
+        #grid #navi #license {
+            position: absolute;
+            bottom: 0;
+            left: 55px;
+            color: white;
+        }
+
+            #grid #navi #license a {
+                text-decoration: none;
+                font-size: 15px;
+                color: white;
+            }
+
+
+
+        #grid #navi::-webkit-scrollbar {
+            width: 0px;
+        }
+
+        #grid #navi::-webkit-scrollbar-track {
+            background: none;
+        }
+        #grid #navi::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+
+/* 
+    ////////////////////////////////////
+          MAIN GRID CONTENTHEADER
+    ////////////////////////////////////
+ */
+
+    #grid #contentHeader {
+        grid-area: contentHeader;
+        min-width: 0;
+        min-height: 0;
+    }
+
+/* 
+    ////////////////////////////////////
+            MAIN GRID CONTENT
+    ////////////////////////////////////
+*/
+
+    #grid #content {
+        grid-area: content;
+        min-width: 0;
+        min-height: 0;
+        overflow-y: scroll;
+    }
+
+        #grid #content::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        #grid #content::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        #grid #content::-webkit-scrollbar-thumb {
+            background: #888;
+        }

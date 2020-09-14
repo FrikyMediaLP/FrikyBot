@@ -1,0 +1,55 @@
+/* 
+    ////////////////////////////////////
+                GRID: DEFAULT
+    ////////////////////////////////////
+
+    * This CSS File designs the Grid wrapping around the content!
+    * Grid Foundation(css too) required!
+    * _____________________________
+    * | NaviHeader | ContenHeader |
+    * |____________|______________|
+    * |    Navi    |   Content    |
+    * |____________|______________|
+*/
+
+/* 
+    ////////////////////////////////////
+            MAIN GRID NAVIHEADER
+    ////////////////////////////////////
+*/
+
+#grid #naviHeader {
+    background-color: #028deb;
+}
+
+/* 
+    ////////////////////////////////////
+             MAIN GRID NAVI
+    ////////////////////////////////////
+*/
+
+#grid #navi {
+    background-color: #2b353b;
+}
+
+/* 
+    ////////////////////////////////////
+          MAIN GRID CONTENTHEADER
+    ////////////////////////////////////
+ */
+
+#grid #contentHeader {
+    background-color: #19a3ff;
+}
+
+/* 
+    ////////////////////////////////////
+            MAIN GRID CONTENT
+    ////////////////////////////////////
+*/
+
+#grid #content {
+    background-color: white;
+    padding: 10px;
+    font-family: 'Roboto', sans-serif;
+}

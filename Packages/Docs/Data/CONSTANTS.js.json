@@ -1,0 +1,40 @@
+{
+  "CONSTANTS": {
+    "description": "Constats Collection used in everywhere from Website to 3rd Party Libraries.",
+    "variables": {
+      "DEFAULT_CONFIG_FILE_PATH": {
+        "type": "String",
+        "description": "Value: \"config.json\""
+      },
+      "PACKAGES_INSTALL_ROOT": {
+        "type": "String",
+        "description": "Value: \"Packages/\""
+      },
+      "STATUS_SUCCESS": {
+        "type": "String",
+        "description": "Value: \"SUCCESS\""
+      },
+      "STATUS_FAILED": {
+        "type": "String",
+        "description": "Value: \"FAILED\""
+      },
+      "Package_Status": {
+        "type": "Array",
+        "description": "Values: \"Operational\", \"Outages\", \"Fatal\""
+      },
+      "TTV_API_ROOT_URL": {
+        "type": "String",
+        "description": "Value: \"https://api.twitch.tv/helix\""
+      },
+      "TTV_API_ACCESS_TOKEN_TYPES": {
+        "type": "Object",
+        "description": "Value: \"{ ANY_TOKEN: 0, APP_ACCESS: 1, USER_ACCESS: 2 }\""
+      },
+      "UserLevel": {
+        "type": "Object",
+        "description": "Value: \"{ broadcaster: 7, admin: 6, staff: 6, global_mod: 6, moderator: 6, vip: 5, founder: 4, subscriber: 3, partner: 2, other: 1, follower: 1, regular: 0 }\""
+      }
+    },
+    "exports": "CONSTANTS"
+  }
+}

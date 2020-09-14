@@ -1,0 +1,462 @@
+{
+  "TwitchIRC": {
+    "description": "Module for the Twitch IRC Connection.",
+    "modules": {
+      "tmi.js": "npm",
+      "CONSTANTS": "FrikyBot Module",
+      "BTTV": "FrikyBot Module",
+      "FFZ": "FrikyBot Module"
+    },
+    "variables": {
+      "CONSTANTS": {
+        "type": "CONSTANTS Module",
+        "description": "Bot Constants used to generalize Outputs and Settings."
+      },
+      "tmi": {
+        "type": "Object",
+        "npm": "https://www.npmjs.com/package/tmi.js",
+        "description": "Official Twitch IRC Library."
+      },
+      "BTTV": {
+        "type": "BTTV Module",
+        "description": "BTTV API Interface."
+      },
+      "FFZ": {
+        "type": "FFZ Module",
+        "description": "FFZ API Interface."
+      }
+    },
+    "classes": {
+      "TwitchAPI": {
+        "description": "The actual Class for interfacing and Maintaining Connection to the Twitch IRC.",
+        "constructor": {
+          "params": [
+            {
+              "name": "user",
+              "type": "String"
+            },
+            {
+              "name": "pw",
+              "type": "String"
+            },
+            {
+              "name": "channel",
+              "type": "Array"
+            },
+            {
+              "name": "logger",
+              "opt": true,
+              "type": "Logger.js:Logger"
+            }
+          ],
+          "description": "Sets up the TMI.js Client. Use Connect() to connect to the Chat."
+        },
+        "variables": {
+          "client": {
+            "type": "tmi.js:Client",
+            "description": "The TMI.js Client Object that connects and handles the Twitch IRC."
+          },
+          "Logger": {
+            "type": "Object",
+            "description": "Console Logger Object."
+          }
+        },
+        "functions": {
+          "SetupClient": {
+            "params": [
+              {
+                "name": "user",
+                "opt": true,
+                "type": "String"
+              },
+              {
+                "name": "pw",
+                "opt": true,
+                "type": "String"
+              },
+              {
+                "name": "channel",
+                "opt": true,
+                "type": "Array"
+              }
+            ],
+            "description": "Sets up the tmi.js Client with the supplied User Settings."
+          },
+          "Connect": {
+            "params": [
+              {
+                "name": "user",
+                "opt": true,
+                "type": "String"
+              },
+              {
+                "name": "pw",
+                "opt": true,
+                "type": "String"
+              },
+              {
+                "name": "channel",
+                "opt": true,
+                "type": "Array"
+              }
+            ],
+            "is-async": true,
+            "description": "Connects to the Twitch Chat allowing to read, write Chat Messages and perform Actions."
+          },
+          "on": {
+            "params": [
+              {
+                "name": "eventName",
+                "type": "String"
+              },
+              {
+                "name": "callback",
+                "type": "Function"
+              }
+            ],
+            "description": "Outsourced the tmi.js:client.on() Function, doing the exact same thing!"
+          },
+          "say": {
+            "params": [
+              {
+                "name": "message",
+                "type": "String"
+              },
+              {
+                "name": "channel",
+                "type": "String"
+              }
+            ],
+            "is-async": true,
+            "description": "Writes a message into the given Chat Channel."
+          },
+          "saySync": {
+            "params": [
+              {
+                "name": "message",
+                "type": "String"
+              },
+              {
+                "name": "channel",
+                "type": "String"
+              }
+            ],
+            "description": "Same as say, just not async."
+          },
+          "deleteMessage": {
+            "params": [
+              {
+                "name": "id",
+                "type": "String"
+              },
+              {
+                "name": "channel",
+                "type": "String"
+              }
+            ],
+            "is-async": true,
+            "description": "Deletes a message based on its id. User needs Mod Status!"
+          },
+          "deleteMessageSync": {
+            "params": [
+              {
+                "name": "id",
+                "type": "String"
+              },
+              {
+                "name": "channel",
+                "type": "String"
+              }
+            ],
+            "description": "Same as deleteMessage, just not async."
+          },
+          "timeout": {
+            "params": [
+              {
+                "name": "username",
+                "type": "String"
+              },
+              {
+                "name": "length",
+                "type": "Number"
+              },
+              {
+                "name": "reason",
+                "type": "String"
+              },
+              {
+                "name": "channel",
+                "type": "String"
+              }
+            ],
+            "is-async": true,
+            "description": "Timeoutes a User for the given Length and reason."
+          },
+          "timeoutSync": {
+            "params": [
+              {
+                "name": "username",
+                "type": "String"
+              },
+              {
+                "name": "length",
+                "type": "Number"
+              },
+              {
+                "name": "reason",
+                "type": "String"
+              },
+              {
+                "name": "channel",
+                "type": "String"
+              }
+            ],
+            "description": "Same as timeout, just not async."
+          },
+          "ban": {
+            "params": [
+              {
+                "name": "username",
+                "type": "String"
+              },
+              {
+                "name": "reason",
+                "type": "String"
+              },
+              {
+                "name": "channel",
+                "type": "String"
+              }
+            ],
+            "is-async": true,
+            "description": "Bans a User for the given reason in the given Chat Channel."
+          },
+          "banSync": {
+            "params": [
+              {
+                "name": "username",
+                "type": "String"
+              },
+              {
+                "name": "reason",
+                "type": "String"
+              },
+              {
+                "name": "channel",
+                "type": "String"
+              }
+            ],
+            "description": "Same as ban, just not async."
+          },
+          "getUsername": {
+            "params": null,
+            "description": "Returns the Username."
+          },
+          "getChannels": {
+            "params": null,
+            "description": "Returns the joined Chat Channels."
+          },
+          "getChannel": {
+            "params": null,
+            "description": "Returns the first joined Chat Channel."
+          },
+          "getOptions": {
+            "params": null,
+            "description": "Returns the Options used when connecting to the Twitch Chat."
+          },
+          "readyState": {
+            "params": null,
+            "description": "Returns the readyState of the IRC Connection."
+          },
+          "setLogger": {
+            "params": [
+              {
+                "name": "loggerObject",
+                "type": "Object"
+              }
+            ],
+            "description": "Sets the Console Logger. This Object needs an info(), a warn() nad an error() Function!"
+          }
+        }
+      },
+      "Message": {
+        "description": "Sub Class Handling Messages sent in the Twitch Chat.",
+        "constructor": {
+          "params": [
+            {
+              "name": "channel",
+              "type": "String"
+            },
+            {
+              "name": "userstate",
+              "type": "Object"
+            },
+            {
+              "name": "message",
+              "type": "String"
+            }
+          ],
+          "description": "Collects data from the Twitch IRC Message and determines the Userlevel."
+        },
+        "variables": {
+          "message": {
+            "type": "String",
+            "description": "The message sent in the Twitch Chat."
+          },
+          "channel": {
+            "type": "String",
+            "description": "The Twitch Chat Channel the message was sent in."
+          },
+          "userstate": {
+            "type": "Object",
+            "description": "Extra data from the Twitch Chat message. e.g. Badges, Emotes, ..."
+          },
+          "userLevel": {
+            "type": "String",
+            "description": "The Users Userlevel based on their active badges."
+          }
+        },
+        "functions": {
+          "toString": {
+            "params": null,
+            "description": "Returns a short stringyfied version of the message sent in the Chat."
+          },
+          "toJSON": {
+            "params": null,
+            "description": "Returns the neccacary data combined in a JSON Object."
+          },
+          "checkFollow": {
+            "params": [
+              {
+                "name": "API",
+                "type": "TwitchAPI.js:TwitchAPI"
+              }
+            ],
+            "is-async": true,
+            "description": "Checks the Follow Status of the User in the Channel the message was sent in. This requieres the Twitch API!"
+          },
+          "getDisplayName": {
+            "params": null,
+            "description": "Returns the Users DisplayName, if set, otherwise it returns their Username."
+          },
+          "getUsername": {
+            "params": null,
+            "description": "Returns the Users Username."
+          },
+          "getUser": {
+            "params": null,
+            "description": "Returns the userstate."
+          },
+          "getUserID": {
+            "params": null,
+            "description": "Returns the Users ID."
+          },
+          "getChannel": {
+            "params": null,
+            "description": "Returns the Channel the message was sent in."
+          },
+          "getRoomID": {
+            "params": null,
+            "description": "Returns the RoomID the message was sent in."
+          },
+          "getMessage": {
+            "params": null,
+            "description": "Returns the message."
+          },
+          "getID": {
+            "params": null,
+            "description": "Returns the message ID."
+          },
+          "getTime": {
+            "params": null,
+            "description": "Returns the Timestamp the Message was sent."
+          },
+          "getEmotesSync": {
+            "params": null,
+            "description": "Returns the Twitch Emotes used in the Message."
+          },
+          "getEmotes": {
+            "params": [
+              {
+                "name": "includeBTTV",
+                "type": "Boolean"
+              },
+              {
+                "name": "includeFFZ",
+                "type": "Boolean"
+              }
+            ],
+            "is-async": true,
+            "description": "Returns the Twitch Emotes used in the Message. Further can BTTV and FFZ Emotes be included, this might take a bit longer!"
+          },
+          "getMessageWithoutEmotes": {
+            "params": [
+              {
+                "name": "keepBTTV",
+                "type": "Boolean"
+              },
+              {
+                "name": "keepFFZ",
+                "type": "Boolean"
+              }
+            ],
+            "is-async": true,
+            "description": "Removes the Emotes used in the Message and returns the remaining Text. BTTV and FFZ can also be removed, this might take a bit longer!"
+          },
+          "isEmoteOnly": {
+            "params": null,
+            "description": "Returns true, if the Message only contains Emotes, false otherwise."
+          },
+          "getFFZEmotes": {
+            "params": null,
+            "is-async": true,
+            "description": "Returns the FFZ Emotes used in the message."
+          },
+          "getBTTVEmotes": {
+            "params": null,
+            "is-async": true,
+            "description": "Returns the BTTV Emotes used in the message."
+          },
+          "getMessageDetails": {
+            "params": null,
+            "description": "Returns combined data of Emotes, Msg-ID, Time and message."
+          },
+          "getUserLevel": {
+            "params": null,
+            "description": "Returns the Userlevel as a Number."
+          },
+          "getUserLevelAsText": {
+            "params": null,
+            "description": "Returns the Userlevel as a Text."
+          },
+          "hasBadge": {
+            "params": [
+              {
+                "name": "badgeName",
+                "type": "String"
+              }
+            ],
+            "description": "Returns true, if the user has the given Badge currently equipped, false otherwise."
+          },
+          "matchUserlevel": {
+            "params": [
+              {
+                "name": "userLevel",
+                "type": "String"
+              },
+              {
+                "name": "strictLevel",
+                "type": "Number"
+              }
+            ],
+            "description": "Returns true, if the current Userlevel matches or exceedes the given Userlevel and restrictions. </br> A StrictLevel of 0 means \"Mod Masterrace\" or Mods can do everything! </br> A StrictLevel of 1 means \"Badge Mode\" or the User must have the correct Badge equipped, Version doesnt matter! </br> A StrictLevel of 2 means \"Badge and Version Mode\" or the User must have the correct Badge equipped, Version MATTERS, but lower Versions count too! </br> A StrictLevel of 3 means \"Exact Mode\" or the User must have the correct Badge AND Version equipped, lower Version DONT COUNT!"
+          }
+        }
+      }
+    },
+    "exports": {
+      "TwitchIRC": "TwitchIRC",
+      "Message": "Message"
+    }
+  }
+}

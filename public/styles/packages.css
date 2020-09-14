@@ -1,0 +1,119 @@
+﻿#grid #content {
+    background-color: #f5f5f5;
+}
+
+
+    #grid #content h1 {
+        background-color: white;
+        padding: 5px;
+        font-weight: 400;
+        margin: 0;
+    }
+
+    #grid #content #master {
+        display: grid;
+        grid-template-columns: 50px 160px auto 120px 120px;
+        grid-template-rows: auto;
+    }
+
+/*
+    HEADER
+*/
+
+.package_index:nth-child(1), .package_name:nth-child(2), .package_description:nth-child(3), .package_capabilities:nth-child(4), .package_settings:nth-child(5) {
+    border-bottom: 1px solid black;
+}
+
+/*
+    CONTENT
+*/
+
+.package_index:nth-child(10n+1), .package_name:nth-child(10n+2), .package_description:nth-child(10n+3), .package_capabilities:nth-child(10n+4), .package_settings:nth-child(10n+5) {
+    background-color: whitesmoke;
+}
+
+.package_index:nth-child(10n+6), .package_name:nth-child(10n+7), .package_description:nth-child(10n+8), .package_capabilities:nth-child(10n+9), .package_settings:nth-child(10n+10) {
+    background-color: lavender;
+}
+
+.package_index, .package_name, .package_description, .package_capabilities, .package_settings {
+    padding: 10px;
+    height: 100%;
+    display: table;
+    border-right: 1px dashed gray;
+}
+
+    .package_index p, .package_name p, .package_description p, .package_settings p {
+        display: table-cell;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    .package_name a {
+        text-decoration: none;
+    }
+
+    .package_name a {
+        color: black;
+    }
+
+    .package_other div, .package_capabilities div {
+        display: table-cell;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    .package_capabilities img {
+        width: 30px;
+        margin: 5px;
+    }
+
+
+    .package_settings div {
+        display: table-cell;
+        padding-top: 5px;
+    }
+
+        .package_settings div p {
+            display: block !important;
+            margin: 0;
+        }
+
+.package_Error {
+    padding: 10px;
+    height: 100%;
+    display: table;
+    background-color: lightgray;
+}
+
+    .package_Error p {
+        display: table-cell;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+/*
+    NEW PACKAGES
+*/
+
+#InstalledPackages .Package {
+    margin-top: 10px;
+    background-color: white;
+    padding: 5px;
+}
+
+    #InstalledPackages .Package h2 {
+        border-bottom: 1px solid lightgray;
+        margin: 0;
+    }
+
+        #InstalledPackages .Package h2 a {
+            text-decoration: none;
+            float: right;
+        }
+
+    #InstalledPackages .Package p {
+        margin-top: 10px;
+        margin-bottom: 5px;
+        margin-left: 5px;
+    }

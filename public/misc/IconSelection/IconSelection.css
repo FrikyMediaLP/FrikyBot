@@ -1,0 +1,73 @@
+.SELECTION {
+    width: 100%;
+    height: 20px;
+    position: relative;
+}
+
+    .SELECTION .SELECTION_SELECTOR {
+        max-width: 20px;
+        max-height: 20px;
+        width: auto;
+        height: auto;
+    }
+
+        .SELECTION .SELECTION_SELECTOR[data-selected='true'] {
+            padding: 3px !important;
+            background-color: rgba(0, 0, 0, 0.4) !important;
+            border: 2px solid red !important;
+        }
+
+    .SELECTION .SELECTION_SELECTON {
+        position: absolute;
+        top: 45px;
+        left: 5px;
+        height: 150px;
+        width: 200px;
+        overflow-y: scroll;
+        overflow-x: hidden;
+        resize: both;
+        border: 2px solid gray;
+        display: none;
+        grid-template-rows: auto;
+        grid-template-columns: repeat(auto-fit, 20px);
+        grid-column-gap: 6px;
+        grid-row-gap: 6px;
+        z-index: 1;
+        background-color: white;
+    }
+
+        .SELECTION .SELECTION_SELECTON::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .SELECTION .SELECTION_SELECTON::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        .SELECTION .SELECTION_SELECTON::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+
+    .SELECTION[data-expanded='true'] .SELECTION_SELECTON {
+        display: grid;
+    }
+
+    .SELECTION .SELECTION_OPTION {
+        max-width: 20px;
+        max-height: 20px;
+        width: auto;
+        height: auto;
+
+        padding: 3px;
+        cursor: pointer;
+    }
+
+        .SELECTION .SELECTION_OPTION[data-selected='true'] {
+            padding: 2px !important;
+            background-color: rgba(155, 0, 0, 0.1);
+            border: 1px solid rgba(155, 0, 0, 0.4);
+        }
+
+        .SELECTION .SELECTION_OPTION:hover {
+            background-color: rgba(0,0,0, 0.3);
+        }
