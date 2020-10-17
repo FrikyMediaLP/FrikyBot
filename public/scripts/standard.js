@@ -27,8 +27,10 @@ async function Standard_Page_Init(settings = {}){
 
         if (settings.PROFILE_ENABLE != false && TTV_PROFILE_isLoggedIn()) {
             TTV_PROFILE_initProfile();
-            if (document.getElementById("Login_Bot_Navi"))
-                document.getElementById("Login_Bot_Navi").childNodes[0].childNodes[1].innerHTML = "Log out";
+            //Update Navi
+            if (document.getElementById("MAINNAV_Settings_Login")) {
+                document.getElementById("MAINNAV_Settings_Login").innerHTML = "Logout";
+            }
         }
 
         resolve();
@@ -49,24 +51,11 @@ async function NAVIVATION_init() {
     if (COOKIE_ACCEPT) {
         let dta = NAVIVATION_getCookiesData();
         if (dta) {
-            document.getElementById("mainNavi").innerHTML = NAVIGATIONV2_create(json.data);
+            document.getElementById("mainNavi").innerHTML = NAVIGATIONV2_create(json.data, "MAINNAV");
             NAVIGATIONV2_SCROLL_HL_CHECK(true);
             return Promise.resolve();
         }
     }
-
-    //Create UNLOADED
-    //let s = "";
-
-    //for (let i = 0; i < 3; i++) {
-    //    s += '<div class="mainNaviHeader"><div class="UNLOADED"></div></div>';
-
-    //    for (let j = 0; j < 4-i; j++) {
-    //        s += '<div class="caption"><a><div class="UNLOADED_S"></div><span class="UNLOADED"></span></a></div>';
-    //    }
-    //}
-
-    //document.getElementById("mainNavi").innerHTML = s;
 
     //FETCH NAVI
     return fetch("/api/Navi")
@@ -75,7 +64,7 @@ async function NAVIVATION_init() {
             if (json.err) {
                 return Promise.reject(new Error(json.err));
             } else {
-                document.getElementById("mainNavi").innerHTML = NAVIGATIONV2_create(json.data);
+                document.getElementById("mainNavi").innerHTML = NAVIGATIONV2_create(json.data, "MAINNAV");
                 NAVIGATIONV2_SCROLL_HL_CHECK(true);
                 
                 //SAVE IN COOKIES
@@ -180,7 +169,7 @@ function clearAllCookies() {
     sessionStorage.clear();
 }
 
-//UTIL
+//URL
 function GetURLParams() {
     return window.location.search.substring(1).split('&');
 }
@@ -203,6 +192,38 @@ function HasURLParam(ParamName) {
             return sParamName[1];
         }
     }
+}
+
+//HTML
+function copyToClipboard(str) {
+    const el = document.createElement('textarea');
+    el.value = str;
+    el.setAttribute('readonly', '');
+    el.style.position = 'absolute';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+}
+function ScollToHash() {
+    if (document.location.hash.indexOf("#") >= 0 && document.getElementById(document.location.hash.substring(1)))
+        document.getElementById(document.location.hash.substring(1)).scrollIntoView();
+}
+
+//Data
+function FillFormattedString(string, vars = {}) {
+    let outstring = "";
+
+    for (let word of string.split(" ")) {
+        let varname = word.substring(1, word.length-1);
+        if (word.charAt(0) === "{" && word.charAt(word.length - 1) === "}" && vars[varname] !== undefined)
+            outstring += " " + vars[varname];
+        else
+            outstring += " " + word;
+    }
+
+    return outstring.substring(1);
 }
 function PrintArraySpaced(arr) {
     let s = "";
@@ -230,21 +251,6 @@ function hasArrayElement(arr, elm) {
     }
 
     return false;
-}
-function copyToClipboard(str){
-    const el = document.createElement('textarea');
-    el.value = str;
-    el.setAttribute('readonly', '');
-    el.style.position = 'absolute';
-    el.style.left = '-9999px';
-    document.body.appendChild(el);
-    el.select();
-    document.execCommand('copy');
-    document.body.removeChild(el);
-}
-function ScollToHash() {
-    if (document.location.hash.indexOf("#") >= 0 && document.getElementById(document.location.hash.substring(1)))
-        document.getElementById(document.location.hash.substring(1)).scrollIntoView();
 }
 function removeNonAlphabet(str) {
     let s = "";
@@ -292,4 +298,20 @@ function toggleClass(elt, className, parentSelect = 0) {
     }
 
     elt.classList.toggle(className);
+}
+
+//MISC
+function PROFILE_IMAGES(id) {
+    let colors = ["blue", "green", "orange", "purple", "red", "yellow"];
+
+    if (isNaN(id)) {
+        return ROOT + "images/no_image_found.png";
+    } else if (typeof (id) == "string") {
+        try {
+            id = parseInt(id);
+            return ROOT + "images/Profiles/" + colors[id > colors.length - 1 ? id % (colors.length - 1) : id] + ".png";
+        } catch{
+            return ROOT + "images/no_image_found.png";
+        }
+    }
 }

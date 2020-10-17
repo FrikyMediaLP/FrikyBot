@@ -1,0 +1,137 @@
+#grid #content {
+    background-color: #f5f5f5;
+}
+
+/*
+    -------------------------
+             LOGIN
+    -------------------------
+*/
+
+
+.TTV_LOGIN {
+    margin: 10px auto;
+    width: 90%;
+    min-width: 450px;
+    max-width: 600px;
+    display: grid;
+    grid-template-columns: 100%;
+    grid-template-rows: auto 50px;
+}
+
+    /* TTV_LOGIN_DATA */
+
+    .TTV_LOGIN .TTV_LOGIN_DATA {
+        height: 0px;
+        padding: 0px;
+        background-color: white;
+        border: 1px solid gray;
+        border-bottom: none;
+        overflow: hidden;
+    }
+
+    .TTV_LOGIN.TTV_LOGIN_FALSE .TTV_LOGIN_DATA > center {
+        font-size: 30px;
+        font-weight: 400;
+    }
+    .TTV_LOGIN.TTV_LOGIN_FALSE .TTV_LOGIN_DATA .TTV_LOGIN_DATA_SPLITTER {
+        height: 100%;
+        display: grid;
+        grid-template-columns: 11% 33% 11% 33% 11%;
+        grid-template-rows: 100%;
+        grid-template-areas: ". left . right .";
+    }
+
+        .TTV_LOGIN.TTV_LOGIN_FALSE .TTV_LOGIN_DATA .TTV_LOGIN_DATA_SPLITTER .TTV_LOGIN_DATA_LEFT {
+            grid-area: left;
+        }
+
+        .TTV_LOGIN.TTV_LOGIN_FALSE .TTV_LOGIN_DATA .TTV_LOGIN_DATA_SPLITTER .TTV_LOGIN_DATA_RIGHT {
+            height: 100%;
+            grid-area: right;
+        }
+
+        .TTV_LOGIN.TTV_LOGIN_FALSE .TTV_LOGIN_DATA .TTV_LOGIN_DATA_SPLITTER p {
+            margin: 0;
+        }
+
+        .TTV_LOGIN.TTV_LOGIN_FALSE .TTV_LOGIN_DATA .TTV_LOGIN_DATA_SPLITTER img {
+            height: calc(100% - 40px);
+        }
+
+        .TTV_LOGIN.TTV_LOGIN_FALSE .TTV_LOGIN_DATA .TTV_LOGIN_DATA_SPLITTER .TTV_LOGIN_DATA_TOP {
+            margin-top: 10px;
+            border-bottom: 1px black dashed;
+        }
+
+        .TTV_LOGIN.TTV_LOGIN_FALSE .TTV_LOGIN_DATA .TTV_LOGIN_DATA_SPLITTER .TTV_LOGIN_DATA_BOTTOM {
+            font-weight: 200;
+            font-size: 15px;
+        }
+
+/* TTV_LOGIN_BUTTON */
+    .TTV_LOGIN .TTV_LOGIN_BUTTON {
+        background-color: #6441a5;
+        cursor: pointer;
+    }
+
+    .TTV_LOGIN .TTV_LOGIN_BUTTON a{
+        text-decoration: none;
+    }
+
+        .TTV_LOGIN .TTV_LOGIN_BUTTON center {
+            padding: 5px;
+            height: calc(100% - 10px);
+        }
+
+            .TTV_LOGIN .TTV_LOGIN_BUTTON center span {
+                display: inline-block;
+                margin-right: 10px;
+                font-weight: 600;
+                font-size: 35px;
+                color: white;
+                vertical-align: top;
+            }
+
+        .TTV_LOGIN .TTV_LOGIN_BUTTON center img {
+            height: 100%
+        }
+
+            .TTV_LOGIN .TTV_LOGIN_BUTTON center img[data-type="svg"] {
+                filter: invert(1);
+            }
+
+.TTV_LOGIN .TTV_LOGIN_DATA_EXPAND {
+    animation-name: TTV_LOGIN_EXPAND;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+}
+
+.TTV_LOGIN .TTV_LOGIN_DATA_COLLAPSE {
+    animation-name: TTV_LOGIN_COLLAPSE;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+}
+
+@keyframes TTV_LOGIN_EXPAND {
+    from {
+        height: 0px;
+        padding: 0px;
+    }
+
+    to {
+        height: 200px;
+        padding: 5px;
+    }
+}
+@keyframes TTV_LOGIN_COLLAPSE {
+    from {
+        height: 200px;
+        padding: 5px;
+    }
+
+    to {
+        height: 0px;
+        padding: 0px;
+    }
+}

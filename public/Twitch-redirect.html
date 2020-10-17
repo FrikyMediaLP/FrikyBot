@@ -1,0 +1,34 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Twitch Redirect - FrikyBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- GENERAL CSS -->
+    <link href="styles/standard.css" rel="stylesheet">
+
+    <!-- GENERAL JS-->
+    <script src="scripts/standard.js"></script>
+
+    <!-- MISC -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+</head>
+<body onload="init();">
+    <script>
+        function init() {
+            if (document.location.hash.indexOf("#") >= 0) {
+                //REDIRECT TO LOGIN
+                window.location.href = "login.html" + document.location.hash;
+            } else if (window.location.search.indexOf("?") >= 0) {
+                //REDIRECT TO SETTINGS
+                window.location.href = "Settings.html" + window.location.search;
+            } else {
+                //REDIRECT TO INDEX
+                window.location.href = "index.html";
+            }
+        }
+    </script>
+</body>
+</html>

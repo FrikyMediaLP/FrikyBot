@@ -107,7 +107,7 @@ class PackageBase {
      */
 
     loadSettings() {
-        let resolvedPath = path.resolve(CONSTANTS.PACKAGES_INSTALL_ROOT + this.PackageName + "/config.json");
+        let resolvedPath = path.resolve(CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + this.PackageName + "/config.json");
 
         //SETUP CONFIG
         let settings_file = {};
@@ -399,7 +399,7 @@ class PackageBase {
         let FILE_ENDINGS = ["/index.html", "/index.htm",".html", ".htm"];
 
         for (let ending of FILE_ENDINGS) {
-            pathRes = path.resolve(CONSTANTS.PACKAGES_INSTALL_ROOT + this.PackageName + "/html" + URL_PATH + ending);
+            pathRes = path.resolve(CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + this.PackageName + "/html" + URL_PATH + ending);
             if (fs.existsSync(pathRes) && fs.statSync(pathRes).isFile())
                 return pathRes;
         }

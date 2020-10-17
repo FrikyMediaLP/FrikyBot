@@ -263,3 +263,5 @@ __pycache__/
 
 #OWN STUFF
 TOKENS/
+Logs/
+config.json

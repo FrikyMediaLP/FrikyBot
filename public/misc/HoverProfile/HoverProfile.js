@@ -14,6 +14,9 @@ function TTV_PROFILE_initProfile() {
         document.getElementById("contentHeader").innerHTML += '<div id="Profile" title="(' + id + ') ' + name + '"><a href="http://twitch.tv/' + name + '" target="_blank"><p>' + name + '</p><img src="' + (logo ? logo : PROFILE_IMAGES(id)) + '" /></a></div>';
     }
 }
+function TTV_PROFILE_remove() {
+    document.getElementById("Profile").remove();
+}
 function TTV_PROFILE_isLoggedIn() {
     let dta = TTV_PROFILE_getCookieData();
     if (dta && dta.Details) {
@@ -22,15 +25,11 @@ function TTV_PROFILE_isLoggedIn() {
         return false;
     }
 }
-function TTV_PROFILE_saveCookieData(details, oauth) {
-    if (COOKIE_ACCEPT && (details || oauth)) {
+function TTV_PROFILE_saveCookieData(details, id_token) {
+    if (COOKIE_ACCEPT && (details || id_token)) {
         setCookie("TTV_PROFILE", JSON.stringify({
-            Details: {
-                picture: details["picture"],
-                preferred_username: details["preferred_username"],
-                sub: details["sub"]
-            },
-            OAUTH: oauth
+            Details: details,
+            id_token: id_token
         }));
     }
 }
@@ -48,17 +47,25 @@ function TTV_PROFILE_getCookieData() {
 function TTV_PROFILE_removeCookieData() {
     removeCookie("TTV_PROFILE");
 }
-function PROFILE_IMAGES(id) {
-    let colors = ["blue", "green", "orange", "purple", "red", "yellow"];
 
-    if (isNaN(id)) {
-        return ROOT + "images/no_image_found.png";
-    } else if (typeof (id) == "string") {
-        try {
-            id = parseInt(id);
-            return ROOT + "images/Profiles/" + colors[id > colors.length - 1 ? id % (colors.length - 1) : id] + ".png";
-        } catch{
-            return ROOT + "images/no_image_found.png";
+//Login
+async function TTV_LOGIN_FETCH_USERINFO(id_token) {
+    return fetch("/api/TwitchAPI/auth", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json", "Authorization": "Bearer " + id_token
         }
-    }
+    })
+        .then(data => data.json())
+        .then(json => {
+            if (json.err) {
+                if (typeof json.err === "string") {
+                    return Promise.reject(new Error(json.err));
+                } else {
+                    return Promise.reject(json.err);
+                }
+            } else {
+                return Promise.resolve(json);
+            }
+        });
 }

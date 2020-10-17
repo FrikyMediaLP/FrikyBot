@@ -1,0 +1,107 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>FrikyBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- GENERAL CSS -->
+    <link href="styles/standard.css" rel="stylesheet">
+    <link href="styles/Grid/Grid_Foundation.css" rel="stylesheet">
+
+    <!-- PAGE CSS-->
+    <link href="styles/Grid/Grid_Default.css" rel="stylesheet">
+    <link href="styles/login.css" rel="stylesheet">
+
+    <!-- GENERAL JS-->
+    <script src="scripts/standard.js"></script>
+
+    <!-- PAGE JS-->
+    <script src="scripts/login.js"></script>
+
+    <!-- MISC -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+
+    <script src="misc/NavigationV2/NavigationV2.js"></script>
+    <link href="misc/NavigationV2/NavigationV2.css" rel="stylesheet">
+
+    <script src="misc/OUTPUT/OUTPUT.js"></script>
+    <link href="misc/OUTPUT/OUTPUT.css" rel="stylesheet">
+
+    <script src="misc/BOT_STATUS/BOT_STATUS.js"></script>
+    <link href="misc/BOT_STATUS/BOT_STATUS.css" rel="stylesheet">
+
+    <script src="misc/HoverProfile/HoverProfile.js"></script>
+    <link href="misc/HoverProfile/HoverProfile.css" rel="stylesheet">
+
+    <script src="misc/SwitchButton/SwitchButton.js"></script>
+    <link href="misc/SwitchButton/SwitchButton.css" rel="stylesheet">
+</head>
+<body onload="Standard_Page_Init(); init();">
+    <!-- MAIN GRID -->
+    <div id="grid">
+        <!-- NAVI HEADER -->
+        <div class="cellM" id="naviHeader">
+            <a href="./">FRIKY<span>BOT</span></a>
+        </div>
+
+        <!-- CONTENT HEADER -->
+        <div class="cellM" id="contentHeader">
+
+        </div>
+
+        <!-- NAVI -->
+        <div class="cellM" id="navi">
+            <div id="BOT_STATUS_DETAILS_MINI">
+
+            </div>
+            <div id="mainNavi">
+                
+            </div>
+            <div id="license"> - <a href="https://fontawesome.com/license" target="_blank">Icon license</a> - </div>
+        </div>
+
+        <!-- ACTUAL CONTENT -->
+        <div class="cellM" id="content" onscroll="NAVIGATIONV2_SCROLL_HL_CHECK()">
+            <h1>FrikyBot Login!</h1>
+            <p><b style="color: red;">NOTE:</b> Using your Twitch Account the Bot can check who you are! We only request a "WHO ARE YOU"-Token (so called ID-Token), the bot <b>cant</b> use it to access your account, it can only Authenticate/Authorize you for this Website. It <b>does not</b> store your Token received from Twitch! More about how the Bot uses/stores your User Information, check the <a href="Data-and-Cookies">Data and Cookies</a> Page!</p>
+
+            <div id="OUTPUT">
+
+            </div>
+
+            <div class="TTV_LOGIN TTV_LOGIN_FALSE">
+                <div class="TTV_LOGIN_DATA">
+                    <center class="TTV_LOGIN_DATA_USERNAME">Logged in as: <b>UNKNWON</b></center>
+
+                    <div class="TTV_LOGIN_DATA_SPLITTER">
+                        <div class="TTV_LOGIN_DATA_LEFT">
+                            <center class="TTV_LOGIN_DATA_ID">
+                                <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
+                                <p class="TTV_LOGIN_DATA_BOTTOM">User ID</p>
+                            </center>
+                            <center class="TTV_LOGIN_DATA_IAT">
+                                <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
+                                <p class="TTV_LOGIN_DATA_BOTTOM">ISSUED AT</p>
+                            </center>
+                            <center class="TTV_LOGIN_DATA_EXP">
+                                <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
+                                <p class="TTV_LOGIN_DATA_BOTTOM">EXPIRES AT</p>
+                            </center>
+                        </div>
+                        <div class="TTV_LOGIN_DATA_RIGHT">
+                            <img src="images/no_image_found_alpha.png"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="TTV_LOGIN_BUTTON">
+                    <a href="">
+                        <center><span>LOG IN USING TWITCH</span><img src="images/icons/twitch.svg" data-type="svg"/></center>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
