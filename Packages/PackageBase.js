@@ -13,7 +13,7 @@ const PACKAGE_SETTINGS = {
 };
 
 class PackageBase {
-    constructor(packagename = "", description = "", expressapp, twitchirc, twitchapi, datacollection, startparameters = {}, logger) {
+    constructor(packagename = "", description = "", webappinteractor, twitchirc, twitchapi, datacollection, startparameters = {}, logger) {
         //PACKAGE UTILITY
         this.Package_Status = {
             Status: "Operational",
@@ -47,7 +47,7 @@ class PackageBase {
         this.Requested_Package_Interconnects = {};
         this.Allowed_Package_Interconnects = {};
 
-        this.ExpressApp = expressapp;
+        this.WebAppInteractor = webappinteractor;
         this.TwitchIRC = twitchirc;
         this.TwitchAPI = twitchapi;
         this.Datacollection = datacollection;
@@ -274,9 +274,9 @@ class PackageBase {
     //Express Routing
     useDefaultFileRouter() {
         this.USE_HTML_HOSTING = true;
-        if (!this.ExpressApp) throw new Error("ExpressApp-Reference is not set!");
-
-        this.ExpressApp.use("/" + this.getHTMLROOT(),
+        if (!this.WebAppInteractor) throw new Error("WebApp-Reference is not set!");
+        
+        this.WebAppInteractor.addFileRoute("/" + this.getHTMLROOT(),
             (req, res, next) => { if (this.isEnabled()) next(); else res.sendFile(path.resolve("DATA/PAGES/PackageDisabled.html")); },
             (req, res, next) => {
                 let page = this.HTMLFileExists(req.url);
@@ -291,22 +291,22 @@ class PackageBase {
     }
     setFileRouter(router) {
         this.USE_HTML_HOSTING = true;
-        if (!this.ExpressApp) throw new Error("ExpressApp-Reference is not set!");
+        if (!this.WebAppInteractor) throw new Error("WebApp-Reference is not set!");
         
-        this.ExpressApp.use("/" + this.getHTMLROOT(),
+        this.WebAppInteractor.addFileRoute("/" + this.getHTMLROOT(),
             (req, res, next) => { if (this.isEnabled()) next(); else res.sendFile(path.resolve("DATA/PAGES/PackageDisabled.html")); },
             router);
     }
     setAPIRouter(router) {
         this.USE_API_HOSTING = true;
-        if (!this.ExpressApp) throw new Error("ExpressApp-Reference is not set!");
+        if (!this.WebAppInteractor) throw new Error("WebApp-Reference is not set!");
 
-        this.ExpressApp.use("/" + this.getAPIROOT() + "/api",
+        this.WebAppInteractor.addAPIRoute("/" + this.getAPIROOT(),
             (req, res, next) => {
                 if (this.isEnabled())
                     next(); 
                 else 
-                    res.sendFile(path.resolve("DATA/PAGES/PackageDisabled.html")); },
+                    res.status(401).json({ err: 'Package Disabled!' }); },
             router, (req, res, next) => {
                 res.status(404).json({
                     status: CONSTANTS.STATUS_FAILED,
@@ -389,7 +389,7 @@ class PackageBase {
     HTMLFileExists(URL_PATH) {
         //Cut extra / at the end
         if (URL_PATH.charAt(URL_PATH.length - 1) == "/") URL_PATH = URL_PATH.substring(0, URL_PATH.length - 1);
-        let pathRes = path.resolve(CONSTANTS.PACKAGES_INSTALL_ROOT + this.PackageName + "/html" + URL_PATH);
+        let pathRes = path.resolve(CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + this.PackageName + "/html" + URL_PATH);
         
         //ALREADY EXISTS
         if (URL_PATH != "" && fs.existsSync(pathRes) && fs.statSync(pathRes).isFile())

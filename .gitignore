@@ -265,3 +265,5 @@ __pycache__/
 TOKENS/
 Logs/
 config.json
+*.db
+config.json

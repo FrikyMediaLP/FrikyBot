@@ -1,3 +1,10 @@
+
+/* 
+    ------------------
+        SWITCH BUTTON
+    ------------------
+*/
+
 .SWITCH_BUTTON{
     background-color: white;
     border-radius: 5px;
@@ -115,5 +122,275 @@
         position: absolute;
         top: 0;
         left: 28px;
+    }
+}
+
+/* 
+    -----------------------
+        Trash Button
+    -----------------------
+*/
+
+.MISC_TRASH_BUTTON {
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+}
+
+    .MISC_TRASH_BUTTON img {
+        height: 100%;
+        filter: invert(37%) sepia(71%) saturate(3543%) hue-rotate(338deg) brightness(101%) contrast(104%);
+    }
+
+    .MISC_TRASH_BUTTON:hover img {
+        filter: invert(45%) sepia(25%) saturate(6262%) hue-rotate(332deg) brightness(110%) contrast(115%);
+    }
+
+/* 
+    -----------------------
+        Edit Button
+    -----------------------
+*/
+
+.MISC_EDIT_BUTTON {
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+}
+
+    .MISC_EDIT_BUTTON img {
+        height: 100%;
+        filter: invert(58%) sepia(87%) saturate(408%) hue-rotate(135deg) brightness(93%) contrast(93%);
+    }
+
+    .MISC_EDIT_BUTTON:hover img {
+        filter: invert(72%) sepia(22%) saturate(1514%) hue-rotate(143deg) brightness(107%) contrast(101%);
+    }
+    
+/* 
+    -----------------------
+        Save Button
+    -----------------------
+*/
+
+.MISC_SAVE_BUTTON {
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+}
+
+    .MISC_SAVE_BUTTON img {
+        height: 100%;
+        filter: invert(58%) sepia(49%) saturate(1967%) hue-rotate(79deg) brightness(98%) contrast(91%);
+    }
+
+    .MISC_SAVE_BUTTON:hover img {
+        filter: invert(71%) sepia(100%) saturate(914%) hue-rotate(64deg) brightness(110%) contrast(116%);
+    }
+
+/* 
+    -----------------------
+        LOADING RING
+    -----------------------
+*/
+.LOADING_RING {
+    width: 100%;
+    padding-top: 100%;
+    position: relative;
+    border-radius: 10%;
+}
+
+    .LOADING_RING .LOADING_RING_SPINNER {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        width: calc(100% - 4px);
+        height: calc(100% - 4px);
+        border: 2px solid rgba(255,255,255,0.2);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: LOADING_RING_SPIN 1s infinite;
+    }
+
+@keyframes LOADING_RING_SPIN {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* 
+    -----------------------
+        LOADING CHECKMARK
+    -----------------------
+*/
+
+.CHECKMARK {
+    width: 21px;
+    height: 21px;
+    border: 1px solid black;
+    background-color: #212121;
+    border-radius: 10%;
+}
+
+    .CHECKMARK .CHECKMARK_SPINNER {
+        margin: 20% auto;
+        width: 40%;
+        height: 40%;
+        border: 2px solid rgba(255,255,255,0.2);
+        border-radius: 50%;
+        border-top-color: white;
+    }
+
+    .CHECKMARK.WAITING .CHECKMARK_SPINNER {
+        display: block;
+        animation: CHECKMARK_SPIN 1s infinite;
+    }
+
+    .CHECKMARK:not(.WAITING) .CHECKMARK_SPINNER {
+        display: none;
+    }
+
+
+    .CHECKMARK .CHECKMARK_X {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+
+        .CHECKMARK .CHECKMARK_X div {
+            position: absolute;
+            top: 8px;
+            right: 50%;
+            height: 5px;
+            width: 0;
+            background-color: red;
+            border-bottom-left-radius: 2px;
+            border-bottom-right-radius: 2px;
+            border-top-left-radius: 2px;
+            border-top-right-radius: 2px;
+        }
+
+        .CHECKMARK .CHECKMARK_X .left {
+            transform: rotate(-45deg);
+        }
+
+        .CHECKMARK .CHECKMARK_X .right {
+            transform: rotate(45deg);
+        }
+
+    .CHECKMARK.FAILED {
+        animation: CHECKMARK_X_backg 1s;
+        animation-fill-mode: forwards;
+    }
+
+        .CHECKMARK.FAILED .CHECKMARK_X {
+            display: block;
+        }
+
+            .CHECKMARK.FAILED .CHECKMARK_X div {
+                animation: CHECKMARK_X 1s;
+                animation-fill-mode: forwards;
+            }
+
+    .CHECKMARK:not(.FAILED) .CHECKMARK_X {
+        display: none;
+    }
+
+    .CHECKMARK .CHECKMARK_CHECK {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+
+        .CHECKMARK .CHECKMARK_CHECK div {
+            position: absolute;
+            height: 5px;
+            background-color: lime;
+            border-bottom-left-radius: 2px;
+            border-bottom-right-radius: 2px;
+        }
+
+        .CHECKMARK .CHECKMARK_CHECK .short {
+            transform: rotate(35deg);
+            border-top-left-radius: 2px;
+            width: 0%;
+            top: 11px;
+            right: 11px;
+        }
+
+        .CHECKMARK .CHECKMARK_CHECK .long {
+            width: 0%;
+            border-top-right-radius: 2px;
+            transform: rotate(-65deg);
+            top: 10px;
+            right: 10px;
+        }
+
+    .CHECKMARK.SUCCESS {
+        animation: CHECKMARK_CHECK_backg 1s;
+        animation-fill-mode: forwards;
+    }
+
+        .CHECKMARK.SUCCESS .CHECKMARK_CHECK {
+            display: block;
+        }
+
+            .CHECKMARK.SUCCESS .CHECKMARK_CHECK .short {
+                animation: CHECKMARK_CHECK_S 0.5s;
+                animation-fill-mode: forwards;
+            }
+
+            .CHECKMARK.SUCCESS .CHECKMARK_CHECK .long {
+                animation: CHECKMARK_CHECK_L 0.5s;
+                animation-fill-mode: forwards;
+            }
+
+    .CHECKMARK:not(.SUCCESS) .CHECKMARK_CHECK {
+        display: none;
+    }
+
+@keyframes CHECKMARK_SPIN {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes CHECKMARK_X {
+    100% {
+        width: 100%;
+        top: 8px;
+        right: 0px;
+    }
+}
+
+@keyframes CHECKMARK_X_backg {
+    100% {
+        border-color: red;
+        background-color: darkred;
+    }
+}
+
+@keyframes CHECKMARK_CHECK_S {
+    100% {
+        width: 35%;
+        top: 11px;
+        right: 11px;
+    }
+}
+
+@keyframes CHECKMARK_CHECK_L {
+    100% {
+        width: 80%;
+        top: 8px;
+        right: 0;
+    }
+}
+
+@keyframes CHECKMARK_CHECK_backg {
+    100% {
+        border-color: lime;
+        background-color: darkgreen;
     }
 }

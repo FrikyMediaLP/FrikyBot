@@ -74,6 +74,7 @@ class Docs extends require('./../PackageBase.js').PackageBase {
         let StaticRouter = express.Router();
         StaticRouter.use("/", (req, res, next) => {
             let page = this.HTMLFileExists(req.url);
+
             //Check if File/Dir is Present
             if (page != "") {
                 res.sendFile(page);

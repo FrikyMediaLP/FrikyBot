@@ -29,7 +29,7 @@ let NEWS_FEED_SETTINGS = {
     folder: "News/",
     publicFolder: "../",
     DEFAULT_LINK_TARGET: "_blank",
-    ROOT_URL: "/News/api/"
+    ROOT_URL: "/api/News/"
 };
 
 function NEWS_FEED_Settings(settings) {

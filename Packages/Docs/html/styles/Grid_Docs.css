@@ -50,7 +50,6 @@
 #grid #navi {
     background-color: #2b353b;
 }
-
     #grid #navi button {
         height: 50px;
         width: 200px;
@@ -59,12 +58,12 @@
         left: 15px;
         background-color: lightgray;
         cursor: pointer;
+        outline: none;
     }
 
-    #grid #navi button:hover {
-        border: 1px solid orange;
-    }
-
+        #grid #navi button:hover {
+            border: 1px solid orange;
+        }
 /* 
     ////////////////////////////////////
           MAIN GRID CONTENTHEADER

@@ -570,25 +570,9 @@ function changeDocsURLHeader() {
 function changeTitle() {
     document.title = (getModuleName() ? getModuleName() : "Documentation") + " - FrikyDocs";
 }
-function toggleLightMode(dark) {
-    if (dark === true && !document.getElementsByTagName('body')[0].classList.contains('darkmode')) {
-        document.getElementsByTagName('body')[0].classList.toggle('darkmode');
-        document.getElementById('LightModeButton').innerHTML = document.getElementsByTagName('body')[0].classList.contains('darkmode') ? 'LightMode' : 'DarkMode'
-    } else if (dark === false && document.getElementsByTagName('body')[0].classList.contains('darkmode')) {
-        document.getElementsByTagName('body')[0].classList.toggle('darkmode');
-        document.getElementById('LightModeButton').innerHTML = document.getElementsByTagName('body')[0].classList.contains('darkmode') ? 'LightMode' : 'DarkMode'
-    } else {
-        document.getElementsByTagName('body')[0].classList.toggle('darkmode');
-        document.getElementById('LightModeButton').innerHTML = document.getElementsByTagName('body')[0].classList.contains('darkmode') ? 'LightMode' : 'DarkMode'
-    }
-
-    if (COOKIE_ACCEPT === true) {
-        setCookie("darkmode", document.getElementsByTagName('body')[0].classList.contains('darkmode'));
-    }
-}
 
 async function fetchNav() {
-    return fetch('/Docs/api/Navigation')
+    return fetch('/api/Docs/Navigation')
         .then(data => data.json())
         .then(async json => {
             if (json.err) {
@@ -604,15 +588,13 @@ async function fetchNav() {
         .catch(async err => Promise.reject(err));
 }
 async function fetchDocsData() {
-    return fetch('/Docs/api/Data/' + getModuleName() + (getClassName() ? "/" + getClassName() : ""))
+    return fetch('/api/Docs/Data/' + getModuleName() + (getClassName() ? "/" + getClassName() : ""))
         .then(data => data.json())
         .then(async json => {
             if (json.err) {
                 return Promise.reject(new Error(json.err));
             }
-
-            console.log(json.data);
-
+            
             if (json.data != undefined) {
                 return Promise.resolve(json.data);
             }

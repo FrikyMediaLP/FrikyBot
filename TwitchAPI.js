@@ -1,10 +1,14 @@
 const CONSTANTS = require('./Util/CONSTANTS.js');
 const express = require('express');
 const FETCH = require('node-fetch');
+
 const fs = require('fs');
 const path = require('path');
+
 const jwt = require('jsonwebtoken');
 const jwksClient = require('jwks-rsa');
+
+const Datastore = require('nedb');
 
 const TTV_API_CLAIMS = {
     email:              "Email address of the authorizing user",
@@ -13,7 +17,6 @@ const TTV_API_CLAIMS = {
     preferred_username: "Display name of the authorizing user",
     updated_at:         "Date of the last update to the authorizing user’s profile"
 };
-
 const TTV_API_SCOPES = {
     "analytics:read:extensions": "View analytics data for your extensions",
     "analytics:read:games": "View analytics data for your game",
@@ -30,7 +33,6 @@ const TTV_API_SCOPES = {
     "user:read:broadcast": "View your broadcasting configuration, including extension configurations.",
     "user:read:email": "Read an authorized user’s email address."
 };
-
 const CONFIG_TEMPLATE = {
     "Bot_User_ID":          "string/integer",
     "Client_ID":            "string",
@@ -45,7 +47,7 @@ const CONFIG_TEMPLATE = {
 const TTV_JWK_URL = "https://id.twitch.tv/oauth2/keys";
 
 class TwitchAPI {
-    constructor(settings = {}, expressApp, twitchChat, logger) {
+    constructor(settings = {}, webappinteractor, twitchChat, logger) {
         //INIT
         this.Settings = {
             Bot_User: "",
@@ -55,7 +57,7 @@ class TwitchAPI {
             Client_Redirect_Uri: "",
             Client_Secret: "",
             Scopes: [],
-            Claims: {  },
+            Claims: { "picture": null, "preferred_username": null },
             Tokens_Dir: "Tokens/"
         };
 
@@ -73,16 +75,20 @@ class TwitchAPI {
             }
         }
 
-        this.expressApp = expressApp;
+        this.WebAppInteractor = webappinteractor;
         this.twitchChat = twitchChat;
 
         //LOGGER
-        logger.addSources({
-            TwitchAPI: {
-                display: () => " TwitchAPI ".inverse.magenta
-            }
-        });
-        this.setLogger(logger.TwitchAPI);
+        if (logger.identify && logger.identify() === "FrikyBotLogger") {
+            logger.addSources({
+                TwitchAPI: {
+                    display: () => " TwitchAPI ".inverse.magenta
+                }
+            });
+            this.setLogger(logger.TwitchAPI);
+        } else {
+            this.setLogger(logger);
+        }
 
         //API Stuff
         this.RateLimits = null;
@@ -90,10 +96,10 @@ class TwitchAPI {
         this.AppAccessToken = null;
         this.UserAccessToken = null;
         
-        if (this.expressApp) {
+        if (this.WebAppInteractor) {
             //API Routung
-            let router = express.Router();
-            router.get('/Scopes', async (request, response) => {
+            let api_router = express.Router();
+            api_router.get('/Scopes', async (request, response) => {
                 //AUTHENTICATION
                 if (true) {
                     //SUCCESS
@@ -102,8 +108,7 @@ class TwitchAPI {
                         req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
                         data: {                             //Data
                             scopes: this.Settings.Scopes,
-                            claims: this.Settings.Claims,
-                            v5: this.Settings.v5
+                            claims: this.Settings.Claims
                         }
                     });
                 } else {
@@ -115,7 +120,7 @@ class TwitchAPI {
                     });
                 }
             });
-            router.get('/GetClientID', async (request, response) => {
+            api_router.get('/GetClientID', async (request, response) => {
                 response.json({
                     status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
                     req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
@@ -124,29 +129,12 @@ class TwitchAPI {
                     }
                 });
             });
-            router.post('/BotUserTTVLogInPage', async (request, response) => {
-                //AUTHENTICATION
-                if (true) {
-                    //SET SCOPES
-                    let claims = this.getClaims();
-                    let scopes = this.CombineScopes();
-
-                    response.send(this.generateUserAccessLinkCode(scopes, claims));
-                } else {
-                    //FAILED
-                    response.json({
-                        status: CONSTANTS.STATUS_FAILED,   //Sending Failed confimation
-                        req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                        err: "Authentication Failed"        //error Message
-                    });
-                }
-            });
-            router.get('/WebUserTTVLoginPage', async (request, response) => {
+            api_router.get('/WebUserTTVLoginPage', async (request, response) => {
                 response.json({
                     data: this.generateUserAccessLinkToken({id_token: { preferred_username: null, picture: null }})
                 });
             });
-            router.post('/auth', async (req, res) => {
+            api_router.post('/auth', async (req, res) => {
                 const header = req.headers['authorization'];
                 const token = header && header.split(" ")[1];
 
@@ -159,7 +147,100 @@ class TwitchAPI {
                     return res.json({ err: err.message });
                 }
             });
-            this.expressApp.use('/api/TwitchAPI', router);
+            api_router.post('/BotUserTTVLogInPage', (req, res, next) => this.AUTHENTICATION(req, res, next), async (req, res) => {
+                let claims = req.body['claims'] ? req.body['claims'] : this.getClaims();
+                let scopes = req.body['scopes'] ? req.body['scopes'] : this.getScopes();
+
+                res.send({
+                    data: this.generateUserAccessLinkCode(scopes, claims)
+                });
+            });
+
+            //Tokens
+            api_router.route('/token')
+                .get(async (req, res) => {
+                    if (!req.query['type'])  return res.status(400).json({ err: 'Bad Request' });
+                    if (typeof req.query['type'] === 'string') req.query['type'] = [ req.query['type'] ]; 
+                    
+                    let data = [];
+
+                    for (let type of req.query['type']) {
+                        let tkn_data = {
+                            type: type,
+                            state: 'unavailable',
+                            data: null
+                        };
+                        
+                        if (type === 'app') {
+                            try {
+                                if (this.AppAccessToken) {
+                                    tkn_data.state = 'available';
+                                    tkn_data.data = this.getAppTokenStatus();
+                                }
+                            } catch (err) {
+
+                            }
+                        }
+                        else if (type === 'user') {
+                            try {
+                                if (this.UserAccessToken) {
+                                    tkn_data.state = 'available';
+                                    tkn_data.data = await this.getUserTokenStatus();
+                                }
+                            } catch (err) {
+
+                            }
+                        }
+                        else {
+                            return res.json({ err: 'invalid Type ' + type });
+                        }
+
+                        data.push(tkn_data);
+                    }
+                    
+                    return res.json({ data: data });
+                })
+                .delete(async (req, res) => {
+                    if (!req.query['type']) return res.status(400).json({ err: 'Bad Request' });
+                    if (typeof req.query['type'] === 'string') req.query['type'] = [req.query['type']]; 
+
+                    let data = [];
+
+                    for (let type of req.query['type']) {
+                        let tkn_data = {
+                            type: type,
+                            state: 'failed'
+                        };
+
+                        if (type === 'app') {
+                            //App
+                            try {
+                                await this.removeAppAccessToken();
+                                data.app.state = this.AppAccessToken ? 'failed' : 'deleted';
+                            } catch (err) {
+
+                            }
+                        }
+                        else if (type === 'user') {
+                            //User
+                            try {
+                                await this.removeUserAccessToken();
+                                data.user.state = this.UserAccessToken ? 'failed' : 'deleted';
+                            } catch (err) {
+
+                            }
+                        }
+                        else {
+                            return res.json({ err: 'invalid Type ' + type });
+                        }
+
+                        data.push(tkn_data);
+                    }
+
+                    return res.json({ data: data });
+                });
+            
+            this.WebAppInteractor.addAPIRoute('/TwitchAPI', api_router);
         }
     }
 
@@ -168,6 +249,7 @@ class TwitchAPI {
     //////////////////////////////////////////////////////////////////////
 
     async Init() {
+        //File Structure Check
         if (!fs.existsSync(this.Settings.Tokens_Dir)) {
             try {
                 fs.mkdirSync(path.resolve(this.Settings.Tokens_Dir));
@@ -192,6 +274,8 @@ class TwitchAPI {
             }
         }
 
+        //Checking Tokens
+        this.Logger.warn("Checking Access Tokens...");
         try {
             await this.updateAppAccessToken();
             this.Logger.info("App Access Token found!".green);
@@ -212,6 +296,22 @@ class TwitchAPI {
     //////////////////////////////////////////////////////////////////////
     //                  TWTICH AUTHORIZATION
     //////////////////////////////////////////////////////////////////////
+
+    //MIDDLEWARE
+    async AUTHENTICATION(req, res, next) {
+        const header = req.headers['authorization'];
+        const token = header && header.split(" ")[1];
+        
+        try {
+            let user = await this.VerifyTTVJWT(token);
+            console.log("TTV API: Authenticated User: (" + user.sub + ") " + user.preferred_username);
+            next();
+            return;
+        } catch (err) {
+            console.log(err);
+            return res.status("401").send("Unauthorized");
+        }
+    }
 
     /// APP ACCESS
     async getAppAccessToken() {
@@ -286,6 +386,7 @@ class TwitchAPI {
         try {
             //GET NEW
             let newToken = await this.getAppAccessToken();
+            this.Logger.warn("Requested a new App Access Token!");
 
             //SAVE NEW
             if (newToken && newToken.access_token) {
@@ -294,6 +395,26 @@ class TwitchAPI {
                 this.AppAccessToken = newToken;
                 return Promise.resolve(newToken);
             }
+        } catch (err) {
+            return Promise.reject(err);
+        }
+    }
+    async removeAppAccessToken() {
+        try {
+            //REVOKE
+            let tkn = this.AppAccessToken.access_token;
+            let resp = await this.revoke(tkn);
+            this.Logger.warn("Revoked App Access Token:" + resp);
+
+            if (resp != "200 OK") 
+                return Promise.reject(new Error('Revoking failed!'));
+
+            this.AppAccessToken = null;
+
+            //Delete OLD
+            this.Logger.warn("Deleting Old App Access Token!");
+            fs.unlinkSync(this.Settings.Tokens_Dir + "AppAccess/" + tkn + ".json");
+            return Promise.resolve();
         } catch (err) {
             return Promise.reject(err);
         }
@@ -373,24 +494,41 @@ class TwitchAPI {
                 //GET NEW
                 let newToken = await this.getUserAccessToken(code);
 
-                //SAVE NEW
-                if (newToken && newToken.access_token) {
-                    let userData = await this.OIDCUserInfoEndpoint(newToken.access_token);
-                    
-                    if (userData.sub != this.Settings.Bot_User_ID) {
-                        reject(new Error("This User is not Authorized to log in as the Bot User!"));
-                        return;
-                    }
-
-                    console.log("[" + "INFO".green + "] " + userData.preferred_username + " just logged in as Bot API User!");
-
-                    this.setExtraTokenDetails(newToken);
-                    this.saveToken(newToken, "UserAccess");
-                    this.UserAccessToken = newToken;
-                    resolve(newToken);
-                } else {
-                    reject(newToken);
+                if (!newToken || !newToken.access_token || !newToken.id_token) {
+                    reject(new Error("Token was not created properly!"));
+                    return;
                 }
+
+                //Verify User - OAUTH
+                let oauthUser = await this.OIDCUserInfoEndpoint(newToken.access_token);
+
+                if (oauthUser.sub != this.Settings.Bot_User_ID) {
+                    reject(new Error("This User is not Authorized to log in as the Bot User! ID: " + oauthUser.sub + "  Name: " + oauthUser.preferred_username));
+                    return;
+                }
+                
+                //Verify User - ID Token
+                let idUser = await this.VerifyTTVJWT(newToken.id_token);
+
+                if (idUser.sub != this.Settings.Bot_User_ID) {
+                    reject(new Error("This User is not Authorized to log in as the Bot User! ID: " + idUser.sub + "  Name: " + idUser.preferred_username));
+                    return;
+                }
+
+                //Sanity Check
+                if (idUser.sub !== oauthUser.sub && idUser.preferred_username !== oauthUser.preferred_username) {
+                    reject(new Error("User Data does not match! ID: " + idUser.sub + " / " + oauthUser.sub + "  Name: " + idUser.preferred_username + " / " + oauthUser.preferred_username));
+                    return;
+                }
+
+                //SAVE NEW
+                this.Logger.warn(idUser.preferred_username + " just logged in as Bot API User!");
+
+                this.setExtraTokenDetails(newToken);
+                this.saveToken(newToken, "UserAccess");
+                this.UserAccessToken = newToken;
+
+                resolve(newToken);
             } catch (err) {
                 console.log(err);
                 reject(err);
@@ -435,6 +573,7 @@ class TwitchAPI {
                     this.saveToken(resp, "UserAccess");
                     this.UserAccessToken = resp;
 
+                    //Delete Old Token
                     this.Logger.warn("Deleting Old User Access Token!");
                     fs.unlinkSync(this.Settings.Tokens_Dir + "UserAccess/" + token.access_token + ".json");
                     return Promise.resolve(this.UserAccessToken);
@@ -447,6 +586,17 @@ class TwitchAPI {
         //ASK FOR NEW LOGIN
         if (!this.UserAccessToken)
             return Promise.reject(new Error("Pls log in again"));
+    }
+    async removeUserAccessToken() {
+        try {
+            //Delete Old Token
+            this.Logger.warn("Deleting Old User Access Token!");
+            fs.unlinkSync(this.Settings.Tokens_Dir + "UserAccess/" + this.UserAccessToken.access_token + ".json");
+            this.UserAccessToken = null;
+            return Promise.resolve();
+        } catch (err) {
+            return Promise.reject(err);
+        }
     }
     
     async revoke(token) {
@@ -494,8 +644,6 @@ class TwitchAPI {
         });
     }
     async CheckAccessToken(token) {
-        this.Logger.warn("Checking Access Token...");
-
         //No Scopes/No Params -> using Stream Endpoint
         try {
             let resp = await this.request("https://api.twitch.tv/helix/streams?first=1", {
@@ -532,7 +680,7 @@ class TwitchAPI {
         });
     }
 
-
+    //General Tokens
     setExtraTokenDetails(token) {
         //Add created_at
         let date = new Date();
@@ -577,18 +725,51 @@ class TwitchAPI {
 
         return { userinfo: output };
     }
-    CombineScopes() {
+    getScopes() {
         let output = [];
 
-        for (let scope of this.Settings.Scopes) {
-            output.push(scope);
-        }
-
-        for (let scope of this.Settings.v5) {
-            output.push(scope);
+        if (this.UserAccessToken) {
+            output = this.UserAccessToken.scope.filter(scope => scope !== "openid");
+        } else {
+            for (let scope of this.Settings.Scopes) {
+                output.push(scope);
+            }
         }
 
         return output;
+    }
+    async getUserTokenStatus() {
+        if (!this.UserAccessToken)
+            return Promise.resolve({});
+
+        let user;
+
+        try {
+            user = await this.OIDCUserInfoEndpoint(this.UserAccessToken.access_token);
+        } catch (err) {
+            return Promise.reject(err);
+        }
+        
+        if (!user)
+            return Promise.resolve({});
+
+        return {
+            sub: user.sub,
+            preferred_username: user.preferred_username,
+            picture: user.picture,
+            iat: Math.floor(new Date(this.UserAccessToken.created_at).getTime() / 1000),
+            exp: Math.floor(new Date(this.UserAccessToken.expires_at).getTime() / 1000),
+            scopes: this.getScopes()
+        };
+    }
+    getAppTokenStatus() {
+        if (!this.AppAccessToken)
+            return Promise.resolve({});
+
+        return {
+            iat: Math.floor(new Date(this.AppAccessToken.created_at).getTime() / 1000),
+            exp: Math.floor(new Date(this.AppAccessToken.expires_at).getTime() / 1000),
+        };
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -605,7 +786,8 @@ class TwitchAPI {
         for (let param in Query_Parameters) {
             if (Array.isArray(Query_Parameters[param])) {
                 for (let value of Query_Parameters[param]) {
-                    querry += "&" + param + "=" + value;
+                    if (value !== undefined && value !== null)
+                        querry += "&" + param + "=" + value;
                 }
 
             } else {
@@ -920,6 +1102,272 @@ class TwitchAPI {
     }
 }
 
+class Authenticator {
+    constructor(config = {}, TwitchAPI, logger) {
+        this.Settings = {
+            show_auth_message: true,
+            UserDB_Dir: CONSTANTS.FILESTRUCTURE.DATA_STORAGE_ROOT + "Auth/",
+            UserDB: "User"
+        };
+
+        //Apply Config Settings
+        if (typeof config == "object" && config.length == undefined) {
+            for (let setting in config) {
+                //one time nesting
+                if (typeof config[setting] == "object" && config[setting].length == undefined) {
+                    for (let innerSetting in config[setting]) {
+                        this.Settings[setting][innerSetting] = config[setting][innerSetting];
+                    }
+                } else {
+                    this.Settings[setting] = config[setting];
+                }
+            }
+        }
+
+        //LOGGER
+        if (logger.identify && logger.identify() === "FrikyBotLogger") {
+            logger.addSources({
+                Authenticator: {
+                    display: () => " Authenticator ".inverse.cyan
+                }
+            });
+            this.setLogger(logger.Authenticator);
+        } else {
+            this.setLogger(logger);
+        }
+
+        //FileStructure Check
+        if (!fs.existsSync(path.resolve(this.Settings.UserDB_Dir))) {
+            fs.mkdirSync(path.resolve(this.Settings.UserDB_Dir));
+        }
+
+        //VARS
+        this.TwitchAPI = TwitchAPI;
+        this.UserDatabase = new Datastore({ filename: path.resolve(this.Settings.UserDB_Dir + this.Settings.UserDB + ".db"), autoload: true });
+    }
+    
+    async AuthenticateUser(headers = {}, method = {}) {
+        const header = headers['authorization'];
+        const token = header && header.split(" ")[1];
+        let user;
+        try {
+            user = await this.TwitchAPI.VerifyTTVJWT(token);
+        } catch (err) {
+            //Authentication failed
+            return Promise.reject(err);
+        }
+
+        //Check Method
+        for (let meth in method) {
+            try {
+                if (meth === 'user_id') {
+                    await this.Auth_UserID(user.sub, method[meth]);
+                } else if (meth === 'user_level') {
+                    await this.Auth_UserLevel(user.sub, method[meth]);
+                } else {
+                    return Promise.reject(new Error('Unknown Authorization Method!'));
+                }
+            } catch (err) {
+                return Promise.reject(err);
+            }
+        }
+        
+        if (this.Settings.show_auth_message === true)
+            this.Logger.warn("Authenticated User: (" + user.sub + ") " + user.preferred_username);
+        
+        return Promise.resolve(user);
+    }
+
+    async Auth_UserID(user_id, target_id) {
+        if (user_id === target_id) {
+            return Promise.resolve();
+        } else {
+            return Promise.reject(new Error('User ID doesnt match!'));
+        }
+    }
+    async Auth_UserLevel(user_id, target_level) {
+        if (!this.UserDatabase)
+            return Promise.reject(new Error("User Data Error."));
+        
+        this.UserDatabase.find({ user_id: user_id }, (err, docs) => {
+            if (err || !docs) return Promise.reject(new Error("User Database Error."));
+            if (docs.lenght == 0) return Promise.reject(new Error("User not found!"));
+            if (docs[0].userlevel !== target_level) return Promise.reject(new Error("Userlevel doesnt match"));
+            return Promise.resolve();
+        });
+    }
+
+    //User Auth Databse
+    async addUser(user_id, user_name, user_level, added_by_id, added_by) {
+        //Input Check
+        if (typeof user_level !== 'string') return Promise.reject(new Error('User Level not found'));
+
+        try {
+            let users = await this.fetchUserInfo([user_id, added_by_id], [user_name, added_by]);
+
+            for(let user of users) {
+                if (user.id == user_id || user.login == user_name || user.display_name == user_name) {
+                    user_id = user.id;
+                    user_name = user.login;
+                }
+
+                if (user.id == added_by_id || user.login == added_by || user.display_name == added_by) {
+                    added_by_id = user.id;
+                    added_by = user.login;
+                }
+            }
+        } catch (err) {
+            return Promise.reject(err);
+        }
+
+        if (!user_id || !user_name || !user_level || !added_by_id || !added_by) 
+            return Promise.reject(new Error("User Info not found"));
+
+        //Add User to Database
+        return new Promise((resolve, reject) => {
+            this.UserDatabase.insert({ user_id: user_id, user_name: user_name, user_level: user_level, added_by: added_by, added_by_id: added_by_id, added_at: Math.floor(Date.now() / 1000) }, (err, newDocs) => {
+                if (err) return reject(new Error("User Database Error"));
+                if (newDocs == 0) return reject(new Error("User couldnt be inserted"));
+
+                this.Logger.warn('Added ' + user_id + '(' + user_name + ') User Authorization as ' + user_level + ' by ' + added_by_id + '(' + added_by + ')');
+                
+                return resolve({
+                    added_at: newDocs.added_at,
+                    added_by: newDocs.added_by,
+                    user_id: newDocs.user_id,
+                    user_level: newDocs.user_level,
+                    user_name: newDocs.user_name
+                });
+            });
+        });
+    }
+    async removeUser(user_id, added_by_id, added_by) {
+        if (!user_id || !added_by_id || !added_by)
+            return Promise.reject(new Error("User Info not found"));
+
+        //Add User to Database
+        return new Promise((resolve, reject) => {
+            this.UserDatabase.remove({ user_id: user_id }, (err, numRemoved) => {
+                if (err) return reject(new Error("User Database Error"));
+                if (numRemoved == 0) return reject(new Error("User couldnt be removed"));
+
+                this.Logger.warn('Removed ' + user_id + ' User Authorization by ' + added_by_id + '(' + added_by + ')');
+
+                return resolve(numRemoved);
+            });
+        });
+    }
+    async updateUser(user_id, user_name, user_level, added_by_id, added_by) {
+        //Input Check
+        if (typeof user_level !== 'string') return Promise.reject(new Error('User Level not found'));
+
+        try {
+            let users = await this.fetchUserInfo([user_id, added_by_id], [user_name, added_by]);
+
+            for (let user of users) {
+                if (user.id == user_id || user.login == user_name || user.display_name == user_name) {
+                    user_id = user.id;
+                    user_name = user.login;
+                }
+
+                if (user.id == added_by_id || user.login == added_by || user.display_name == added_by) {
+                    added_by_id = user.id;
+                    added_by = user.login;
+                }
+            }
+        } catch (err) {
+            return Promise.reject(err);
+        }
+
+        if (!user_id || !user_name || !user_level || !added_by_id || !added_by)
+            return Promise.reject(new Error("User Info not found"));
+        
+        //Update User to Database
+        return new Promise((resolve, reject) => {
+            this.UserDatabase.update({ user_id: user_id }, { user_id: user_id, user_name: user_name, user_level: user_level, added_by: added_by, added_by_id: added_by_id, added_at: Math.floor(Date.now() / 1000) }, (err, numReplaced) => {
+                if (err) return reject(new Error("User Database Error"));
+                if (numReplaced == 0) return reject(new Error("User couldnt be updated"));
+
+                this.Logger.warn('Updated ' + user_id + '(' + user_name + ') User Authorization to ' + user_level + ' by ' + added_by_id + '(' + added_by + ')');
+
+                return resolve(numReplaced);
+            });
+        });
+    }
+    
+    async GetUsers(user_ids) {
+        return new Promise((resolve, reject) => {
+            let tofind = {};
+
+            if (user_ids) {
+                if (!(user_ids instanceof Array)) return reject(new Error("UserIDs Format Error."));
+
+                let uid_wrapped = [];
+
+                for (let user_id of user_ids) {
+                    uid_wrapped.push({ user_id: user_id });
+                }
+
+                tofind = { $or: uid_wrapped };
+            }
+
+            this.UserDatabase.find(tofind, (err, docs) => {
+                if (err || !docs) return reject(new Error("User Database Error."));
+                
+                let users = [];
+
+                for (let doc of docs) {
+                    users.push({
+                        user_id: doc.user_id,
+                        user_name: doc.user_name,
+                        user_level: doc.user_level,
+                        added_by: doc.added_by,
+                        added_at: doc.added_at
+                    });
+                }
+
+                return resolve(users);
+            });
+        });
+    }
+
+    //UTIL
+    async fetchUserInfo(ids = [], names = []) {
+        let query = {
+            id: ids,
+            login: names
+        };
+
+        if (query.id.length == 0) delete query.id;
+        if (query.login.length == 0) delete query.login;
+        if (!query.id && !query.login) return Promise.reject(new Error('User not supplied'));
+        
+        //Fetch Data
+        try {
+            let resp = await this.TwitchAPI.GetUsers(query);
+
+            if (resp && resp.data && resp.data.length > 0) {
+                return Promise.resolve(resp.data);
+            } else {
+                return Promise.reject(new Error('User not found'));
+            }
+        } catch (err) {
+            return Promise.reject(err);
+        }
+    }
+    setLogger(loggerObject) {
+        if (loggerObject && loggerObject.info && loggerObject.warn && loggerObject.error) {
+            this.Logger = loggerObject;
+        } else {
+            this.Logger = {
+                info: console.log,
+                warn: console.log,
+                error: console.log
+            };
+        }
+    }
+}
+
 function writeFile(path, data) {
     let fd;
 
@@ -955,6 +1403,7 @@ function readFile(path) {
 }
 
 module.exports.TwitchAPI = TwitchAPI;
+module.exports.Authenticator = Authenticator;
 module.exports.CONFIG_TEMPLATE = {
     "Bot_User": "",
     "Bot_User_ID": "",

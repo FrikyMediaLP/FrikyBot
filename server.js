@@ -5,11 +5,11 @@
  *                      NPM MODULES
  *  ----------------------------------------------------------
  */
-const express = require('express');
+
 const fs = require('fs');
 const path = require('path');
 const colors = require('colors');
-
+const express = require('express');
 
 console.log("\n");
 console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////");
@@ -29,6 +29,10 @@ let Logger;
 //CONSTANTS
 let CONSTANTS;
 
+//WebApp
+let WEBAPP = require('./WebApp.js');
+let WebApp;
+
 //TWITCH CHAT -> IRC
 let TWITCHIRC;
 let TwitchIRC;
@@ -41,9 +45,8 @@ let TwitchAPI;
 let DATACOLLECTION;
 let DataCollection;
 
-//Express
-const app = express();
-let server;
+//TEMP
+let app;
 
 //SERVER STATUS DATA
 let Server_Status = {
@@ -146,18 +149,7 @@ SETUP()
         /*----------------------------------------------------------
          *                   INIT VARIABLES
          *----------------------------------------------------------*/
-
-        //Authenticator
-        if (CONFIG.Authenticator) {
-            try {
-                AUTHENTICATOR = require('./Authenticator.js');
-            } catch (err) {
-                Logger.server.error("Authenticator Module failed to load!!");
-                Logger.server.error(err.message);
-                Logger.server.warn("Authenticaton will be unavailable, please check your install!");
-            }
-        }
-
+        
         //TwitchIRC 
         if (CONFIG.TwitchIRC) {
             try {
@@ -209,7 +201,7 @@ SETUP()
             return Promise.reject(err);
         }
 
-        if (server === undefined) {
+        if (WebApp === undefined) {
             Logger.server.error("Internal Error, WebServer wasnt started!");
             console.log("Press any key to exit.");
             process.stdin.on("data", data => {
@@ -266,9 +258,12 @@ async function checkBotFileStructure(go2create) {
 
     let FILESTRUCTURE = {};
 
+    //Constats
     for (let dir in CONSTANTS.FILESTRUCTURE) {
         FILESTRUCTURE[dir] = CONSTANTS.FILESTRUCTURE[dir];
     }
+
+    //Logger
     for (let dir in Logger.Settings.FileStructure) {
         FILESTRUCTURE["LOGS " + dir] = (dir !== "ROOT" ? Logger.Settings.FileStructure.ROOT : "") + Logger.Settings.FileStructure[dir];
     }
@@ -544,9 +539,13 @@ function combineConfigs(config_content, extern_config) {
 //INIT
 async function INIT() {
     Logger.server.info("INITATING BOT CORE ... ");
-
-    //WebApp Init
-    INIT_EXPRESS();
+    
+    //Init
+    try {
+        await INIT_WEBAPP();
+    } catch (err) {
+        Logger.express.error(err.message);
+    }
     
     //TwitchIRC
     try {
@@ -563,7 +562,7 @@ async function INIT() {
         Logger.TwitchAPI.error(err.message);
         Server_Status.errors.outage.TwitchAPI = err.message;
     }
-    
+
     //DataCollection
     INIT_DATACOLLECTION();
 
@@ -580,7 +579,7 @@ async function INIT_Packages() {
     for (let pack in INSTALLED_PACKAGES) {
         try {
             let packClass = INSTALLED_PACKAGES[pack].Class;
-            INSTALLED_PACKAGES[pack].Object = new packClass(app, TwitchIRC, TwitchAPI, DataCollection, CONFIG.Packages[pack], Logger);
+            INSTALLED_PACKAGES[pack].Object = new packClass(WebApp.GetInteractor(), TwitchIRC, TwitchAPI, DataCollection, CONFIG.Packages[pack], Logger);
 
             //Init ENABLED Packages
             if (INSTALLED_PACKAGES[pack].Object.isEnabled()) {
@@ -601,6 +600,83 @@ async function INIT_Packages() {
 }
 async function POST_INIT() {
     Logger.server.info("POST INIT BOT Packages ... ");
+
+    //WebApp Authenticator
+    if (CONFIG.TwitchAPI && TWITCHAPI && TwitchAPI) {
+        let auth = new TWITCHAPI.Authenticator({ show_auth_message: false }, TwitchAPI, Logger);
+        WebApp.setAuthenticator(auth);
+        let AuthenticatorAPIRoute = express.Router();
+
+        AuthenticatorAPIRoute.get('/user', async (req, res, next) => {
+            if (!res.locals.user || isNaN(res.locals.user.sub)) {
+                res.status(500).json({ err: 'Internal Error.' });
+                return Promise.resolve();
+            }
+            
+            let user_ids;
+
+            if (typeof (req.query.user_id) === 'string') {
+                user_ids = [ req.query.user_id ];
+            } else {
+                user_ids = req.query.user_id;
+            }
+
+            try {
+                let users = await auth.GetUsers(user_ids);
+                res.json({ data: users });
+            } catch (err) {
+                res.json({ err: 'getting users failed.' });
+            }
+            return Promise.resolve();
+        });
+        AuthenticatorAPIRoute.post('/user', async (req, res, next) => {
+            if (!res.locals.user || isNaN(res.locals.user.sub)) {
+                res.status(500).json({ err: 'Internal Error.' });
+                return Promise.resolve();
+            }
+
+            //Add User
+            try {
+                let new_user = await auth.addUser(req.body.user_id, req.body.user_name, req.body.user_level, res.locals.user.sub, res.locals.user.preferred_username);
+                res.json({ new_user: new_user });
+            } catch (err) {
+                res.json({ err: err.message });
+            }
+            return Promise.resolve();
+        });
+        AuthenticatorAPIRoute.delete('/user', async (req, res, next) => {
+            if (!res.locals.user || isNaN(res.locals.user.sub)) {
+                res.status(500).json({ err: 'Internal Error.' });
+                return Promise.resolve();
+            }
+
+            //Remove User
+            try {
+                let cnt = await auth.removeUser(req.body.user_id, res.locals.user.sub, res.locals.user.preferred_username);
+                res.json({ deleted: cnt });
+            } catch (err) {
+                res.json({ err: err.message });
+            }
+            return Promise.resolve();
+        });
+        AuthenticatorAPIRoute.put('/user', async (req, res, next) => {
+            if (!res.locals.user || isNaN(res.locals.user.sub)) {
+                res.status(500).json({ err: 'Internal Error.' });
+                return Promise.resolve();
+            }
+
+            try {
+                let cnt = await auth.updateUser(req.body.user_id, req.body.user_name, req.body.user_level, res.locals.user.sub, res.locals.user.preferred_username);
+                res.json({ upt_user: cnt });
+            } catch (err) {
+                console.log(err);
+                res.json({ err: 'user edit failed.' });
+            }
+            return Promise.resolve();
+        });
+
+        WebApp.GetInteractor().addAuthAPIRoute('/Authenticator', null, AuthenticatorAPIRoute);
+    }
 
     //PACKAGE INTERCONNECT
     for (let pack in INSTALLED_PACKAGES) {
@@ -643,16 +719,10 @@ async function POST_INIT() {
                     Logger.error(err.message);
                 }
             }
-
         } catch (err) {
             Logger.server.error(err.message);
         }
     }
-
-    //NO ENDPOINT FOUND
-    app.all('/api/*', API_404);
-    //NO FILE FOUND
-    app.use(FINAL_404);
 
     //CONSOLE INPUT
     process.stdin.on("data", DEV_CONSOLE_INPUT_MASTER);
@@ -661,25 +731,37 @@ async function POST_INIT() {
     return Promise.resolve();
 }
 
-function INIT_EXPRESS() {
-    server = app.listen(8080, () => Logger.express.info("Listening on " + server.address().address + ":" + server.address().port + " ..."));
-    app.use(express.static("public", {
-        extensions: ['html', 'htm']
-    }));
-    app.use(express.json({ limit: "1mb" }));
+async function INIT_WEBAPP() {
+    WebApp = new WEBAPP.WebApp({}, Logger);
 
-    //WebApp - File Routing
-    app.use(FILE_ROUTER);
+    try {
+        await WebApp.Init();
+        let WebAppInteractor = WebApp.GetInteractor();
 
-    //WebApp - API
-    let APIRouter = express.Router();
+        ////WebApp - API
+        let APIRouter = express.Router();
+        let AuthAPIRouter = express.Router();
 
-    APIRouter.get('/BotStatus', API_BotStatus);
-    APIRouter.get('/Navi', API_Navi);
-    APIRouter.get('/Packages', API_Packages);
-    APIRouter.get('/Cookies', API_Cookies);
+        //NON AUTHENTICATED
+        APIRouter.get('/BotStatus', API_BotStatus);
+        APIRouter.get('/Navi', API_Navi);
+        APIRouter.get('/Packages', API_Packages);
+        APIRouter.get('/Cookies', API_Cookies);
 
-    app.use("/api", APIRouter);
+        //AUTHENTICATED - SETTINGS
+        let SettingsAPIRouter = express.Router();
+        SettingsAPIRouter.get('/setup', PAGE_Settings_Setup);
+        SettingsAPIRouter.get('/navigation', PAGE_Settings_Nav);
+        AuthAPIRouter.use("/settings", SettingsAPIRouter);
+
+        WebAppInteractor.addMainRoute(MAIN_ROUTER);
+        WebAppInteractor.addAPIRoute('', APIRouter);
+        WebAppInteractor.addAuthAPIRoute('/auth', null, AuthAPIRouter);
+
+        return Promise.resolve();
+    } catch (err) {
+        return Promise.reject(err);
+    }
 }
 async function INIT_TTV_IRC() {
     if (CONFIG.TwitchIRC && TWITCHIRC) {
@@ -698,7 +780,7 @@ async function INIT_TTV_IRC() {
             Logger.TwitchIRC.info(msg.toString());
         });
         TwitchIRC.on('join', (channel, username, self) => { Logger.TwitchIRC.info(username + " joined!"); });
-
+        
         //Connect to Twitch IRC Servers
         try {
             await TwitchIRC.Connect();
@@ -710,7 +792,7 @@ async function INIT_TTV_IRC() {
 }
 async function INIT_TTV_API() {
     if (CONFIG.TwitchAPI && TWITCHAPI) {
-        TwitchAPI = new TWITCHAPI.TwitchAPI(CONFIG.TwitchAPI, app, TwitchIRC, Logger);
+        TwitchAPI = new TWITCHAPI.TwitchAPI(CONFIG.TwitchAPI, WebApp.GetInteractor(), TwitchIRC, Logger);
         try {
             await TwitchAPI.Init();
         } catch (err) {
@@ -775,19 +857,29 @@ function shutdown(timeS) {
  *  ----------------------------------------------------------
  */
 
-function FILE_ROUTER(req, res, next) {
+async function MAIN_ROUTER(req, res, next) {
     //Rediect .../test/ to .../test
-    if (req.originalUrl.charAt(req.originalUrl.length - 1) == "/") {
+    if (req.originalUrl !== "/" && req.originalUrl.charAt(req.originalUrl.length - 1) == "/") {
         res.redirect(req.originalUrl.substring(0, req.originalUrl.length - 1));
         return Promise.resolve();
     }
-
+   
     //Facivon 
     if (req.originalUrl == "/favicon.ico") {
-        res.redirect("/favicon.png");
-        return Promise.resolve();
+        return res.redirect("/favicon.png");
     }
 
+    //TTV Login 
+    if (CONFIG.TwitchAPI && TwitchAPI && req.originalUrl.toLowerCase().startsWith("/settings/setup") && req.query['code']) {
+        try {
+            await TwitchAPI.createUserAccessToken(req.query['code'], req.query['scopes']);
+            return res.redirect("/Settings");
+        } catch (err) {
+            Logger.TwitchAPI.error(err.message);
+            return res.redirect("/Settings?error=" + err.message);
+        }
+    }
+    
     //Check other Routers
     try {
         next();
@@ -843,7 +935,7 @@ async function API_BotStatus(req, res, next) {
                             data.Image = UserJson.data[0].profile_image_url;
                         }
                     } catch (err) {
-                        console.log(err);
+                        Logger.TwitchAPI.error(err.message);
                         Server_Status.errors.fatal.TwitchAPI = err.message;
                     }
                 }
@@ -876,37 +968,37 @@ async function API_BotStatus(req, res, next) {
         res.json({ err: err.message });
     }
 }
-function API_Navi(req, res, next) {
+async function API_Navi(req, res, next) {
+    //Authentication
+    let is_authed = false;
+    try {
+        is_authed = await WebApp.GetInteractor().AuthenticateRequest(req);
+    } catch (err) {
+
+    }
+
+
     //  Main - Section
     let MainNavigationPackages = ["CommandHandler", "ChatStats", "CustomChat"];
-    let MainSection = {
-        "type": "section",
-        "name": "Main Navigation",
-        "contents": [{ type: "icon", name: "Homepage", href: "/", icon: "images/icons/home.svg" }]
-    };
+    let MainSection = [{ type: "icon", name: "Homepage", href: "/", icon: "images/icons/home.svg" }];
 
     for (let pack of MainNavigationPackages) {
         if (INSTALLED_PACKAGES[pack] && INSTALLED_PACKAGES[pack].Object && INSTALLED_PACKAGES[pack].Object.isNaviEnabled()) {
             let temp_Pck_Nav = INSTALLED_PACKAGES[pack].Object.isNaviEnabled();
             temp_Pck_Nav.type = "icon";
-            MainSection.contents.push(temp_Pck_Nav);
+            MainSection.push(temp_Pck_Nav);
         }
     }
 
     //  Packages - Section
-    let PackageSection = {
-        "type": "section",
-        "name": "Packages",
-        "contents": []
-    };
+    let PackageSection = [];
 
     for (let pack in INSTALLED_PACKAGES) {
         //Skip Packages already used in Main Nav
         let skip = false;
         for (let dont of MainNavigationPackages) {
             if (dont == pack) {
-                skip = true;
-                break;
+                skip = true; break;
             }
         }
 
@@ -914,33 +1006,47 @@ function API_Navi(req, res, next) {
         if (!skip && INSTALLED_PACKAGES[pack].Object && INSTALLED_PACKAGES[pack].Object.isNaviEnabled()) {
             let temp_Pck_Nav = INSTALLED_PACKAGES[pack].Object.isNaviEnabled();
             temp_Pck_Nav.type = "icon";
-            PackageSection.contents.push(temp_Pck_Nav);
+            PackageSection.push(temp_Pck_Nav);
         }
     }
     //Add "More Packages"
-    PackageSection.contents.push({ type: "icon", name: "More Packages", href: "/Packages", icon: "images/icons/packages.svg" });
+    PackageSection.push({ type: "icon", name: "More Packages", href: "/Packages", icon: "images/icons/packages.svg" });
 
     //  Settings - Section
-    let SettingsSection = {
-        "type": "section",
-        "name": "Settings",
-        "contents": [
-            { type: "icon", name: "Bot Details", href: "/Bot", icon: "images/icons/FrikyBot.png" },
-            { type: "icon", name: "Login", href: "/Login", icon: "images/icons/twitch.svg" }
-        ]
-    };
+    let SettingsSection = [];
+
+    SettingsSection.push({ type: "icon", name: "Bot Details", href: "/Bot", icon: "images/icons/FrikyBot.png" });
+    if (is_authed === true) SettingsSection.push({ type: "icon", name: "Settings", href: "/Settings", icon: "images/icons/gear.svg" });
+    SettingsSection.push({ type: "icon", name: "Login", href: "/Login", icon: "images/icons/twitch.svg" });
 
     //Return Data
-    return res.json({ data: [MainSection, PackageSection, SettingsSection] });
+    return res.json({
+        data: [
+            {
+                "type": "section",
+                "name": "Main Navigation",
+                "contents": [{ type: "icon", name: "Homepage", href: "/", icon: "images/icons/home.svg" }]
+            },
+            {
+                "type": "section",
+                "name": "Packages",
+                "contents": PackageSection
+            },
+            {
+                "type": "section",
+                "name": "Settings",
+                "contents": SettingsSection
+            }
+        ]
+    });
 }
-function API_Packages(req, res, next) {
-    let authent = false;
+async function API_Packages(req, res, next) {
+    //Authentication
+    let is_authed = false;
+    try {
+        is_authed = await WebApp.GetInteractor().AuthenticateRequest(req);
+    } catch (err) {
 
-    //AUTHENTICATION
-    if (CONFIG.TwitchAPI && TwitchAPI && request.headers.authentication) {
-        //Check UserInfo
-        Logger.server.warn("Authenticating: " + req.headers.authentication + " -> SUCCESS");
-        authent = false;
     }
 
     let out = {
@@ -951,7 +1057,7 @@ function API_Packages(req, res, next) {
 
     for (let pack in INSTALLED_PACKAGES) {
         try {
-            if (authent || INSTALLED_PACKAGES[pack].Object.isEnabled()) {
+            if (is_authed || INSTALLED_PACKAGES[pack].Object.isEnabled()) {
                 out.Packages[pack] = INSTALLED_PACKAGES[pack].Object.getPackageDetails();
             }
         } catch (err) {
@@ -983,15 +1089,128 @@ function API_Cookies(req, res, next) {
     return res.json({ data: out });
 }
 
-function API_login(req, res, next) {
+async function PAGE_Settings_Control(req, res, next) {
+    let data = {};
 
+    res.json({
+        data: data
+    });
 }
+async function PAGE_Settings_Setup(req, res, next) {
+    let data = {};
 
-function API_404(req, res) {
-    res.json({ err: "404 - API Endpoint not found" });
+    //TTV API
+    if (CONFIG.TwitchAPI && TwitchAPI) {
+        data.TwitchAPI = {};
+
+        try {
+            await TwitchAPI.updateAppAccessToken();
+            data.TwitchAPI.app = await TwitchAPI.getAppTokenStatus();
+        } catch (err) {
+            Logger.TwitchAPI.error(err.message);
+        }
+
+        try {
+            await TwitchAPI.updateUserAccessToken();
+            data.TwitchAPI.user = await TwitchAPI.getUserTokenStatus();
+        } catch (err) {
+            Logger.TwitchAPI.error(err.message);
+        }
+    }
+
+    //TTV IRC
+    if (CONFIG.TwitchIRC && TwitchIRC) {
+        data.TwitchIRC = {
+            channel: TwitchIRC.getChannel()
+        };
+
+        if (TwitchIRC.getChannel()) {
+            try {
+                let streams = await TwitchAPI.GetStreams({ user_login: TwitchIRC.getChannel().substring(1) });
+                if (streams && streams.data && streams.data.length > 0)
+                    data.TwitchIRC.channel_state = true;
+                else
+                    data.TwitchIRC.channel_state = false;
+            } catch (err) {
+                Logger.TwitchIRC.error(err.message);
+            }
+        }
+    }
+    
+    //Authentication
+    if (WebApp && WebApp.GetInteractor() && WebApp.GetInteractor().Authenticator) {
+        let auth = WebApp.GetInteractor().Authenticator;
+
+        data.Authenticator = {
+
+        };
+        
+        if (TWITCHAPI && auth instanceof TWITCHAPI.Authenticator) {
+            data.Authenticator.origin = 'TWITCH API AUTHENTICATOR';
+            try {
+                data.Authenticator.users = await auth.GetUsers();
+            } catch (err) {
+                Logger.Authenticator.error(err.message);
+            }
+        }
+    }
+
+    res.json({
+        data: data
+    });
 }
-function FINAL_404(req, res) {
-    return res.redirect("/NotFound");
+async function PAGE_Settings_Packages(req, res, next) {
+    let data = {};
+
+    res.json({
+        data: data
+    });
+}
+async function PAGE_Settings_Logs(req, res, next) {
+    let data = {};
+
+    res.json({
+        data: data
+    });
+}
+async function PAGE_Settings_Nav(req, res, next) {
+    let data = [];
+
+    //Bot Control
+    data.push({
+        type: "icon",
+        name: "Bot Control",
+        href: "settings",
+        icon: "images/icons/home.svg"
+    });
+
+    //Bot Setup
+    data.push({
+        type: "icon",
+        name: "Bot Setup",
+        href: "settings/setup",
+        icon: "images/icons/home.svg"
+    });
+
+    //Packages
+    data.push({
+        type: "icon",
+        name: "Packages",
+        href: "settings/packages",
+        icon: "images/icons/home.svg"
+    });
+
+    //Logs
+    data.push({
+        type: "icon",
+        name: "Logs",
+        href: "settings/logs",
+        icon: "images/icons/home.svg"
+    });
+
+    res.json({
+        data: data
+    });
 }
 
 /*

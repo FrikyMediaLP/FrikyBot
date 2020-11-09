@@ -38,7 +38,7 @@
     <script src="misc/SwitchButton/SwitchButton.js"></script>
     <link href="misc/SwitchButton/SwitchButton.css" rel="stylesheet">
 </head>
-<body onload="Standard_Page_Init(); init();">
+<body onload="Standard_Page_Init({ NAVIGATION_ENABLE_DEFAULT: false }); init();">
     <!-- MAIN GRID -->
     <div id="grid">
         <!-- NAVI HEADER -->
@@ -87,7 +87,7 @@
                             </center>
                             <center class="TTV_LOGIN_DATA_EXP">
                                 <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                <p class="TTV_LOGIN_DATA_BOTTOM">EXPIRES AT</p>
+                                <p class="TTV_LOGIN_DATA_BOTTOM">EXPIRES IN</p>
                             </center>
                         </div>
                         <div class="TTV_LOGIN_DATA_RIGHT">
@@ -96,9 +96,7 @@
                     </div>
                 </div>
                 <div class="TTV_LOGIN_BUTTON">
-                    <a href="">
-                        <center><span>LOG IN USING TWITCH</span><img src="images/icons/twitch.svg" data-type="svg"/></center>
-                    </a>
+                    <center onclick="TTV_LOGIN_CLICKED(this, 'Client')"><span>LOG IN USING TWITCH</span><img src="images/icons/twitch.svg" data-type="svg" /></center>
                 </div>
             </div>
         </div>

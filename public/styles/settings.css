@@ -1,0 +1,370 @@
+﻿/* GENERAL */
+#HEADER {
+    font-family: Roboto, sans-serif;
+    color: white;
+    font-size: 30px;
+    padding: 7px 15px;
+}
+
+#WAITING_FOR_DATA {
+    margin: 0 auto;
+    margin-top: 10vh;
+    width: 25%;
+}
+
+body.darkmode #content {
+    background-color: #363636 !important;
+    color: white;
+}
+
+#SECTION_CONTROL, #SECTION_SETUP, #SECTION_PACKAGES, #SECTION_LOGS {
+    display: none;
+}
+
+/*MISC*/
+h2 {
+    text-transform: uppercase;
+    color: black;
+    border-bottom-width: 2px;
+    border-bottom-style: solid;
+}
+
+body.darkmode h2 {
+    color: white;
+    border-bottom-color: gray;
+}
+
+h3 {
+    font-weight: 400;
+    border-bottom: 1px solid gray;
+}
+
+button {
+    outline: none;
+    cursor: pointer;
+    background-color: lightgray;
+    border: 2px solid lightgray;
+}
+    button.SAVE {
+        background-color: lightgreen;
+        border: 2px solid #59eb28;
+    }
+
+    button:hover {
+        filter: brightness(0.9);
+    }
+
+/* 
+    ----------------------
+         Config
+    ----------------------
+*/
+
+#SETUP_CONFIG {
+    display: none;
+}
+
+/* 
+    ------------------
+        TWITCH API 
+    ------------------
+*/
+#SETUP_TWITCH_API {
+    display: none;
+}
+
+/*APP*/
+    #SETUP_TWITCH_API #TWITCHAPI_APP {
+        display: grid;
+        grid-template-columns: auto 340px;
+        grid-template-rows: auto;
+    }
+        #SETUP_TWITCH_API #TWITCHAPI_APP #TWITCHAPI_APP_DATA {
+            display: grid;
+            grid-template-columns: 50% 50%;
+            grid-template-rows: auto;
+        }
+
+            #SETUP_TWITCH_API #TWITCHAPI_APP #TWITCHAPI_APP_DATA > div {
+                min-width: 160px;
+                margin: 0 auto;
+            }
+
+                #SETUP_TWITCH_API #TWITCHAPI_APP #TWITCHAPI_APP_DATA > div center:nth-child(2n) {
+                    border-top: 1px dashed lightgray;
+                }
+
+        #SETUP_TWITCH_API #TWITCHAPI_APP #TWITCHAPI_APP_BUTTONS {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(25%, 200px));
+            grid-template-rows: repeat(auto-fill, 21px);
+            grid-row-gap: 5px;
+            grid-column-gap: 5px;
+        }
+
+/*USER*/
+    #SETUP_TWITCH_API #TTV_API_USER {
+        display: grid;
+        grid-template-columns: auto 470px auto;
+        grid-template-rows: auto;
+        grid-column-gap: 15px;
+    }
+        #SETUP_TWITCH_API #TTV_API_USER #TTV_API_BUTTONS_USER {
+            display: grid;
+            grid-template-columns: 100%;
+            grid-template-rows: repeat(auto-fill, 21px);
+            grid-row-gap: 5px;
+        }
+
+/*SCOPES*/
+    #SETUP_TWITCH_API #TWITCHAPI_SCOPES_WRAPPER {
+        height: auto;
+        overflow: hidden;
+    }
+
+    #SETUP_TWITCH_API #TWITCHAPI_SCOPES {
+        margin-top: 5px;
+        width: calc(100% - 2px);
+        max-height: 237px;
+        overflow-y: scroll;
+        display: grid;
+        grid-template-columns: auto 57px;
+        grid-template-rows: auto;
+    }
+
+        #SETUP_TWITCH_API #TWITCHAPI_SCOPES::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        #SETUP_TWITCH_API #TWITCHAPI_SCOPES::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        #SETUP_TWITCH_API #TWITCHAPI_SCOPES::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+
+        #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div {
+            padding: 5px 0px;
+        }
+            #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-child(2n+1) {
+                padding-top: 8px;
+                padding-left: 5px;
+            }
+
+            #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-child(4n+3), #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-child(4n+4) {
+                background-color: #fefaff;
+            }
+
+            #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-child(4n+1), #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-child(4n+2) {
+                background-color: #f2f0f2;
+            }
+
+            #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-last-child(-n+1), #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-last-child(-n+2) {
+                background-color: white;
+                border-bottom: none;
+            }
+
+body.darkmode #SETUP_TWITCH_API #TWITCHAPI_SCOPES {
+    color: lightgray;
+}
+
+    body.darkmode #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div {
+        border-top: 1px solid gray;
+    }
+
+        body.darkmode #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-child(2n+1) {
+            border-left: 1px solid gray;
+        }
+
+        body.darkmode #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-child(2n) {
+            border-right: 1px solid gray;
+        }
+
+        body.darkmode #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-child(4n+3), body.darkmode #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-child(4n+4) {
+            background-color: #383838;
+        }
+
+        body.darkmode #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-child(4n+1), body.darkmode #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-child(4n+2) {
+            background-color: #404040;
+        }
+
+        body.darkmode #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-last-child(-n+3), body.darkmode #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-last-child(-n+4) {
+            border-bottom: 1px gray solid;
+        }
+
+        body.darkmode #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-last-child(-n+1), body.darkmode #SETUP_TWITCH_API #TWITCHAPI_SCOPES > div:nth-last-child(-n+2) {
+            background-color: #363636;
+            border: none;
+        }
+
+/*login*/
+#SETUP_TWITCH_API #TWITCHAPI_LOGIN {
+    width: 470px;
+}
+    #SETUP_TWITCH_API #TWITCHAPI_LOGIN > div {
+        width: 470px;
+        margin: 0px;
+    }
+
+/* 
+    ------------------
+        TWITCH IRC 
+    ------------------
+*/
+#SETUP_TWITCH_IRC {
+    display: none;
+}
+
+    #SETUP_TWITCH_IRC #TWITCHIRC_CONNECTION {
+        display: grid;
+        grid-template-columns: 140px 200px 50px 50px;
+        grid-template-rows: 23px;
+        grid-column-gap: 5px;
+        font-size: 18px;
+    }
+
+        #SETUP_TWITCH_IRC #TWITCHIRC_CONNECTION .LIVE {
+            width: 50px;
+            border: 1px solid #ff3333;
+            background-color: #572626;
+            color: #ff3333;
+            text-align: center;
+        }
+
+/* 
+    ----------------------
+         WebApp
+    ----------------------
+*/
+
+#SETUP_WEBAPP {
+    display: none;
+}
+/* 
+    ----------------------
+         Authentication
+    ----------------------
+*/
+
+#SETUP_AUTHENTICATOR {
+    display: none;
+}
+
+    #SETUP_AUTHENTICATOR #AUTHENTICATOR_USERS {
+        display: grid;
+        grid-template-columns: auto auto auto auto auto 25px 20px 28px;
+        grid-template-rows: auto;
+        border: 1px solid gray;
+        border-bottom: none;
+    }
+
+        #SETUP_AUTHENTICATOR #AUTHENTICATOR_USERS > div {
+            border-bottom: 1px solid gray;
+            height: 18px !important;
+            padding: 5px;
+        }
+            #SETUP_AUTHENTICATOR #AUTHENTICATOR_USERS > div .CHECKMARK {
+                height: 18px !important;
+                width: 18px !important;
+                display: none;
+            }
+
+        #SETUP_AUTHENTICATOR #AUTHENTICATOR_USERS .AUTHENTICATOR_USERS_HEADER {
+            cursor: pointer;
+            /* DISABLE SELECT */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        #SETUP_AUTHENTICATOR #AUTHENTICATOR_USERS .AUTHENTICATOR_USERS_HEADER span {
+            filter: brightness(0.6);
+        }
+
+        #SETUP_AUTHENTICATOR #AUTHENTICATOR_USERS .AUTHENTICATOR_USERS_HEADER.UP span::after {
+            content: '▲';
+        }
+
+        #SETUP_AUTHENTICATOR #AUTHENTICATOR_USERS .AUTHENTICATOR_USERS_HEADER.DOWN span::after {
+            content: '▼';
+        }
+
+            #SETUP_AUTHENTICATOR #AUTHENTICATOR_USERS > div.MISC_TRASH_BUTTON {
+                width: calc(100% - 10px);
+            }
+
+            #SETUP_AUTHENTICATOR #AUTHENTICATOR_USERS > div.MISC_EDIT_BUTTON {
+                width: calc(100% - 10px);
+            }
+
+            #SETUP_AUTHENTICATOR #AUTHENTICATOR_USERS > div.MISC_SAVE_BUTTON {
+                width: calc(100% - 10px);
+            }
+
+    #SETUP_AUTHENTICATOR select {
+        outline: none;
+        background-color: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+    }
+
+    #SETUP_AUTHENTICATOR #AUTHENTICATOR_USERS select {
+        font-size: 16px;
+    }
+
+body.darkmode #SETUP_AUTHENTICATOR select > option {
+    color: white;
+    background-color: #00497a;
+}
+
+
+    /* AUTHENTICATOR_Interface */
+    #SETUP_AUTHENTICATOR #AUTHENTICATOR_Interface {
+        padding: 5px;
+        padding-top: 10px;
+        display: grid;
+        grid-template-columns: auto auto auto 100px 23px;
+        grid-template-rows: 23px;
+        grid-column-gap: 10px;
+        border: 1px solid gray;
+        border-top: none;
+    }
+
+        #SETUP_AUTHENTICATOR #AUTHENTICATOR_Interface select {
+            height: 23px;
+            padding: 0 40px;
+        }
+
+        #SETUP_AUTHENTICATOR #AUTHENTICATOR_Interface input {
+            background: none;
+            border: none;
+            border-bottom: 1px solid dimgray;
+            outline: none;
+        }
+
+        #SETUP_AUTHENTICATOR #AUTHENTICATOR_Interface .fillpls {
+            color: red !important;
+        }
+
+        #SETUP_AUTHENTICATOR #AUTHENTICATOR_Interface input.fillpls {
+            border-color: red !important;
+        }
+
+body.darkmode #SETUP_AUTHENTICATOR #AUTHENTICATOR_Interface input {
+    color: white;
+    border-bottom: 1px solid gray;
+}
+
+/* 
+    ----------------------
+         Authentication
+    ----------------------
+*/
+
+#SETUP_DATACOLLECTION {
+    display: none;
+}

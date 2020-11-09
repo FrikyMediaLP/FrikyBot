@@ -2,7 +2,10 @@ function init() {
     OUTPUT_create();
     Bot_Status_Details_Settings.ErrorOutput = OUTPUT_showError;
 
-    fetch("/api/Packages")
+    let opt = {};
+    if (TTV_PROFILE_getCookieData())
+        opt = { headers: { "Authorization": "Baerer " + TTV_PROFILE_getCookieData().id_token } };
+    fetch("/api/Packages", opt)
         .then(data => data.json())
         .then(json => {
             if (json.err) {

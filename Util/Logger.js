@@ -337,7 +337,10 @@ class Logger {
                 return;
             }
 
+            if (!fs.existsSync(path.resolve(fpath + filename + ".txt"))) return;
             fs.appendFileSync(path.resolve(fpath + filename + ".txt"), consoleString);
+            
+            if (!fs.existsSync(path.resolve(this.Settings.FileStructure.ROOT + this.Settings.FileStructure.RAW + "latest.txt"))) return;
             fs.appendFileSync(path.resolve(this.Settings.FileStructure.ROOT + this.Settings.FileStructure.RAW + "latest.txt"), consoleString);
         }
     }

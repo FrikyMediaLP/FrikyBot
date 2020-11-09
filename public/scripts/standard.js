@@ -5,12 +5,22 @@ let ONCOOKIEACCEPT = null;
 //Website Stuff
 async function Standard_Page_Init(settings = {}){
     return new Promise(async (resolve, reject) => {
-        if (hasCookie("CookieAccept") && getCookie("CookieAccept") == "true") {
-            COOKIE_ACCEPT = true;
+        //Cookies
+        if (settings.COOKIE_ENABLE_AUTOCHECK != false) {
+            if (hasCookie("CookieAccept") && getCookie("CookieAccept") == "true") {
+                COOKIE_ACCEPT = true;
+                
+                //Darkmode
+                if (hasCookie("darkmode") && getCookie("darkmode") == "true") {
+                    toggleLightMode(true);
+                }
+            }
         }
-        
+
+        //URL ROOT TO FrikyBot.de
         calculateROOT();
 
+        //Default Navigation
         try {
             if (settings.NAVIGATION_ENABLE_DEFAULT != false)
                 await NAVIVATION_init();
@@ -18,18 +28,27 @@ async function Standard_Page_Init(settings = {}){
             console.log(err);
         }
 
+        //Default Navigation BotStatus
         try {
-            if (settings.NAVIGATION_ENABLE_STATUS != false)
+            if (settings.NAVIGATION_ENABLE_DEFAULT != false && settings.NAVIGATION_ENABLE_STATUS != false)
                 await BOT_STATUS_DETAILS_MINI();
         } catch (err) {
             console.log(err);
         }
 
+        //Default Hover Profile
         if (settings.PROFILE_ENABLE != false && TTV_PROFILE_isLoggedIn()) {
-            TTV_PROFILE_initProfile();
-            //Update Navi
-            if (document.getElementById("MAINNAV_Settings_Login")) {
-                document.getElementById("MAINNAV_Settings_Login").innerHTML = "Logout";
+
+            try {
+                await TTV_PROFILE_initProfile();
+
+                //Update Navi
+                if (document.getElementById("MAINNAV_Settings_Login")) {
+                    document.getElementById("MAINNAV_Settings_Login").innerHTML = "Logout";
+                }
+            } catch (err) {
+                if (err.message !== "jwt expired")
+                    console.log(err);
             }
         }
 
@@ -58,7 +77,10 @@ async function NAVIVATION_init() {
     }
 
     //FETCH NAVI
-    return fetch("/api/Navi")
+    let opt = {};
+    if (TTV_PROFILE_getCookieData())
+        opt = { headers: { "Authorization": "Baerer " + TTV_PROFILE_getCookieData().id_token } };
+    return fetch("/api/Navi", opt)
         .then(data => data.json())
         .then(json => {
             if (json.err) {
@@ -209,6 +231,24 @@ function copyToClipboard(str) {
 function ScollToHash() {
     if (document.location.hash.indexOf("#") >= 0 && document.getElementById(document.location.hash.substring(1)))
         document.getElementById(document.location.hash.substring(1)).scrollIntoView();
+}
+function toggleLightMode(dark) {
+    if (!document.getElementById('LightModeButton')) return;
+
+    if (dark === true && !document.getElementsByTagName('body')[0].classList.contains('darkmode')) {
+        document.getElementsByTagName('body')[0].classList.toggle('darkmode');
+        document.getElementById('LightModeButton').innerHTML = document.getElementsByTagName('body')[0].classList.contains('darkmode') ? 'LightMode' : 'DarkMode'
+    } else if (dark === false && document.getElementsByTagName('body')[0].classList.contains('darkmode')) {
+        document.getElementsByTagName('body')[0].classList.toggle('darkmode');
+        document.getElementById('LightModeButton').innerHTML = document.getElementsByTagName('body')[0].classList.contains('darkmode') ? 'LightMode' : 'DarkMode'
+    } else {
+        document.getElementsByTagName('body')[0].classList.toggle('darkmode');
+        document.getElementById('LightModeButton').innerHTML = document.getElementsByTagName('body')[0].classList.contains('darkmode') ? 'LightMode' : 'DarkMode'
+    }
+
+    if (COOKIE_ACCEPT === true) {
+        setCookie("darkmode", document.getElementsByTagName('body')[0].classList.contains('darkmode'));
+    }
 }
 
 //Data

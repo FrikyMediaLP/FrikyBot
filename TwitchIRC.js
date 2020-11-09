@@ -6,13 +6,18 @@ const FFZ = require('./3rdParty/FFZ.js');
 
 class TwitchIRC {
     constructor(user, pw, channel = [], logger) {
-        logger.addSources({
-            TwitchIRC: {
-                display: () => " TwitchIRC ".inverse.brightMagenta
-            }
-        });
-        this.setLogger(logger.TwitchIRC);
-
+        //LOGGER
+        if (logger.identify && logger.identify() === "FrikyBotLogger") {
+            logger.addSources({
+                TwitchIRC: {
+                    display: () => " TwitchIRC ".inverse.brightMagenta
+                }
+            });
+            this.setLogger(logger.TwitchIRC);
+        } else {
+            this.setLogger(logger);
+        }
+        
         //Connection client
         this.client = undefined;
         if (!this.SetupClient(user, pw, channel)) {

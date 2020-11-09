@@ -1,4 +1,7 @@
-/* -------------------------------------
+/* 
+ *          SWITCH BUTTON
+ * 
+ * -------------------------------------
  *          NEEDED HTML CODE
  * -------------------------------------
  *
@@ -85,11 +88,11 @@ function SWITCH_BUTTON_TOGGLE(x) {
 
 function SWITCH_BUTTON_CREATE(state, disabled, onChange, id) {
     if (state == true) {
-        return '<div class="SWITCH_BUTTON SWITCH_BUTTON_ON ' + (disabled ? "SWITCH_BUTTON_DISABLED" : "") + '" ' + (id ? 'id="' + id + '"' : "") + ' onclick="SWITCH_BUTTON_TOGGLE(this); ' + onChange + '"><div class="SWITCH_BUTTON_CURSOR"></div></div>';
+        return '<div class="SWITCH_BUTTON SWITCH_BUTTON_ON ' + (disabled ? "SWITCH_BUTTON_DISABLED" : "") + '" ' + (id ? 'id="' + id + '"' : "") + ' onclick="SWITCH_BUTTON_TOGGLE(this); ' + (onChange ? onChange : "") + '"><div class="SWITCH_BUTTON_CURSOR"></div></div>';
     } else if (state == false) {
-        return '<div class="SWITCH_BUTTON SWITCH_BUTTON_OFF ' + (disabled ? "SWITCH_BUTTON_DISABLED" : "") + '" ' + (id ? 'id="' + id + '"' : "") + ' onclick="SWITCH_BUTTON_TOGGLE(this); ' + onChange + '"><div class="SWITCH_BUTTON_CURSOR"></div></div>';
+        return '<div class="SWITCH_BUTTON SWITCH_BUTTON_OFF ' + (disabled ? "SWITCH_BUTTON_DISABLED" : "") + '" ' + (id ? 'id="' + id + '"' : "") + ' onclick="SWITCH_BUTTON_TOGGLE(this); ' + (onChange ? onChange : "") + '"><div class="SWITCH_BUTTON_CURSOR"></div></div>';
     } else {
-        return '<div class="SWITCH_BUTTON ' + (disabled ? "SWITCH_BUTTON_DISABLED" : "") + '" ' + (id ? 'id="' + id + '"' : "") + ' onclick="SWITCH_BUTTON_TOGGLE(this); ' + onChange + '"><div class="SWITCH_BUTTON_CURSOR"></div></div>';
+        return '<div class="SWITCH_BUTTON ' + (disabled ? "SWITCH_BUTTON_DISABLED" : "") + '" ' + (id ? 'id="' + id + '"' : "") + ' onclick="SWITCH_BUTTON_TOGGLE(this); ' + (onChange ? onChange : "") + '"><div class="SWITCH_BUTTON_CURSOR"></div></div>';
     }
 }
 
@@ -106,4 +109,121 @@ function SWITCH_BUTTON_GETVALUE(id) {
 function SWITCH_BUTTON_GETVALUE_ELT(elt) {
     let classes = elt.className;
     return (classes.indexOf("SWITCH_BUTTON_ON") >= 0 || classes.indexOf("SWITCH_BUTTON_TO_ON") >= 0);
+}
+
+/* 
+ *          MISC BUTTON
+ * 
+ * -------------------------------------
+ *          NEEDED HTML CODE
+ * -------------------------------------
+ *
+ *  - DELETE BUTTON
+    <div class="MISC_TRASH_BUTTON" title="Delete">
+        <img src="images/icons/trash-alt-solid.svg" />
+    </div>
+
+ *  - EDIT BUTTON
+    <div class="MISC_EDIT_BUTTON" title="Edit">
+        <img src="images/icons/pen-solid.svg" />
+    </div>
+ *
+ *  - SAVE BUTTON
+    <div class="MISC_SAVE_BUTTON" title="Save">
+        <img src="images/icons/server-solid.svg" />
+    </div>
+ * 
+ */
+
+let MISC_BUTTON_SETTINGS = {
+    OnClick: (elt, id) => (elt, id)
+};
+
+function MISC_BUTTON_TRASH_CREATE(id, title = 'TRASH') {
+    let s = '<div class="MISC_TRASH_BUTTON" ' + (id ? 'id="' + id + '"' : '') + ' title="' + title + '" onclick="MISC_BUTTON_SETTINGS.OnClick(this, \'' + id + '\');">';
+    s += '<img src="' + ROOT + 'images/icons/trash-alt-solid.svg" />';
+    s += '</div>';
+    return s;
+}
+function MISC_BUTTON_EDIT_CREATE(id, title = 'EDIT') {
+    let s = '<div class="MISC_EDIT_BUTTON" ' + (id ? 'id="' + id + '"' : '') + ' title="' + title + '" onclick="MISC_BUTTON_SETTINGS.OnClick(this, \'' + id + '\');">';
+    s += '<img src="' + ROOT + 'images/icons/pen-solid.svg" />';
+    s += '</div>';
+    return s;
+}
+function MISC_BUTTON_SAVE_CREATE(id, title = 'SAVE') {
+    let s = '<div class="MISC_SAVE_BUTTON" ' + (id ? 'id="' + id + '"' : '') + ' title="' + title + '" onclick="MISC_BUTTON_SETTINGS.OnClick(this, \'' + id + '\');">';
+    s += '<img src="' + ROOT + 'images/icons/server-solid.svg" />';
+    s += '</div>';
+    return s;
+}
+
+/*
+ * -------------------------------------
+ *        MICS LOADING ANIMATIONS
+ * -------------------------------------
+ * -------------------------------------
+ *          Loading
+ * -------------------------------------
+ *
+ *  - UNSET CHECKMARK
+    <div class="LOADING_RING">
+        <div class="LOADING_RING_SPINNER"></div>
+    </div>
+ *
+ *
+ *
+ *
+ * -------------------------------------
+ *          Checkmark
+ * -------------------------------------
+ *
+ *  - UNSET CHECKMARK
+    <div class="CHECKMARK">
+        <div class="CHECKMARK_SPINNER"></div>
+        <div class="CHECKMARK_X"><div class="left"></div><div class="right"></div></div>
+        <div class="CHECKMARK_CHECK"><div class="long"></div><div class="short"></div></div>
+    </div>
+ *
+ *  - WAITING CHECKMARK
+    <div class="CHECKMARK WAITING">
+        <div class="CHECKMARK_SPINNER"></div>
+        <div class="CHECKMARK_X"><div class="left"></div><div class="right"></div></div>
+        <div class="CHECKMARK_CHECK"><div class="long"></div><div class="short"></div></div>
+    </div>
+ *
+ *  - FAILED CHECKMARK
+    <div class="CHECKMARK FAILED">
+        <div class="CHECKMARK_SPINNER"></div>
+        <div class="CHECKMARK_X"><div class="left"></div><div class="right"></div></div>
+        <div class="CHECKMARK_CHECK"><div class="long"></div><div class="short"></div></div>
+    </div>
+ *
+ *  - SUCCESS CHECKMARK
+    <div class="CHECKMARK SUCCESS">
+        <div class="CHECKMARK_SPINNER"></div>
+        <div class="CHECKMARK_X"><div class="left"></div><div class="right"></div></div>
+        <div class="CHECKMARK_CHECK"><div class="long"></div><div class="short"></div></div>
+    </div>
+ */
+
+function CHECKMARK_TOGGLE(elt, type) {
+    if (elt && elt instanceof Element) {
+        elt.classList.remove('WAITING');
+        elt.classList.remove('FAILED');
+        elt.classList.remove('SUCCESS');
+
+        elt.classList.add(type);
+    }
+}
+function CHECKMARK_CREATE(type, id) {
+    let s = '';
+
+    s += '<div class="CHECKMARK' + (type ? ' ' + type : '') + '" ' + (id ? 'id="' + id + '"' : '' ) + '>';
+    s += '<div class="CHECKMARK_SPINNER"></div>';
+    s += '<div class="CHECKMARK_X"><div class="left"></div><div class="right"></div></div>';
+    s += '<div class="CHECKMARK_CHECK"><div class="long"></div><div class="short"></div></div>';
+    s += '</div>';
+
+    return s;
 }

@@ -1,13 +1,5 @@
 ﻿async function init() {
     OUTPUT_create();
-
-    //Cookies
-    if (hasCookie("CookieAccept") && getCookie("CookieAccept") == "true") {
-        COOKIE_ACCEPT = true;
-        if (hasCookie("darkmode") && getCookie("darkmode") == "true") {
-            toggleLightMode(true);
-        }
-    }
     
     //GET DOCS DATA
     let DOCS_DATA = null;
