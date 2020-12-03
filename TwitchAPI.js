@@ -447,12 +447,13 @@ class TwitchAPI {
         query += "?client_id=" + this.Settings.Client_ID;
         query += "&redirect_uri=" + this.Settings.Client_Redirect_Uri;
         query += "&response_type=id_token";
-        query += "&force_verify=true";
         query += "&scope=openid";
 
         if (claims) {
             query += "&claims=" + JSON.stringify(claims);
         }
+
+        query += "&force_verify=true";
 
         return query;
     }
@@ -1107,7 +1108,8 @@ class Authenticator {
         this.Settings = {
             show_auth_message: true,
             UserDB_Dir: CONSTANTS.FILESTRUCTURE.DATA_STORAGE_ROOT + "Auth/",
-            UserDB: "User"
+            UserDB: "User",
+            Userlevels: ['viewer', 'subscriber', 'moderator', 'staff', 'admin']
         };
 
         //Apply Config Settings
@@ -1145,25 +1147,43 @@ class Authenticator {
         this.TwitchAPI = TwitchAPI;
         this.UserDatabase = new Datastore({ filename: path.resolve(this.Settings.UserDB_Dir + this.Settings.UserDB + ".db"), autoload: true });
     }
-    
-    async AuthenticateUser(headers = {}, method = {}) {
-        const header = headers['authorization'];
-        const token = header && header.split(" ")[1];
-        let user;
-        try {
-            user = await this.TwitchAPI.VerifyTTVJWT(token);
-        } catch (err) {
-            //Authentication failed
-            return Promise.reject(err);
+
+    //Authentication
+    async AuthenticateRequest(headers = {}, method = {}, user) {
+        //Fetch User Data
+        if (!user) {
+            const header = headers['authorization'];
+            const token = header && header.split(" ")[1];
+
+            //Check JWT
+            try {
+                user = await this.TwitchAPI.VerifyTTVJWT(token);
+            } catch (err) {
+                //JWT Validation failed
+                return Promise.reject(err);
+            }
+
+            //Check Database
+            try {
+                let db_users = await this.GetUsers([user.sub]);
+                if (db_users.length > 0) user.user_level = db_users[0].user_level;
+            } catch (err) {
+                //Database Error
+                return Promise.reject(err);
+            }
         }
 
+        //Check User and Method
+        return this.AuthenticateUser(user, method);
+    }
+    async AuthenticateUser(user = {}, method = {}) {
         //Check Method
         for (let meth in method) {
             try {
                 if (meth === 'user_id') {
                     await this.Auth_UserID(user.sub, method[meth]);
                 } else if (meth === 'user_level') {
-                    await this.Auth_UserLevel(user.sub, method[meth]);
+                    await this.Auth_UserLevel(user.user_level, method[meth], method.user_level_cutoff === true);
                 } else {
                     return Promise.reject(new Error('Unknown Authorization Method!'));
                 }
@@ -1171,30 +1191,28 @@ class Authenticator {
                 return Promise.reject(err);
             }
         }
-        
+
         if (this.Settings.show_auth_message === true)
             this.Logger.warn("Authenticated User: (" + user.sub + ") " + user.preferred_username);
-        
+
         return Promise.resolve(user);
     }
 
     async Auth_UserID(user_id, target_id) {
+        //Check UserID
         if (user_id === target_id) {
             return Promise.resolve();
         } else {
             return Promise.reject(new Error('User ID doesnt match!'));
         }
     }
-    async Auth_UserLevel(user_id, target_level) {
-        if (!this.UserDatabase)
-            return Promise.reject(new Error("User Data Error."));
-        
-        this.UserDatabase.find({ user_id: user_id }, (err, docs) => {
-            if (err || !docs) return Promise.reject(new Error("User Database Error."));
-            if (docs.lenght == 0) return Promise.reject(new Error("User not found!"));
-            if (docs[0].userlevel !== target_level) return Promise.reject(new Error("Userlevel doesnt match"));
-            return Promise.resolve();
-        });
+    async Auth_UserLevel(user_level, target_level, cutoff) {
+        //Check Userlevel
+        if (!this.CompareUserlevels(user_level, target_level, cutoff)) {
+            return Promise.reject(new Error("Userlevel doesnt match"));
+        }
+
+        return Promise.resolve();
     }
 
     //User Auth Databse
@@ -1332,6 +1350,38 @@ class Authenticator {
     }
 
     //UTIL
+    GetUserlevels() {
+        return this.Settings.Userlevels ? this.Settings.Userlevels : [];
+    }
+    GetUserLevelIndex(user_level) {
+        let userlevel_index = -1;
+
+        this.GetUserlevels().find((element, index) => {
+            if (element === user_level) {
+                userlevel_index = index;
+                return true;
+            }
+
+            return false;
+        });
+
+        return userlevel_index;
+    }
+    CompareUserlevels(current, target, cutoff = false) {
+        let target_index = this.GetUserLevelIndex(target);
+        let current_index = this.GetUserLevelIndex(current);
+        let rel_index = 0;
+
+        if (target_index === -1) return false;
+
+        rel_index = current_index - target_index;
+        
+        if (rel_index < 0) return false;
+        if (cutoff === true && rel_index === 0 && current_index !== this.GetUserlevels().length-1) return false;
+        
+        return true;
+    }
+
     async fetchUserInfo(ids = [], names = []) {
         let query = {
             id: ids,

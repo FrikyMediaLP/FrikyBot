@@ -358,11 +358,13 @@ class Logger {
     }
 
     ResetLatest() {
+        if (!fs.existsSync(path.resolve(this.Settings.FileStructure.ROOT + this.Settings.FileStructure.RAW + "latest.txt"))) return;
+
         try {
             let path_comb = this.Settings.FileStructure.ROOT + this.Settings.FileStructure.RAW + "latest.txt";
             fs.writeFileSync(path.resolve(path_comb), "");
         } catch (err) {
-            console.log(err);
+            this.error(err.message);
         }
     }
 

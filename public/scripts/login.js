@@ -1,6 +1,12 @@
 ﻿async function init() {
     OUTPUT_create();
-    
+
+    //Remember me
+    //if (COOKIE_ACCEPT && getCookie('LOGIN_REMEMBER') === "true") {
+    //    //<center>Remember Me <input type="checkbox" id="LOGIN_STAYLOGGED" onclick="Login_Remember(this)" /></center>
+    //    document.getElementById("LOGIN_STAYLOGGED").checked = true;
+    //}
+
     let userdata = {};
 
     if (TTV_PROFILE_isLoggedIn()) {
@@ -51,5 +57,11 @@
         await NAVIVATION_init();
     } catch (err) {
         console.log(err);
+    }
+}
+
+function Login_Remember(checkbox) {
+    if (COOKIE_ACCEPT) {
+        setCookie('LOGIN_REMEMBER', '' + checkbox.checked  + '');
     }
 }

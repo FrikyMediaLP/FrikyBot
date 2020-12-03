@@ -1,0 +1,179 @@
+#SECTION_PACKAGES {
+    display: none;
+}
+
+.Package {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 120px auto;
+    grid-template-rows: auto auto;
+    background-color: rgba(255,255,255,0.2);
+    border: 1px black solid;
+    border-radius: 5px;
+}
+
+    .Package .IMG {
+        width: 100%;
+        background-color: orange;
+        border-bottom: 1px solid dimgray;
+        border-right: 1px solid dimgray;
+    }
+        .Package .IMG img {
+            padding: 0px 10px;
+            width: 100px;
+            height: 100px;
+        }
+        .Package .IMG img[src*="svg"] {
+            filter: invert(100%);
+        }
+
+    .Package .Name {
+        height: calc(100% - 1px);
+        border-bottom: 1px solid dimgray;
+    }
+        .Package .Name span {
+            display: block;
+            margin-top: 20px;
+            margin-left: 10px;
+            font-size: 50px;
+        }
+
+    .Package .Control {
+        width: 100%;
+        padding-bottom: 5px;
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: 20px repeat(auto-fill, 25px);
+        grid-row-gap: 5px;
+        border-right: 1px solid dimgray;
+    }
+
+        .Package .Control center {
+            width: calc(100% - 2px);
+            margin-left: 1px;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+            .Package .Control center.NOTREADY {
+                color: gray;
+                background-color: rgba(0, 0, 0, 0.2);
+            }
+                .Package .Control center.NOTREADY::after {
+                    content: 'not ready';
+                }
+
+            .Package .Control center.DISABLED {
+                color: red;
+                background-color: rgba(255, 0, 0, 0.2);
+            }
+
+                .Package .Control center.DISABLED::after {
+                    content: 'Disabled';
+                }
+
+            .Package .Control center.ENABLED {
+                color: green;
+                background-color: rgba(0, 155, 0, 0.5)
+            }
+
+                .Package .Control center.ENABLED::after {
+                    content: 'Enabled';
+                }
+
+        .Package .Control button {
+            width: calc(100% - 10px);
+            margin: 0 5px;
+            padding: 5px;
+            background-color: #028deb;
+            color: white;
+            font-weight: bold;
+            border: none;
+            outline: none;
+            cursor: pointer;
+        }
+
+            .Package .Control button:not([disabled]):hover {
+                filter: brightness(0.9);
+            }
+
+            .Package .Control button[disabled] {
+                color: gray;
+                background-color: lightgray !important;
+                cursor: default;
+            }
+
+            .Package .Control button.ENABLE::after {
+                content: 'ENABLE';
+            }
+
+            .Package .Control button.DISABLE::after {
+                content: 'DISABLE';
+            }
+
+            .Package .Control button.NOTREADY::after {
+                content: 'START';
+            }
+
+            .Package .Control button.REMOVE {
+                background-color: #e04a4a;
+            }
+
+    .Package .Misc {
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: auto auto;
+    }
+        .Package .Misc .Desc {
+            padding: 5px;
+            border-bottom: 1px solid dimgray;
+        }
+
+        .Package .Misc .Settings {
+            padding: 5px;
+            display: grid;
+            grid-template-columns: auto;
+            grid-template-rows: auto;
+        }
+
+            .Package .Misc .Settings p {
+                margin-top: 0;
+                margin-bottom: 5px;
+                font-weight: bold;
+            }
+
+            .Package .Misc .Settings .Setting input, .Package .Misc .Settings .Setting select {
+                outline: none;
+            }
+
+            .Package .Misc .Settings .Setting.SWITCH {
+                display: grid;
+                grid-template-columns: auto 52px;
+                grid-template-rows: auto;
+            }
+
+            .Package .Misc .Settings .Setting.SELECT {
+                display: grid;
+                grid-template-columns: auto 200px;
+                grid-template-rows: auto;
+            }
+
+            .Package .Misc .Settings .Setting.INPUT {
+                display: grid;
+                grid-template-columns: auto 200px;
+                grid-template-rows: auto;
+            }
+
+        .Package .Misc .Interconnect {
+            padding: 5px;
+            border-top: 1px solid dimgray;
+        }
+
+            .Package .Misc .Interconnect p {
+                margin-top: 0;
+                margin-bottom: 5px;
+                font-weight: bold;
+            }
+
+            .Package .Misc .Interconnect ul {
+                margin-top: 0;
+            }

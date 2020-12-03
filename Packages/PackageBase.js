@@ -13,39 +13,29 @@ const PACKAGE_SETTINGS = {
 };
 
 class PackageBase {
-    constructor(packagename = "", description = "", webappinteractor, twitchirc, twitchapi, datacollection, startparameters = {}, logger) {
-        //PACKAGE UTILITY
-        this.Package_Status = {
-            Status: "Operational",
-            errors: {
-                fatal: {
-
-                },
-                outage: {
-
-                }
-            }
+    constructor(package_details = {}, webappinteractor, twitchirc, twitchapi, datacollection, logger) {
+        //PRE-INIT
+        this.Package_Details = {
+            name: package_details.name ? package_details.name : "UNKNOWN",
+            description: package_details.description ? package_details.description : ""
         };
 
         //LOGGER
         if (logger && logger.identify != undefined && logger.identify() == "FrikyBotLogger") {
             logger.addSources({
-                [packagename]: {
-                    display: () => (" " + packagename + " ").inverse.yellow
+                [this.getName()]: {
+                    display: () => (" " + this.getName() + " ").inverse.yellow
                 }
             });
-            this.setLogger(logger[packagename]);
+            this.setLogger(logger[this.getName()]);
         } else {
             this.setLogger(logger);
         }
 
         //INIT
-        this.PackageName = packagename;
-        this.Description = description;
-
-        this.Package_Interconnects = {};
-        this.Requested_Package_Interconnects = {};
-        this.Allowed_Package_Interconnects = {};
+        this.Package_Interconnects = [];
+        this.Requested_Package_Interconnects = [];
+        this.Allowed_Package_Interconnects = [];
 
         this.WebAppInteractor = webappinteractor;
         this.TwitchIRC = twitchirc;
@@ -55,11 +45,11 @@ class PackageBase {
         this.Settings = {
             enabled: false
         };
-
-        //MiniSet
+        
         this.USE_HTML_HOSTING = false;
         this.USE_API_HOSTING = false;
 
+        //Setup
         this.Logger.info("Package Setup ... ");
         this.loadSettings();
     }
@@ -70,7 +60,8 @@ class PackageBase {
      * /////////////////////////////////////////////////
      */
     
-    async Init() {
+    async Init(startparameters) {
+        this.setStartparameters(startparameters);
         return Promise.resolve();
     }
     async PostInit() {
@@ -99,7 +90,7 @@ class PackageBase {
             return  Promise.reject(err);
         }
     }
-
+    
     /*
      * /////////////////////////////////////////////////
      *              CONGIG / SETTINGS
@@ -107,7 +98,7 @@ class PackageBase {
      */
 
     loadSettings() {
-        let resolvedPath = path.resolve(CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + this.PackageName + "/config.json");
+        let resolvedPath = path.resolve(CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + this.getName() + "/config.json");
 
         //SETUP CONFIG
         let settings_file = {};
@@ -163,14 +154,14 @@ class PackageBase {
         if (this.Settings.HTML_ROOT_NAME) {
             this.getHTMLROOT = () => this.Settings.HTML_ROOT_NAME;
         } else {
-            this.getHTMLROOT = () => this.PackageName;
+            this.getHTMLROOT = () => this.getName();
         }
 
         //HTML ROOT Name
         if (this.Settings.API_ROOT_NAME) {
             this.getAPIROOT = () => this.Settings.API_ROOT_NAME;
         } else {
-            this.getAPIROOT = () => this.PackageName;
+            this.getAPIROOT = () => this.getName();
         }
 
         //enabled
@@ -182,6 +173,10 @@ class PackageBase {
         }
     }
 
+    setStartparameters(parameters = {}) {
+
+    }
+
     setEnable(enable) {
         this.isEnabled = () => enable;
     }
@@ -190,42 +185,7 @@ class PackageBase {
             this.Logger = loggerObject;
         }
     }
-
-    /*
-     * /////////////////////////////////////////////////
-     *             ERROR AND PACKAGE STATUS - BETA
-     * /////////////////////////////////////////////////
-     */
-
-    getPackageStatus() {
-        return this.Package_Status;
-    }
-    setPackageStatus(status) {
-        if (CONSTANTS.Package_Status.find(elt => elt == status) != undefined) {
-            this.Package_Status.Status = status;
-        }
-    }
-
-    addFatalError(name, details) {
-        //Package gets Disabled / needs User to restart/change stuff
-        this.Package_Status.fatal[name] = details;
-        this.disable();
-    }
-    resolveFatalError(name) {
-        delete this.Package_Status.fatal[name];
-    }
-
-    addOutage(name, details) {
-        //Package remains enabled / Feature is disabled
-        this.Package_Status.outage[name] = details;
-    }
-    hasOutage(name) {
-        return this.Package_Status.outage[name] != undefined;
-    }
-    resolveOutage(name) {
-        delete this.Package_Status.outage[name];
-    }
-
+    
     /*
      * /////////////////////////////////////////////////
      *               PACKAGE INTERCONNECT
@@ -233,11 +193,13 @@ class PackageBase {
      */
 
     //SETUP
-    allowPackageInterconnects(allowed = {}) {
-        if (allowed instanceof Object) {
-            this.Allowed_Package_Interconnects = allowed;
-        } else {
-            this.Allowed_Package_Interconnects = {};
+    allowPackageInterconnects(allowed_packages = []) {
+        try {
+            for (let allowed_package of allowed_packages) {
+                this.Allowed_Package_Interconnects.push(allowed_package);
+            }
+        } catch (err) {
+            this.Logger.error(err.message);
         }
     }
 
@@ -245,24 +207,24 @@ class PackageBase {
     GetPackageInterconnectRequests() {
         return this.Requested_Package_Interconnects;
     }
-    addPackageInterconnectRequest(package_name, callback) {
-        this.Requested_Package_Interconnects[package_name] = callback;
+    addPackageInterconnectRequest(package_name, callback, description) {
+        this.Requested_Package_Interconnects.push({
+            package: package_name,
+            callback: callback,
+            description: description
+        });
     }
 
     //Requests From Other Packages to me
-    requestPackageInterconnect(package_name, callback) {
-        if (this.Allowed_Package_Interconnects[package_name] != undefined || Object.getOwnPropertyNames(this.Allowed_Package_Interconnects).length == 0) {
-            return this.setPackageInterconnect(package_name, callback);
+    requestPackageInterconnect(package_name, callback, description) {
+        let is_allowed = this.Allowed_Package_Interconnects.find(elt => elt.package_name === package_name);
+        
+        if (is_allowed || Object.getOwnPropertyNames(this.Allowed_Package_Interconnects).length == 0) {
+            this.Package_Interconnects.push(package_name, callback, description);
+            return true;
         }
         
         return false;
-    }
-    setPackageInterconnect(package_name, callback) {
-        this.Package_Interconnects[package_name] = callback;
-        return true;
-    }
-    removePackageInterconnect(package_name) {
-        delete this.PackageInterconnects[package_name];
     }
 
     /*
@@ -276,50 +238,64 @@ class PackageBase {
         this.USE_HTML_HOSTING = true;
         if (!this.WebAppInteractor) throw new Error("WebApp-Reference is not set!");
         
-        this.WebAppInteractor.addFileRoute("/" + this.getHTMLROOT(),
-            (req, res, next) => { if (this.isEnabled()) next(); else res.sendFile(path.resolve("DATA/PAGES/PackageDisabled.html")); },
-            (req, res, next) => {
-                let page = this.HTMLFileExists(req.url);
-                //Check if File/Dir is Present
-                if (page != "") {
-                    res.sendFile(page);
-                } else {
-                    next();
-                }
+        this.WebAppInteractor.addFileRoute("/" + this.getHTMLROOT(), (req, res, next) => { if (this.isEnabled()) next(); else res.sendFile(path.resolve("DATA/PAGES/PackageDisabled.html")); }, (req, res, next) => {
+            let page = this.HTMLFileExists(req.url);
+            //Check if File/Dir is Present
+            if (page != "") {
+                res.sendFile(page);
+            } else {
+                next();
             }
-        );
+        });
     }
     setFileRouter(router) {
         this.USE_HTML_HOSTING = true;
         if (!this.WebAppInteractor) throw new Error("WebApp-Reference is not set!");
         
-        this.WebAppInteractor.addFileRoute("/" + this.getHTMLROOT(),
-            (req, res, next) => { if (this.isEnabled()) next(); else res.sendFile(path.resolve("DATA/PAGES/PackageDisabled.html")); },
-            router);
+        this.WebAppInteractor.addFileRoute("/" + this.getHTMLROOT(), (req, res, next) => { if (this.isEnabled()) next(); else res.sendFile(path.resolve("DATA/PAGES/PackageDisabled.html")); }, router);
     }
     setAPIRouter(router) {
         this.USE_API_HOSTING = true;
         if (!this.WebAppInteractor) throw new Error("WebApp-Reference is not set!");
 
         this.WebAppInteractor.addAPIRoute("/" + this.getAPIROOT(),
-            (req, res, next) => {
-                if (this.isEnabled())
-                    next(); 
-                else 
-                    res.status(401).json({ err: 'Package Disabled!' }); },
-            router, (req, res, next) => {
-                res.status(404).json({
-                    status: CONSTANTS.STATUS_FAILED,
-                    req: req.body,
-                    err: "404 - API Endpoint not found"
-                });
-            });
+            (req, res, next) => { if (this.isEnabled()) next(); else res.status(401).json({ err: 'Package Disabled!' }); },
+            router);
+    }
+    setAuthenticatedAPIRouter(router, method) {
+        this.USE_API_HOSTING = true;
+        if (!this.WebAppInteractor) throw new Error("WebApp-Reference is not set!");
+
+        let response = this.WebAppInteractor.addAuthAPIRoute("/" + this.getAPIROOT(), method,
+            (req, res, next) => { if (this.isEnabled()) next(); else res.status(401).json({ err: 'Package Disabled!' }); },
+            router);
     }
 
+    setAPIEndpoint(router, method) {
+        this.USE_API_HOSTING = true;
+        if (!this.WebAppInteractor) throw new Error("WebApp-Reference is not set!");
+
+        this.WebAppInteractor.addAPIEndpoint("/" + this.getAPIROOT(), method,
+            (req, res, next) => { if (this.isEnabled()) next(); else res.status(401).json({ err: 'Package Disabled!' }); },
+            router);
+    }
+    setAuthenticatedAPIEndpoint(endpoint, auth_method, callback, method = 'GET') {
+        this.USE_API_HOSTING = true;
+        if (!this.WebAppInteractor) throw new Error("WebApp-Reference is not set!");
+        
+        return this.WebAppInteractor.addAuthAPIEndpoint("/" + this.getAPIROOT() + endpoint, auth_method, method,
+            (req, res, next) => { if (this.isEnabled()) next(); else res.status(401).json({ err: 'Package Disabled!' }); }, callback);
+    }
+    
     //WebApp Util
-    setHTMLNavigation(data) {
-        if (typeof(data) != "object" || data.length != "undefinded") {
-            this.isNaviEnabled = () => data;
+    setWebNavigation(data) {
+        if (typeof (data) != "object" || data.length != "undefinded") {
+            this.getWebNavigation = () => data;
+        }
+    }
+    setWebCookies(data) {
+        if (typeof (data) != "object" || data.length != "undefinded") {
+            this.getWebCookies = () => data;
         }
     }
     
@@ -329,35 +305,46 @@ class PackageBase {
      * /////////////////////////////////////////////////
      */
 
+    isEnabled() {
+        return false;
+    }
     getNavigation() {
         return null;
     }
     getHTMLROOT() {
-        return this.PackageName;
+        return this.getName();
     }
     getAPIROOT() {
-        return this.PackageName;
+        return this.getName();
     }
     getName() {
-        return this.PackageName;
+        return this.Package_Details.name;
     }
     getDescription() {
-        return this.Description;
+        return this.Package_Details.description;
     }
     getPackageDetails() {
         return {
+            name: this.getName(),
             description: this.getDescription(),
-            html: (this.USE_HTML_HOSTING ? this.getHTMLROOT() : undefined)
+            enabled: this.isEnabled(),
+            html: (this.USE_HTML_HOSTING ? this.getHTMLROOT() : undefined),
+            html_navi: (this.isNaviEnabled ? this.isNaviEnabled() : undefined),
+            api: (this.USE_API_HOSTING ? this.getAPIROOT() : undefined)
         }
     }
-
-    isEnabled() {
-        return false;
+    
+    getWebNavigation() {
+        return null;
     }
-    isNaviEnabled() {
-        return false;
+    getWebCookies() {
+        return null;
     }
 
+    getMainPackageRoot() {
+        return CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT;
+    }
+    
     /*
      * /////////////////////////////////////////////////
      *                      UTIL
@@ -389,7 +376,7 @@ class PackageBase {
     HTMLFileExists(URL_PATH) {
         //Cut extra / at the end
         if (URL_PATH.charAt(URL_PATH.length - 1) == "/") URL_PATH = URL_PATH.substring(0, URL_PATH.length - 1);
-        let pathRes = path.resolve(CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + this.PackageName + "/html" + URL_PATH);
+        let pathRes = path.resolve(CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + this.getName() + "/html" + URL_PATH);
         
         //ALREADY EXISTS
         if (URL_PATH != "" && fs.existsSync(pathRes) && fs.statSync(pathRes).isFile())
@@ -399,7 +386,7 @@ class PackageBase {
         let FILE_ENDINGS = ["/index.html", "/index.htm",".html", ".htm"];
 
         for (let ending of FILE_ENDINGS) {
-            pathRes = path.resolve(CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + this.PackageName + "/html" + URL_PATH + ending);
+            pathRes = path.resolve(CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + this.getName() + "/html" + URL_PATH + ending);
             if (fs.existsSync(pathRes) && fs.statSync(pathRes).isFile())
                 return pathRes;
         }

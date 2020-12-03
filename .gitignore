@@ -261,9 +261,13 @@ paket-files/
 __pycache__/
 *.pyc
 
-#OWN STUFF
+# OWN STUFF
 TOKENS/
 Logs/
 config.json
 *.db
-config.json
+
+# Package Specific
+
+Packages/ChatModeration/Link Filter/
+Packages/ChatModeration/Word Filter/

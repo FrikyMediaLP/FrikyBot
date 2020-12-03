@@ -138,7 +138,7 @@ function NAVIVATION_saveCookiesData(data) {
 
 //COOKIES
 function displayCookieNotification(x) {
-    x.innerHTML = '<div id="COOKIE_NOTIFICATION"><span>This Page uses Cookies! More Info <a href="' + ROOT + 'Data-and-Cookies">here</a>!</span><button onclick="CookieBtn(true)">ACCEPT</button></div>';
+    x.innerHTML = '<div id="COOKIE_NOTIFICATION"><span>This Page uses Cookies! More Info <a href="' + ROOT + 'Cookies">here</a>!</span><button onclick="CookieBtn(true)">ACCEPT</button></div>';
 }
 function CookieBtn(state) {
     COOKIE_ACCEPT = state;

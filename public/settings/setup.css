@@ -1,58 +1,49 @@
-﻿/* GENERAL */
-#HEADER {
+﻿
+/* GENERAL */
+#SECTION_SETUP #HEADER {
     font-family: Roboto, sans-serif;
     color: white;
     font-size: 30px;
     padding: 7px 15px;
 }
 
-#WAITING_FOR_DATA {
-    margin: 0 auto;
-    margin-top: 10vh;
-    width: 25%;
-}
-
-body.darkmode #content {
-    background-color: #363636 !important;
-    color: white;
-}
-
 #SECTION_CONTROL, #SECTION_SETUP, #SECTION_PACKAGES, #SECTION_LOGS {
     display: none;
 }
 
-/*MISC*/
-h2 {
-    text-transform: uppercase;
-    color: black;
-    border-bottom-width: 2px;
-    border-bottom-style: solid;
-}
+    /*MISC*/
+    #SECTION_SETUP h2 {
+        text-transform: uppercase;
+        color: black;
+        border-bottom-width: 2px;
+        border-bottom-style: solid;
+    }
 
-body.darkmode h2 {
+body.darkmode #SECTION_SETUP  h2 {
     color: white;
     border-bottom-color: gray;
 }
 
-h3 {
-    font-weight: 400;
-    border-bottom: 1px solid gray;
-}
-
-button {
-    outline: none;
-    cursor: pointer;
-    background-color: lightgray;
-    border: 2px solid lightgray;
-}
-    button.SAVE {
-        background-color: lightgreen;
-        border: 2px solid #59eb28;
+    #SECTION_SETUP h3 {
+        font-weight: 400;
+        border-bottom: 1px solid gray;
     }
 
-    button:hover {
-        filter: brightness(0.9);
+    #SECTION_SETUP button {
+        outline: none;
+        cursor: pointer;
+        background-color: lightgray;
+        border: 2px solid lightgray;
     }
+
+        #SECTION_SETUP button.SAVE {
+            background-color: lightgreen;
+            border: 2px solid #59eb28;
+        }
+
+        #SECTION_SETUP button:hover {
+            filter: brightness(0.9);
+        }
 
 /* 
     ----------------------
@@ -241,6 +232,13 @@ body.darkmode #SETUP_TWITCH_API #TWITCHAPI_SCOPES {
 #SETUP_WEBAPP {
     display: none;
 }
+
+    #SETUP_WEBAPP #SETUP_WEBAPP_ROUTING.hidden {
+        display: none;
+    }
+    #SETUP_WEBAPP #SETUP_WEBAPP_ROUTING:not(.hidden) {
+        display: block;
+    }
 /* 
     ----------------------
          Authentication
@@ -308,7 +306,7 @@ body.darkmode #SETUP_TWITCH_API #TWITCHAPI_SCOPES {
         outline: none;
         background-color: transparent;
         border: none;
-        color: white;
+        color: black;
         cursor: pointer;
     }
 
@@ -337,6 +335,7 @@ body.darkmode #SETUP_AUTHENTICATOR select > option {
         #SETUP_AUTHENTICATOR #AUTHENTICATOR_Interface select {
             height: 23px;
             padding: 0 40px;
+            color: black;
         }
 
         #SETUP_AUTHENTICATOR #AUTHENTICATOR_Interface input {
@@ -357,6 +356,9 @@ body.darkmode #SETUP_AUTHENTICATOR select > option {
 body.darkmode #SETUP_AUTHENTICATOR #AUTHENTICATOR_Interface input {
     color: white;
     border-bottom: 1px solid gray;
+}
+body.darkmode #SETUP_AUTHENTICATOR #AUTHENTICATOR_Interface select {
+    color: white;
 }
 
 /* 

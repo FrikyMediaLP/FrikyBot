@@ -1,0 +1,73 @@
+#SECTION_DASHBOARD {
+    display: none;
+}
+
+#grid #content button {
+    cursor: pointer;
+}
+
+#CONTROL {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 200px);
+    grid-template-rows: auto;
+    grid-column-gap: 5px;
+    grid-row-gap: 5px;
+}
+    #CONTROL .Core {
+        height: auto;
+        display: grid;
+        grid-template-columns: 100%;
+        grid-template-rows: 30px auto;
+        border: 1px solid gray;
+        padding-bottom: 5px;
+    }
+
+        #CONTROL .Core .Header {
+            font-size: 25px;
+            font-weight: bold;
+            border-bottom: 1px solid gray;
+        }
+            #CONTROL .Core .Header.ENABLED {
+                color: green;
+                background-color: rgba(0, 155, 0, 0.5)
+            }
+            #CONTROL .Core .Header.DISABLED {
+                color: red;
+                background-color: rgba(255, 0, 0, 0.2);
+            }
+
+        #CONTROL .Core .Misc {
+            height: auto;
+            max-height: 200px;
+            overflow-y: scroll;
+        }
+
+            #CONTROL .Core .Misc::-webkit-scrollbar {
+                width: 5px;
+            }
+
+            #CONTROL .Core .Misc::-webkit-scrollbar-track {
+                background: none;
+            }
+
+            #CONTROL .Core .Misc::-webkit-scrollbar-thumb {
+                background: #888;
+            }
+
+            #CONTROL .Core .Misc p {
+                margin: 5px;
+            }
+
+            #CONTROL .Core .Misc .Buttons {
+                height: auto;
+                margin: 5px;
+                margin-right: 0px;
+                display: grid;
+                grid-template-columns: 100%;
+                grid-auto-rows: 30px;
+                grid-row-gap: 5px;
+            }
+
+            #CONTROL .Core .Misc .SettingsLink a {
+                color: #2ab89b;
+            }

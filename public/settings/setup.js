@@ -77,64 +77,28 @@ let TTV_API_USER_TOKEN = {
 let AUTHENTICATOR_DATA = [];
 let AUTHENTICATOR_CUR_SORT_ELT;
 
-async function init() {
-    OUTPUT_create();
-
-    //Error Report
-    if (window.location.search.indexOf("?error=") >= 0) {
-        let start = window.location.search.indexOf("?error=") + 7;
-        let end = window.location.search.indexOf("&", start) < 0 ? window.location.search.length : window.location.search.indexOf("&", start);
-        OUTPUT_showError(decodeURI(window.location.search.substring(start, end)));
-    }
-
-
-    let section = window.location.pathname.substring(9);
-    let display_data;
-    if (section === "") {
-        section = 'control';
-        display_data = CONTROL;
-    } else if (section === "/setup") {
-        section = 'setup';
-        display_data = SETUP;
-    } else if (section === "/packages") {
-        section = 'packages';
-        display_data = PACKAGES;
-    } else if (section === "/logs") {
-        section = 'logs';
-        display_data = LOGS;
-    } else {
-        OUTPUT_showError("PAGE CONTENT NOT AVAILABLE!");
-        document.getElementById('WAITING_FOR_DATA').remove();
-        return Promise.resolve();
-    }
-    document.getElementById('HEADER').innerHTML = section.toUpperCase();
-
-
-    //Navigation
-    try {
-        await init_Navigation();
-    } catch (err) {
-        OUTPUT_showError(err.message);
-        document.getElementById('WAITING_FOR_DATA').remove();
-        return Promise.resolve();
-    }
-
+async function Setup_init() {
     //Data
     try {
-        let data = await FetchSettings(section);
+        let data = await FetchSettings();
         console.log(data);
-        display_data(data);
+
+        SETUP_TTV_API(data.TwitchAPI);
+        SETUP_TTV_IRC(data.TwitchIRC);
+        SETUP_AUTHENTICATOR(data.Authenticator);
+        SETUP_WEBAPP(data.WebApp);
     } catch (err) {
         OUTPUT_showError(err.message);
+        return Promise.resolve();
     }
 
     //DONE
     document.getElementById('WAITING_FOR_DATA').remove();
-    document.getElementById('SECTION_' + section.toUpperCase()).style.display = 'block';
+    document.getElementById('SECTION_SETUP').style.display = 'block';
 }
 
-async function FetchSettings(section = '') {
-    return fetch("/api/auth/settings/" + section, getFetchHeader())
+async function FetchSettings() {
+    return fetch("/api/settings/setup", getFetchHeader())
         .then(checkResponse)
         .then(json => {
             if (json.err) {
@@ -144,48 +108,6 @@ async function FetchSettings(section = '') {
             }
         })
 }
-async function fetchNav() {
-    return fetch("/api/auth/settings/navigation", getFetchHeader())
-        .then(checkResponse)
-        .then(json => {
-            if (json.err) {
-                return Promise.reject(new Error(json.err));
-            } else {
-                return Promise.resolve(json.data);
-            }
-        })
-}
-async function init_Navigation() {
-    let navData;
-    try {
-        navData = await fetchNav();
-        document.getElementById("mainNavi").innerHTML = NAVIGATIONV2_create(navData);
-    } catch (err) {
-        try {
-            await NAVIVATION_init();
-        } catch (err) {
-
-        }
-        return Promise.reject(err);
-    }
-    
-    return Promise.resolve();
-}
-
-//CONTROL
-function CONTROL(data = {}) {
-
-}
-
-//SETUP
-function SETUP(data = {}) {
-    SETUP_TTV_API(data.TwitchAPI);
-    SETUP_TTV_IRC(data.TwitchIRC);
-    SETUP_AUTHENTICATOR(data.Authenticator);
-}
-
-//CONFIG
-//sooon
 
 //TTV API
 function SETUP_TTV_API(data) {
@@ -678,35 +600,49 @@ function SETUP_AUTHENTICATOR_USER_SORT(type = '', elt) {
 //sooon
 
 //WebApp
-//sooon
+function SETUP_WEBAPP(data) {
+    if (!data || !document.getElementById('SETUP_WEBAPP')) return;
 
-//UTIL
-function getFetchHeader() {
-    return {
-        headers: {
-            "Authorization": "Bearer " + TTV_PROFILE_getCookieData().id_token
-        }
-    };
-}
-async function checkResponse(response){
-    if (response.status === 200) {
-        return response.json();
-    } else if (response.status === 401) {
-        return Promise.reject(new Error("Unauthorized"));
-    } else {
-        return Promise.reject(new Error("Error: " + request.status + " - " + request.statusText));
-    }
-}
-function HTMLElementArrayToArray(html_arr) {
-    let arr = [];
+    let s = '<ol>';
 
-    for (let elt of html_arr) {
-        arr.push(elt);
+    for (let layer of data.Routing) {
+        s += SETUP_WEBAPP_createLayer2(layer);
     }
 
-    return arr;
+    document.getElementById('SETUP_WEBAPP_ROUTING').innerHTML = s + '</ol>';
+    document.getElementById('SETUP_WEBAPP').style.display = 'block';
 }
-function GetTime(time) {
-    let date = new Date(time);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString('de-DE', { hour: 'numeric', minute: 'numeric' });
+function SETUP_WEBAPP_createLayer2(layer, api = false) {
+    if (!layer.stack || layer.stack.length === 0) return '';
+
+    let s = '';
+    s += '<li>';
+
+    let temp = "";
+
+    for (let sub_layer of layer.stack) {
+        temp += SETUP_WEBAPP_createLayer2(sub_layer, layer.name === 'API Router');
+    }
+
+    s += layer.name + '</li>';
+
+    if (temp) {
+        s += '<ol>';
+        s += temp;
+        s += '</ol>';
+    }
+
+    return s;
+}
+function SETUP_WEBAPP_Routing_toggle(elt, show) {
+    if (elt && document.getElementById('SETUP_WEBAPP_ROUTING')) {
+        if (show === false)
+            document.getElementById('SETUP_WEBAPP_ROUTING').classList.remove('hidden');
+        else if (show === true)
+            document.getElementById('SETUP_WEBAPP_ROUTING').classList.add('hidden');
+        else
+            document.getElementById('SETUP_WEBAPP_ROUTING').classList.toggle('hidden');
+
+        elt.innerHTML = document.getElementById('SETUP_WEBAPP_ROUTING').classList.contains('hidden') ? 'show' : 'hide';
+    }
 }

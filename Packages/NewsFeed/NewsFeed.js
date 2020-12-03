@@ -3,10 +3,16 @@ const express = require('express');
 const fs = require('fs');
 const PATH = require('path');
 
+const PACKAGE_DETAILS = {
+    name: "NewsFeed",
+    description: "News Feed used to Share Updates and Informations on recent Events."
+};
+
 const SETTINGS_REQUIERED = {
     HTML_ROOT_NAME: "News",
     API_ROOT_NAME: "News",
-    News_File_Dir: "Packages/NewsFeed/News/News.json",
+    News_File_Dir: "Packages/NewsFeed/News/",
+    News_File: "News.json",
     Changelog_Dir: "Packages/NewsFeed/News/Changelogs/"
 };
 
@@ -37,11 +43,11 @@ const API_ENDPOINT_PARAMETERS = {
 };
 
 class NewsFeed extends require('./../PackageBase.js').PackageBase {
-    constructor(expressapp, twitchirc, twitchapi, datacollection, startparameters, logger) {
-        super("NewsFeed", "News Feed used to Share Updates and Informations on recent Events.", expressapp, twitchirc, twitchapi, datacollection, startparameters, logger);
+    constructor(expressapp, twitchirc, twitchapi, datacollection, logger) {
+        super(PACKAGE_DETAILS, expressapp, twitchirc, twitchapi, datacollection, logger);
     }
 
-    async Init() {
+    async Init(startparameters) {
         if (!this.isEnabled()) return Promise.resolve();
 
         //API ROUTE
@@ -127,42 +133,6 @@ class NewsFeed extends require('./../PackageBase.js').PackageBase {
                 });
             }
         });
-        APIRouter.post('/Publish', async (request, response) => {
-            if (request.headers.authentication) {
-                //AUTHENTICATION FOLLOWS
-
-                let dta = this.validate(request.body.data);
-
-                if (dta == true) {
-                    this.LoadNews();
-                    this.News.push(request.body.data);
-
-                    if (!this.ExportNews()) {
-                        console.log("NEWS EXPORT FAILED!");
-                    }
-
-                    response.json({
-                        status: CONSTANTS.STATUS_SUCCESS,    //Sending Failure confimation
-                        req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                        data: {
-                            status: "News Successfully published"
-                        }
-                    });
-                } else {
-                    response.json({
-                        status: CONSTANTS.STATUS_FAILED,    //Sending Failure confimation
-                        req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                        err: "News unfinished / has errors"
-                    });
-                }
-            } else {
-                response.json({
-                    status: CONSTANTS.STATUS_FAILED,    //Sending Failure confimation
-                    req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                    err: "Authentication missing"
-                });
-            }
-        });
 
         APIRouter.get('/Changelog', async (request, response) => {
             let data = this.GetLastestChangelog();
@@ -182,45 +152,104 @@ class NewsFeed extends require('./../PackageBase.js').PackageBase {
         });
         super.setAPIRouter(APIRouter);
 
+        //Publish
+        super.setAuthenticatedAPIEndpoint('/publish', { user_level: 'moderator' }, async (request, response) => {
+            let news_data = request.body;
+
+            let dta = this.validate(news_data);
+
+            if (dta == true) {
+                this.LoadNews();
+                this.News.push(news_data);
+
+                if (!this.ExportNews()) {
+                    console.log("NEWS EXPORT FAILED!");
+                }
+
+                response.json({
+                    status: CONSTANTS.STATUS_SUCCESS,    //Sending Failure confimation
+                    req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
+                    data: {
+                        status: "News Successfully published"
+                    }
+                });
+            } else {
+                response.json({
+                    status: CONSTANTS.STATUS_FAILED,    //Sending Failure confimation
+                    req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
+                    err: "News unfinished / has errors"
+                });
+            }
+        }, 'POST');
+        //NewsMakerAccess
+        super.setAuthenticatedAPIEndpoint('/access', {user_level: 'moderator' }, async (request, response) => {
+            return response.json({ data: "ACCESS GRANTED" });
+        });
+
         //STATIC FILE ROUTE
         let StaticRouter = express.Router();
         StaticRouter.use("/", (req, res, next) => {
-            if (req.url.toLowerCase() == "/newsmaker") {
-                //AUTHENTICATION
-                if (false) {
-                    res.sendFile(PATH.resolve("Packages/NewsFeed/html/NewsMaker.html"));
-                } else {
-                    res.sendFile(PATH.resolve("DATA/PAGES/NoAccess.html"));
-                }
-            } else if (req.url.toLowerCase() == "/news_styles") {
-                res.sendFile(PATH.resolve("Packages/NewsFeed/html/style/NewsFeed.css"));
-            } else if (req.url.toLowerCase() == "/news_scripts") {
-                res.sendFile(PATH.resolve("Packages/NewsFeed/html/script/NewsFeed.js"));
-            } else if (req.url.toLowerCase() == "/changelog_styles") {
-                res.sendFile(PATH.resolve("Packages/NewsFeed/html/style/Changelog.css"));
-            } else if (req.url.toLowerCase() == "/changelog_scripts") {
-                res.sendFile(PATH.resolve("Packages/NewsFeed/html/script/Changelog.js"));
-            } else if (req.url.toLowerCase().startsWith('/changelog')) {
-                res.sendFile(PATH.resolve("Packages/NewsFeed/html/Changelog_Template.html"));
+            let url = req.url.toLowerCase();
+
+            if (url == "/newsmaker") {
+                res.sendFile(PATH.resolve(this.getMainPackageRoot() + "NewsFeed/html/NewsMaker.html"));
+            } else if (url == "/news_styles") {
+                res.sendFile(PATH.resolve(this.getMainPackageRoot() + "NewsFeed/html/style/NewsFeed.css"));
+            } else if (url == "/news_scripts") {
+                res.sendFile(PATH.resolve(this.getMainPackageRoot() + "NewsFeed/html/script/NewsFeed.js"));
+            } else if (url == "/changelog_styles") {
+                res.sendFile(PATH.resolve(this.getMainPackageRoot() + "NewsFeed/html/style/Changelog.css"));
+            } else if (url == "/changelog_scripts") {
+                res.sendFile(PATH.resolve(this.getMainPackageRoot() + "NewsFeed/html/script/Changelog.js"));
+            } else if (url.startsWith('/changelog')) {
+                res.sendFile(PATH.resolve(this.getMainPackageRoot() + "NewsFeed/html/Changelog_Template.html"));
             } else {
-                res.sendFile(PATH.resolve("Packages/NewsFeed/html/News_Template.html"));
+                res.sendFile(PATH.resolve(this.getMainPackageRoot() + "NewsFeed/html/News_Template.html"));
             }
         });
         super.setFileRouter(StaticRouter);
 
         //HTML Navigation
-        super.setHTMLNavigation({
+        super.setWebNavigation({
             name: "News",
             href: this.getHTMLROOT(),
             icon: "images/icons/newspaper-solid.svg"
         });
-        
+
+        //Create File Structure
+        if (!fs.existsSync(PATH.resolve(this.Settings.News_File_Dir))) {
+            try {
+                fs.mkdirSync(PATH.resolve(this.Settings.News_File_Dir));
+            } catch (err) {
+                this.Logger.error("Corrupted Installation: News Folder couldnt be created!");
+                return false;
+            }
+        }
+        if (!fs.existsSync(PATH.resolve(this.Settings.News_File_Dir + this.Settings.News_File))) {
+            try {
+                fs.writeFileSync(PATH.resolve(this.Settings.News_File_Dir + this.Settings.News_File), JSON.stringify({ News: [] }, null, 4));
+            } catch (err) {
+                this.Logger.error("Corrupted Installation: News File couldnt be created!");
+                return false;
+            }
+        }
+
+        if (!fs.existsSync(PATH.resolve(this.Settings.Changelog_Dir))) {
+            try {
+                fs.mkdirSync(PATH.resolve(this.Settings.Changelog_Dir));
+            } catch (err) {
+                this.Logger.error("Corrupted Installation: Changelogs Folder couldnt be created!");
+                return false;
+            }
+        }
+
+        //Load Data
         return this.reload();
     }
     
     async reload() {
         if (!this.isEnabled()) return Promise.reject(new Error("Package is disabled!"));
-        
+
         //Load News Data
         this.LoadNews();
 
@@ -238,40 +267,35 @@ class NewsFeed extends require('./../PackageBase.js').PackageBase {
 
     //News
     LoadNews() {
-        if (!this.Settings.News_File_Dir) {
-            return false;
-        }
-
-        if (!fs.existsSync(this.Settings.News_File_Dir)) {
-            super.writeFile(this.Settings.News_File_Dir, JSON.stringify({ News: [] }, null, 4));
-            this.News = [];
-            return true;
-        } else {
-            try {
-                let s = super.readFile(this.Settings.News_File_Dir);
-                let json = JSON.parse(s);
-
-                if (json.News) {
-                    this.News = json.News;
-                    return true;
-                } else {
-                    this.News = [];
-                    return false;
-                }
-            } catch (err) {
-                console.log(err);
-                this.News = [];
-                return false;
-            }
-        }
-    }
-    ExportNews() {
-        if (!this.Settings.News_File_Dir || !this.News) {
+        //Check Settings
+        if (!this.Settings.News_File_Dir || !this.Settings.News_File) {
             return false;
         }
 
         try {
-            super.writeFile(this.Settings.News_File_Dir, JSON.stringify({ News: this.News }, null, 4));
+            let s = super.readFile(PATH.resolve(this.Settings.News_File_Dir + this.Settings.News_File));
+            let json = JSON.parse(s);
+
+            if (json.News) {
+                this.News = json.News;
+                return true;
+            } else {
+                this.News = [];
+                return false;
+            }
+        } catch (err) {
+            this.Logger.error(err.message);
+            this.News = [];
+            return false;
+        }
+    }
+    ExportNews() {
+        if (!this.Settings.News_File_Dir || !this.Settings.News_File || !this.News) {
+            return false;
+        }
+
+        try {
+            super.writeFile(this.Settings.News_File_Dir + this.Settings.News_File, JSON.stringify({ News: this.News }, null, 4));
             return true;
         } catch (err) {
             return false;
@@ -396,7 +420,7 @@ class NewsFeed extends require('./../PackageBase.js').PackageBase {
         output.News.reverse();
 
         //Error Check
-        return output.News.length == 0 ? "News not found" : output;
+        return output;
     }
     getOldest(first, pagination) {
         if (!this.News) {
@@ -432,7 +456,7 @@ class NewsFeed extends require('./../PackageBase.js').PackageBase {
         }
 
         //Error Check
-        return output.News.length == 0 ? "News not found" : output;
+        return output;
     }
     getDate(start, end, first, pagination) {
         if (!this.News) {
@@ -528,7 +552,7 @@ class NewsFeed extends require('./../PackageBase.js').PackageBase {
         }
 
         //Error Check
-        return output.News.length == 0 ? "News not found" : output;
+        return output;
     }
 
     //No Pagination
@@ -688,7 +712,7 @@ class NewsFeed extends require('./../PackageBase.js').PackageBase {
                 let json = JSON.parse(fs.readFileSync(PATH.resolve(this.Settings.Changelog_Dir + name + ".json")));
                 return json;
             } catch (err) {
-                console.log(err);
+                this.Logger.error(err.message);
             }
         }
 

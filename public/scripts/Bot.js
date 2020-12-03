@@ -7,14 +7,20 @@ function init() {
     Bot_Status_Details_Settings.Use_Cookies = false;
 
     BOT_STATUS_DETAILS_NORMAL();
+
+    DisplayChatModeration()
+        .catch(err => {
+            console.log(err);
+            OUTPUT_showError(err);
+        });
 }
 
-function soon(){
-	fetch("/ChatModeration/api/Overview")
+async function DisplayChatModeration(){
+	return fetch("/api/ChatModeration/filters")
         .then(data => data.json())
         .then(json => {
+            console.log(json);
             if (json.err) {
-                console.log(json);
                 OUTPUT_showError(json.err);
             } else if (json.data) {
                 let s = '<h2>Chat Moderation Overview</h2>';
@@ -41,10 +47,6 @@ function soon(){
                     autoSizeFont(elt);
                 }
             }
-        })
-        .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err);
         });
 }
 

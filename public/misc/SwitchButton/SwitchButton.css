@@ -214,6 +214,11 @@
         animation: LOADING_RING_SPIN 1s infinite;
     }
 
+    .LOADING_RING.lightmode .LOADING_RING_SPINNER {
+        border: 2px solid rgba(0,0,0,0.2);
+        border-top-color: gray;
+    }
+
 @keyframes LOADING_RING_SPIN {
     100% {
         transform: rotate(360deg);

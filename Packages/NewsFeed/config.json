@@ -2,6 +2,7 @@
     "enabled": true,
     "HTML_ROOT_NAME": "News",
     "API_ROOT_NAME": "News",
-    "News_File_Dir": "Packages/NewsFeed/News/News.json",
-    "Changelog_Dir": "Packages/NewsFeed/Changelogs/"
+    "News_File_Dir": "Packages/NewsFeed/News/",
+    "Changelog_Dir": "Packages/NewsFeed/Changelogs/",
+    "News_File": "News.json"
 }

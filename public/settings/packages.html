@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Settings - FrikyBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- GENERAL CSS -->
+    <link href="../styles/standard.css" rel="stylesheet">
+    <link href="../styles/Grid/Grid_Foundation.css" rel="stylesheet">
+
+    <!-- PAGE CSS-->
+    <link href="../styles/Grid/Grid_Default.css" rel="stylesheet">
+    <link href="../settings/settings.css" rel="stylesheet">
+    <link href="../settings/packages.css" rel="stylesheet">
+
+    <!-- GENERAL JS-->
+    <script src="../scripts/standard.js"></script>
+
+    <!-- PAGE JS-->
+    <script src="../settings/settings.js"></script>
+    <script src="../settings/packages.js"></script>
+
+    <!-- MISC -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+
+    <script src="../misc/NavigationV2/NavigationV2.js"></script>
+    <link href="../misc/NavigationV2/NavigationV2.css" rel="stylesheet">
+
+    <script src="../misc/OUTPUT/OUTPUT.js"></script>
+    <link href="../misc/OUTPUT/OUTPUT.css" rel="stylesheet">
+
+    <script src="../misc/HoverProfile/HoverProfile.js"></script>
+    <link href="../misc/HoverProfile/HoverProfile.css" rel="stylesheet">
+
+    <script src="../misc/SwitchButton/SwitchButton.js"></script>
+    <link href="../misc/SwitchButton/SwitchButton.css" rel="stylesheet">
+</head>
+<body onload="Standard_Page_Init({ NAVIGATION_ENABLE_DEFAULT: false }); init(); Control_init();">
+    <!-- MAIN GRID -->
+    <div id="grid">
+        <!-- NAVI HEADER -->
+        <div class="cellM" id="naviHeader">
+            <a href="./../">FRIKY<span>BOT</span></a>
+        </div>
+
+        <!-- CONTENT HEADER -->
+        <div class="cellM" id="contentHeader">
+            <div id="HEADER"></div>
+        </div>
+
+        <!-- NAVI -->
+        <div class="cellM" id="navi">
+            <div id="mainNavi">
+
+            </div>
+            <button id="LightModeButton" onclick="toggleLightMode()">DarkMode</button>
+            <div id="license"> - <a href="https://fontawesome.com/license" target="_blank">Icon license</a> - </div>
+        </div>
+
+        <!-- ACTUAL CONTENT -->
+        <div class="cellM" id="content" onscroll="NAVIGATIONV2_SCROLL_HL_CHECK()">
+            <div id="OUTPUT"></div>
+
+            <div id="WAITING_FOR_DATA">
+                <div class="LOADING_RING">
+                    <div class="LOADING_RING_SPINNER"></div>
+                </div>
+            </div>
+
+            <div id="SECTION_PACKAGES">
+
+            </div>
+        </div>
+    </div>
+</body>
+</html>

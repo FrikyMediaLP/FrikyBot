@@ -1,0 +1,11 @@
+﻿
+#WAITING_FOR_DATA {
+    margin: 0 auto;
+    margin-top: 10vh;
+    width: 25%;
+}
+
+body.darkmode #content {
+    background-color: #363636 !important;
+    color: white;
+}

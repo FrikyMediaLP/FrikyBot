@@ -47,7 +47,7 @@ class WebApp {
             this.Logger.info("Listening on " + address.address + ":" + address.port + " ...");
         });
         this.app.use(express.json({ limit: "1mb" }));
-        
+
         //Routers
         this.MAIN_ROUTER = express.Router();
         this.FILE_ROUTER = express.Router();
@@ -65,10 +65,11 @@ class WebApp {
         //NO ENDPOINT FOUND
         this.app.all('/api/*', (req, res, next) => res.json({ err: "404 - API Endpoint not found" }));
         //NO FILE FOUND
-        this.app.use((req, res, next) =>  res.redirect("/NotFound") );
+        this.app.use((req, res, next) => res.status(404).sendFile(path.resolve('public/NotFound.html')) );
 
         return Promise.resolve();
     }
+
     setAuthenticator(authenticator) {
         this.Authenticator = authenticator;
         this.WebAppInteractor.Authenticator = authenticator;
@@ -161,14 +162,14 @@ class WebAppInteractor {
     addAPIRoute(route, ...middlewares) {
         this.API_ROUTER.use(route, ...middlewares);
     }
-    addAuthAPIRoute(route, auth_method = {}, ...middlewares) {
+    addAuthAPIRoute(route, auth_method, ...middlewares) {
         if (auth_method === null)
             auth_method = {};
 
         if (!(auth_method instanceof Object))
             return false;
         
-        this.API_ROUTER.use(route, (req, res, next) => this.AuthenticateRequest(req, auth_method, res, next), ...middlewares);
+        return this.API_ROUTER.use(route, (req, res, next) => this.AuthenticateRequest(req, auth_method, res, next), ...middlewares);
     }
 
     //Endpoints
@@ -189,10 +190,10 @@ class WebAppInteractor {
 
         return false;
     }
-    addAuthAPIEndpoint(route, auth_method = {}, method = 'GET', ...middlewares) {
+    addAuthAPIEndpoint(route, auth_method, method = 'GET', ...middlewares) {
         if (auth_method === null)
             auth_method = {};
-
+        
         if (typeof (method) !== 'string' || !(auth_method instanceof Object))
             return false;
 
@@ -213,21 +214,34 @@ class WebAppInteractor {
     //Authentication
     async AuthenticateRequest(req, method = {}, res, next) {
         if (!this.Authenticator) {
-            if (res) res.status("500").send("Authenticator not ready!");
+            if (res && next) res.status("500").send("Authenticator not ready!");
             return Promise.resolve();
         }
-        
+
         try {
-            let user = await this.Authenticator.AuthenticateUser(req.headers, method);
+            let user = await this.Authenticator.AuthenticateRequest(req.headers, method, res ? res.locals.user : null);
             if (res) res.locals.user = user;
-            if(next) next();
+            if (next) next();
             return Promise.resolve(true);
         } catch (err) {
             //authorization failed
         }
 
-        if (res) res.status("401").send("Unauthorized");
+        if (res && next) res.status("401").send("Unauthorized");
         return Promise.resolve(false);
+    }
+    async AuthenticateUser(user, method = {}) {
+        if (!this.Authenticator) {
+            return Promise.reject(new Error("Authenticator not available."));
+        }
+
+        try {
+            await this.Authenticator.AuthenticateUser(user, method);
+            return Promise.resolve(user);
+        } catch (err) {
+            //authorization failed
+            return Promise.reject(err);
+        }
     }
 }
 

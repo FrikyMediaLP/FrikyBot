@@ -4,6 +4,12 @@
     ----------------
 */
 
+#NEWS_FEED_Feed .NEWS_FEED_NO_NEWS {
+    padding: 5px;
+    border: 1px solid lightgray;
+    font-weight: bold;
+    color: dimgray;
+}
 
 /*
     ----------------
@@ -262,7 +268,7 @@
 
 #NEWS_FEED_NewsMaker {
     margin: 15px;
-    display: grid;
+    display: none;
     grid-template-columns: 50% 50%;
     grid-template-rows: auto;
     grid-column-gap: 5px;

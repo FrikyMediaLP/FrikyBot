@@ -149,7 +149,7 @@ SETUP()
         /*----------------------------------------------------------
          *                   INIT VARIABLES
          *----------------------------------------------------------*/
-        
+
         //TwitchIRC 
         if (CONFIG.TwitchIRC) {
             try {
@@ -161,7 +161,7 @@ SETUP()
             }
         }
 
-        
+
 
         //TwitchAPI
         if (CONFIG.TwitchAPI) {
@@ -194,7 +194,7 @@ SETUP()
         } catch (err) {
             return Promise.reject(err);
         }
-        
+
         try {
             await POST_INIT();
         } catch (err) {
@@ -211,6 +211,7 @@ SETUP()
     })
     .catch(err => {
         Logger.server.error(err.message);
+        console.log(err);
         console.log("Press any key to exit.");
         process.stdin.on("data", data => {
             shutdown(0);
@@ -294,7 +295,7 @@ async function checkBotFileStructure(go2create) {
                 }
                 
                 if (go2create) {
-                    Logger.setup.info("Created Directory: " + FILESTRUCTURE[dir])
+                    Logger.setup.info("Created Directory: " + FILESTRUCTURE[dir]);
                     fs.mkdirSync(path.resolve(FILESTRUCTURE[dir]));
                 }
             }
@@ -574,17 +575,17 @@ async function INIT() {
 }
 async function INIT_Packages() {
     Logger.server.info("INITATING BOT Packages ... ");
-    
+
     //Setup ALL Packages
     for (let pack in INSTALLED_PACKAGES) {
         try {
             let packClass = INSTALLED_PACKAGES[pack].Class;
-            INSTALLED_PACKAGES[pack].Object = new packClass(WebApp.GetInteractor(), TwitchIRC, TwitchAPI, DataCollection, CONFIG.Packages[pack], Logger);
+            INSTALLED_PACKAGES[pack].Object = new packClass(WebApp.GetInteractor(), TwitchIRC, TwitchAPI, DataCollection, Logger);
 
             //Init ENABLED Packages
             if (INSTALLED_PACKAGES[pack].Object.isEnabled()) {
                 try {
-                    await INSTALLED_PACKAGES[pack].Object.Init();
+                    await INSTALLED_PACKAGES[pack].Object.Init(CONFIG.Packages[pack]);
                 } catch (err) {
                     console.log(err);
                     Logger.error(err.message);
@@ -635,6 +636,22 @@ async function POST_INIT() {
                 return Promise.resolve();
             }
 
+            //Check Userlevel
+            try {
+                await WebApp.GetInteractor().Authenticator.Auth_UserLevel(res.locals.user.sub, req.body.user_level, true);
+            } catch (err) {
+                if (err.message === 'User not found!') {
+                    res.status(401).send('You have no Entry in the Authenticator! So you cant edit anything!');
+                } else if (err.message === 'Userlevel doesnt match') {
+                    res.status(401).send('You cant add a User with the same or more power than yourself.');
+                } else {
+                    Logger.error(err.message);
+                    res.status(500).json({ err: 'Internal Error.' });
+                }
+                
+                return Promise.resolve();
+            }
+
             //Add User
             try {
                 let new_user = await auth.addUser(req.body.user_id, req.body.user_name, req.body.user_level, res.locals.user.sub, res.locals.user.preferred_username);
@@ -649,6 +666,32 @@ async function POST_INIT() {
                 res.status(500).json({ err: 'Internal Error.' });
                 return Promise.resolve();
             }
+
+            if (req.body.user_id !== res.locals.user.sub) {
+                //Check Userlevel
+                try {
+                    let users = await WebApp.GetInteractor().Authenticator.GetUsers([req.body.user_id]);
+
+                    if (!users || users.length == 0) {
+                        res.status(404).send('User not found!');
+                        return Promise.resolve();
+                    }
+
+                    await WebApp.GetInteractor().Authenticator.Auth_UserLevel(res.locals.user.sub, users[0].user_level, true);
+                } catch (err) {
+                    if (err.message === 'User not found!') {
+                        res.status(401).send('You have no Entry in the Authenticator! So you cant edit anything!');
+                    } else if (err.message === 'Userlevel doesnt match') {
+                        res.status(401).send('You cant remove a User with the same or more power than yourself.');
+                    } else {
+                        Logger.error(err.message);
+                        res.status(500).json({ err: 'Internal Error.' });
+                    }
+
+                    return Promise.resolve();
+                }
+            }
+            
 
             //Remove User
             try {
@@ -665,6 +708,45 @@ async function POST_INIT() {
                 return Promise.resolve();
             }
 
+            let Auth = WebApp.GetInteractor().Authenticator;
+            let target_user = null;
+            let current_user = null;
+
+            //Get User
+            try {
+                let users = await Auth.GetUsers([res.locals.user.sub, req.body.user_id]);
+
+                if (!users || users.length == 0) {
+                    res.status(404).send('User not found!');
+                    return Promise.resolve();
+                }
+
+                for (let user of users) {
+                    if (user.user_id === res.locals.user.sub) {
+                        current_user = user;
+                    } else if (user.user_id === req.body.user_id) {
+                        target_user = user;
+                    }
+                }
+            } catch (err) {
+                Logger.error(err.message);
+                res.status(500).json({ err: 'Internal Error.' });
+                return Promise.resolve();
+            }
+            
+            //Check Userlevel
+            if (!current_user || !target_user) {
+                res.status(404).send('User not found!');
+                return Promise.resolve();
+            } else if (!Auth.CompareUserlevels(current_user.user_level, target_user.user_level, true)) {
+                res.status(401).send('You cant edit a User with the same or more power than yourself.');
+                return Promise.resolve();
+            } else if (!Auth.CompareUserlevels(current_user.user_level, req.body.user_level, true)) {
+                res.status(401).send('You cant give a User the same or more power than yourself.');
+                return Promise.resolve();
+            }
+
+            //Edit User
             try {
                 let cnt = await auth.updateUser(req.body.user_id, req.body.user_name, req.body.user_level, res.locals.user.sub, res.locals.user.preferred_username);
                 res.json({ upt_user: cnt });
@@ -675,14 +757,14 @@ async function POST_INIT() {
             return Promise.resolve();
         });
 
-        WebApp.GetInteractor().addAuthAPIRoute('/Authenticator', null, AuthenticatorAPIRoute);
+        WebApp.GetInteractor().addAuthAPIRoute('/Authenticator', { user_level: 'staff' }, AuthenticatorAPIRoute);
     }
 
     //PACKAGE INTERCONNECT
     for (let pack in INSTALLED_PACKAGES) {
         try {
             //Post Init ENABLED Packages
-            if (INSTALLED_PACKAGES[pack].Object.isEnabled()) {
+            if (INSTALLED_PACKAGES[pack].Object && INSTALLED_PACKAGES[pack].Object.isEnabled()) {
                 try {
                     let Package_Interconnect_requests = INSTALLED_PACKAGES[pack].Object.GetPackageInterconnectRequests();
 
@@ -711,7 +793,7 @@ async function POST_INIT() {
     for (let pack in INSTALLED_PACKAGES) {
         try {
             //Post Init ENABLED Packages
-            if (INSTALLED_PACKAGES[pack].Object.isEnabled()) {
+            if (INSTALLED_PACKAGES[pack].Object && INSTALLED_PACKAGES[pack].Object.isEnabled()) {
                 try {
                     await INSTALLED_PACKAGES[pack].Object.PostInit();
                 } catch (err) {
@@ -723,7 +805,7 @@ async function POST_INIT() {
             Logger.server.error(err.message);
         }
     }
-
+    
     //CONSOLE INPUT
     process.stdin.on("data", DEV_CONSOLE_INPUT_MASTER);
 
@@ -738,26 +820,30 @@ async function INIT_WEBAPP() {
         await WebApp.Init();
         let WebAppInteractor = WebApp.GetInteractor();
 
-        ////WebApp - API
+        //Main Router
+        WebAppInteractor.addMainRoute(MAIN_ROUTER);
+        
+        //Bot API - General
         let APIRouter = express.Router();
-        let AuthAPIRouter = express.Router();
-
-        //NON AUTHENTICATED
         APIRouter.get('/BotStatus', API_BotStatus);
         APIRouter.get('/Navi', API_Navi);
-        APIRouter.get('/Packages', API_Packages);
         APIRouter.get('/Cookies', API_Cookies);
+
+        //Bot API - Packages
+        APIRouter.get('/packages', API_Packages);
+        WebAppInteractor.addAuthAPIEndpoint('/packages/control', { user_level: 'staff' }, 'GET', API_PACKAGE_CONTROL);
+
+        WebAppInteractor.addAPIRoute('', APIRouter);
 
         //AUTHENTICATED - SETTINGS
         let SettingsAPIRouter = express.Router();
         SettingsAPIRouter.get('/setup', PAGE_Settings_Setup);
+        SettingsAPIRouter.get('/dashboard', PAGE_Settings_Dashboard);
+        SettingsAPIRouter.get('/packages', PAGE_Settings_Packages);
+        SettingsAPIRouter.get('/logs', PAGE_Settings_Logs);
         SettingsAPIRouter.get('/navigation', PAGE_Settings_Nav);
-        AuthAPIRouter.use("/settings", SettingsAPIRouter);
-
-        WebAppInteractor.addMainRoute(MAIN_ROUTER);
-        WebAppInteractor.addAPIRoute('', APIRouter);
-        WebAppInteractor.addAuthAPIRoute('/auth', null, AuthAPIRouter);
-
+        WebAppInteractor.addAuthAPIRoute('/settings', { user_level: 'staff' }, SettingsAPIRouter);
+        
         return Promise.resolve();
     } catch (err) {
         return Promise.reject(err);
@@ -851,6 +937,128 @@ function shutdown(timeS) {
     setTimeout(() => shutdown(timeS - 1), 1000);
 }
 
+function API_ANALYSE_DISPLAY(arch, parent = "ExpressApp", depth = 0, offset = 4) {
+    let out = "";
+
+    for (let i = 0; i < depth * offset; i++) {
+        out += " ";
+    }
+    out += depth + ". " + parent + "\n";
+
+    for (let layer of arch) {
+        if (layer.stack !== "END") {
+            out += API_ANALYSE_DISPLAY(layer.stack, layer.regex ? layer.regex : layer.name, depth + 1, offset = 4);
+        } else {
+            for (let i = 0; i < (depth + 1) * offset; i++) {
+                out += " ";
+            }
+
+            out += (depth + 1) + ". " + layer.name + "\n";
+        }
+    }
+
+    return out;
+}
+function API_ANALYSE(layer, type = "handle", iter = 100, allow_cleanup = false) {
+    let obj = [];
+    
+    if (layer[type].stack) {
+        for (let sub_layer of layer[type].stack) {
+            if (iter < 0) break;
+
+            let splitted = sub_layer.regexp.toString().split('\\/');
+            let cutted_regex;
+
+            if (splitted.length > 2 && splitted[1].charAt(0) !== "?") {
+                cutted_regex = "/" + splitted[1];
+            }
+
+            let method = "";
+
+            if (type === 'route') {
+                for (let meth in layer.route.methods) {
+                    method = meth;
+                }
+            }
+
+            let name = (sub_layer.name !== "<anonymous>" && sub_layer.name !== "bound dispatch" ? sub_layer.name + "" : (sub_layer.name == "bound dispatch" ? sub_layer.route.path : (cutted_regex ? cutted_regex + "" : '')));
+
+            if (name === 'router' && sub_layer.path) {
+                name = sub_layer.path;
+            }
+
+            let new_layer = {};
+
+            if (method) {
+                new_layer = {
+                    name: method,
+                    stack: 'METHOD'
+                };
+            } else {
+                new_layer = {
+                    name: name,
+                    stack: API_ANALYSE(sub_layer, sub_layer.route ? 'route' : 'handle', iter - 1)
+                };
+            }
+
+            if (name === 'router' && new_layer.stack.length > 0) {
+                for (let new_sub_layer of new_layer.stack) {
+                    obj.push(new_sub_layer);
+                }
+            } else {
+                obj.push(new_layer);
+            }
+        }
+
+        //Cleanup
+        let found = 0;
+        while (allow_cleanup && found >= 0) {
+            found = -1;
+
+            for (let i = 0; i < obj.length; i++) {
+                if (obj[i].name === "" || obj[i].stack.length == 0) {
+                    obj.splice(i, 1);
+                    found = i;
+                    break;
+                }
+
+                if (obj[i].stack === "END" || obj[i].stack === "METHOD") {
+                    break;
+                }
+
+                for (let j = 0; j < obj[i].stack.length; j++) {
+                    if (obj[i].stack.find((elt, idx) => {
+                        if (elt.name === obj[i].stack[j].name && elt.stack === obj[i].stack[j].stack && idx !== j) {
+
+                            found = idx;
+                            return true;
+                        }
+
+                        return false;
+                    })) break;
+
+                }
+
+                if (found < 0 && obj[i].stack.find((elt, idx) => {
+                    if (elt.name === "") {
+
+                        found = idx;
+                        return true;
+                    }
+
+                    return false;
+                }));
+
+                if (found >= 0)
+                    obj[i].stack.splice(found, 1);
+            }
+        }
+    } else {
+        obj = 'END';
+    }
+
+    return obj;
+}
 /*
  *  ----------------------------------------------------------
  *                       EXPRESS MIDDLEWARE
@@ -879,6 +1087,13 @@ async function MAIN_ROUTER(req, res, next) {
             return res.redirect("/Settings?error=" + err.message);
         }
     }
+
+    //Add User Information
+    try {
+        await WebApp.GetInteractor().AuthenticateRequest(req, {}, res);
+    } catch (err) {
+
+    }
     
     //Check other Routers
     try {
@@ -888,6 +1103,7 @@ async function MAIN_ROUTER(req, res, next) {
     }
 }
 
+//General API
 async function API_BotStatus(req, res, next) {
     try {
         //Get Data
@@ -969,28 +1185,19 @@ async function API_BotStatus(req, res, next) {
     }
 }
 async function API_Navi(req, res, next) {
-    //Authentication
-    let is_authed = false;
-    try {
-        is_authed = await WebApp.GetInteractor().AuthenticateRequest(req);
-    } catch (err) {
-
-    }
-
-
-    //  Main - Section
+    //Main - Section
     let MainNavigationPackages = ["CommandHandler", "ChatStats", "CustomChat"];
     let MainSection = [{ type: "icon", name: "Homepage", href: "/", icon: "images/icons/home.svg" }];
 
     for (let pack of MainNavigationPackages) {
-        if (INSTALLED_PACKAGES[pack] && INSTALLED_PACKAGES[pack].Object && INSTALLED_PACKAGES[pack].Object.isNaviEnabled()) {
-            let temp_Pck_Nav = INSTALLED_PACKAGES[pack].Object.isNaviEnabled();
+        if (INSTALLED_PACKAGES[pack] && INSTALLED_PACKAGES[pack].Object && INSTALLED_PACKAGES[pack].Object.getWebNavigation()) {
+            let temp_Pck_Nav = INSTALLED_PACKAGES[pack].Object.getWebNavigation();
             temp_Pck_Nav.type = "icon";
             MainSection.push(temp_Pck_Nav);
         }
     }
 
-    //  Packages - Section
+    //Packages - Section
     let PackageSection = [];
 
     for (let pack in INSTALLED_PACKAGES) {
@@ -1003,21 +1210,30 @@ async function API_Navi(req, res, next) {
         }
 
         //Add Data
-        if (!skip && INSTALLED_PACKAGES[pack].Object && INSTALLED_PACKAGES[pack].Object.isNaviEnabled()) {
-            let temp_Pck_Nav = INSTALLED_PACKAGES[pack].Object.isNaviEnabled();
+        if (!skip && INSTALLED_PACKAGES[pack].Object && INSTALLED_PACKAGES[pack].Object.getWebNavigation()) {
+            let temp_Pck_Nav = INSTALLED_PACKAGES[pack].Object.getWebNavigation();
             temp_Pck_Nav.type = "icon";
             PackageSection.push(temp_Pck_Nav);
         }
     }
+
     //Add "More Packages"
     PackageSection.push({ type: "icon", name: "More Packages", href: "/Packages", icon: "images/icons/packages.svg" });
 
-    //  Settings - Section
+    //Settings - Section
     let SettingsSection = [];
 
-    SettingsSection.push({ type: "icon", name: "Bot Details", href: "/Bot", icon: "images/icons/FrikyBot.png" });
-    if (is_authed === true) SettingsSection.push({ type: "icon", name: "Settings", href: "/Settings", icon: "images/icons/gear.svg" });
-    SettingsSection.push({ type: "icon", name: "Login", href: "/Login", icon: "images/icons/twitch.svg" });
+    SettingsSection.push({ type: "icon", name: "Bot Details", href: "/bot", icon: "images/icons/FrikyBot.png" });
+
+    try {
+        //Settings Link
+        await WebApp.GetInteractor().AuthenticateUser(res.locals.user, { user_level: 'staff' });
+        SettingsSection.push({ type: "icon", name: "Settings", href: "/settings", icon: "images/icons/gear.svg" });
+    } catch (err) {
+
+    }
+    
+    SettingsSection.push({ type: "icon", name: "Login", href: "/login", icon: "images/icons/twitch.svg" });
 
     //Return Data
     return res.json({
@@ -1025,7 +1241,7 @@ async function API_Navi(req, res, next) {
             {
                 "type": "section",
                 "name": "Main Navigation",
-                "contents": [{ type: "icon", name: "Homepage", href: "/", icon: "images/icons/home.svg" }]
+                "contents": MainSection
             },
             {
                 "type": "section",
@@ -1068,33 +1284,161 @@ async function API_Packages(req, res, next) {
     return res.json({ data: out });
 }
 function API_Cookies(req, res, next) {
-    const out = {
-        LocalStorage: {
+    let LocalStorage = [];
+    let SessionStorage = [];
+    let Cookies = [];
+    
+    //From Core
+    LocalStorage.push({ name: 'CookieAccept', by: 'Every Site with a "Accept Cookie" Notification', set: 'When you accept the Cookie Notification', removed: 'When you decline Cookies.', reason: 'Remembering that you allredy accepted Cookies.' });
+    SessionStorage.push({ name: 'BOT_STATUS_DETAILS', by: 'Bot Status', set: 'When new Bot Details were fetched', reason: 'Reduce loadtimes by storing a temporary dataset of the Bot Status.' });
+    SessionStorage.push({ name: 'NAVIVATION', by: 'Sites using NavigationV2 (pretty much every)', set: 'When new Navigation Data was fetched', reason: 'Reduce loadtimes by storing a temporary dataset of the Navigation Data.' });
+    LocalStorage.push({ name: 'TTV_PROFILE', by: 'Twitch Login / Hover Profile', set: 'When you log in using Twitch', removed: 'When you log out / Your Aceess expires.', reason: 'Stay logged in on every Site.' });
 
-        },
-        SessionStorage: {
-            "BOT_STATUS_DETAILS": {
-                "Set By?": "Bot_Status_Details.js",
-                "When Set?": "When new Bot Details were fetched",
-                "Used for?": "Reduce loadtimes by storing a temporary dataset of the Bot Status."
-            },
-            "NAVIVATION": {
-                "Set By?": "standard.js -> ANY",
-                "When Set?": "When new Navigation Data was fetched",
-                "Used for?": "Reduce loadtimes by storing a temporary dataset of the Navigation Data."
+    //From Packages
+    for (let pack in INSTALLED_PACKAGES) {
+        try {
+            if (INSTALLED_PACKAGES[pack].Object.isEnabled()) {
+                let package_cookies = INSTALLED_PACKAGES[pack].Object.getWebCookies();
+
+                if (!package_cookies) continue;
+
+                if (package_cookies.LocalStorage) for (let local of package_cookies.LocalStorage) LocalStorage.push(local);
+                if (package_cookies.SessionStorage) for (let session of package_cookies.SessionStorage) SessionStorage.push(session);
+                if (package_cookies.Cookies) for (let cookie of package_cookies.Cookies) Cookies.push(cookie);
             }
+        } catch (err) {
+            Logger.server.error(err.message);
         }
-    };
+    }
 
-    return res.json({ data: out });
+    return res.json({
+        data: {
+            LocalStorage: LocalStorage,
+            SessionStorage: SessionStorage,
+            Cookies: Cookies
+        }
+    });
 }
 
-async function PAGE_Settings_Control(req, res, next) {
-    let data = {};
+//Package API
+async function API_PACKAGE_CONTROL(req, res, next) {
+    const package_name = req.query['package_name'];
+    const type = req.query['type'];
+    
+    if (!type || !package_name) {
+        res.status(400).json({ err: 'Bad Request. ' + (!type ? 'type missing!' : 'package missing!') });
+        return Promise.resolve();
+    }
 
-    res.json({
-        data: data
-    });
+    if (!INSTALLED_PACKAGES[package_name]) {
+        res.status(400).json({ err: 'Bad Request. Package not found.' });
+        return Promise.resolve();
+    }
+
+    if (!INSTALLED_PACKAGES[package_name].Object) {
+        res.status(500).json({ err: 'Package not initiated.' });
+        return Promise.resolve();
+    }
+
+    let out = {};
+
+    if (type === 'start') {
+        //set Enable + call Reload
+        try {
+            await INSTALLED_PACKAGES[package_name].Object.enable();
+            out.enable = 'success';
+        } catch (err) {
+            out.err = 'enable failed';
+        }
+    } else if (type === 'stop') {
+        //set Disable
+        try {
+            await INSTALLED_PACKAGES[package_name].Object.disable();
+            out.disable = 'success';
+        } catch (err) {
+            out.err = 'disable failed';
+        }
+    } else if (type === 'reload') {
+        //call Reload
+        try {
+            await INSTALLED_PACKAGES[package_name].Object.reload();
+            out.reload = 'success';
+        } catch (err) {
+            out.err = 'reload failed';
+        }
+    } else {
+        res.status(400).json({ err: 'Bad Request. Type not found.' });
+        return Promise.resolve();
+    }
+
+    out.package_name = package_name;
+    out.status = INSTALLED_PACKAGES[package_name].Object.isEnabled();
+    res.json(out);
+    return Promise.resolve();
+}
+
+//Settings API
+async function PAGE_Settings_Dashboard(req, res, next) {
+    let data = {
+        TwitchAPI: { enabled: false },
+        TwitchIRC: { enabled: false },
+        WebApp: { enabled: false },
+        Authenticator: { enabled: false },
+        Packages: { enabled: false }
+    };
+
+    //TTV API
+    if (CONFIG.TwitchAPI && TwitchAPI) {
+        data.TwitchAPI.enabled = true;
+
+        let tokens = {
+            user: null,
+            app: null
+        };
+
+        try {
+            await TwitchAPI.updateAppAccessToken();
+            tokens.app = await TwitchAPI.getAppTokenStatus();
+        } catch (err) {
+            Logger.TwitchAPI.error(err.message);
+        }
+
+        try {
+            await TwitchAPI.updateUserAccessToken();
+            tokens.user = await TwitchAPI.getUserTokenStatus();
+        } catch (err) {
+            Logger.TwitchAPI.error(err.message);
+        }
+    }
+
+    //TTV IRC
+    if (CONFIG.TwitchIRC && TwitchIRC) {
+        data.TwitchIRC.enabled = true;
+    }
+
+    //WEBAPP
+    if (WebApp) {
+        data.WebApp.enabled = true;
+    }
+
+    //AUTHENTICATOR
+    if (WebApp && WebApp.GetInteractor() && WebApp.GetInteractor().Authenticator) {
+        let auth = WebApp.GetInteractor().Authenticator;
+
+        data.Authenticator.enabled = true;
+    }
+
+    //DATACOLLECTION
+    if (CONFIG.DataCollection && DataCollection) {
+        data.DataCollection.enabled = true;
+    }
+
+    //PACKAGES
+    if (CONFIG.Packages && INSTALLED_PACKAGES) {
+        data.Packages.enabled = true;
+    }
+
+    res.json({ data: data });
 }
 async function PAGE_Settings_Setup(req, res, next) {
     let data = {};
@@ -1136,7 +1480,32 @@ async function PAGE_Settings_Setup(req, res, next) {
             }
         }
     }
-    
+
+    //WebApp
+    if (WebApp) {
+        data.WebApp = {
+
+        };
+
+        try {
+            let architecture = [];
+
+            for (let i = 3; i < WebApp.app['_router'].stack.length; i++) {
+                let layer = WebApp.app['_router'].stack[i];
+                const alt_names = ['MAIN ROUTER', 'Static File Router', 'Custom File Routing', layer.path, '404 - API Endpoint Not Found', '404 - File Not Found'];
+
+                architecture.push({ name: alt_names[i - 3], stack: API_ANALYSE(layer) });
+            }
+
+            data.WebApp.Routing = architecture;
+
+            //console.log(JSON.stringify(architecture, null, 4));
+            //console.log(API_ANALYSE_DISPLAY(architecture));
+        } catch (err) {
+            Logger.server.error(err.message);
+        }
+    }
+
     //Authentication
     if (WebApp && WebApp.GetInteractor() && WebApp.GetInteractor().Authenticator) {
         let auth = WebApp.GetInteractor().Authenticator;
@@ -1144,7 +1513,7 @@ async function PAGE_Settings_Setup(req, res, next) {
         data.Authenticator = {
 
         };
-        
+
         if (TWITCHAPI && auth instanceof TWITCHAPI.Authenticator) {
             data.Authenticator.origin = 'TWITCH API AUTHENTICATOR';
             try {
@@ -1160,7 +1529,24 @@ async function PAGE_Settings_Setup(req, res, next) {
     });
 }
 async function PAGE_Settings_Packages(req, res, next) {
-    let data = {};
+    let data = {
+        Packages: []
+    };
+
+    for (let pack in INSTALLED_PACKAGES) {
+        try {
+            let pkg = INSTALLED_PACKAGES[pack].Object;
+            let pkg_data = {
+                status: INSTALLED_PACKAGES[pack].Object ? 'ready' : 'not ready', 
+                details: pkg.getPackageDetails(),
+                interconnects: pkg.GetPackageInterconnectRequests()
+            };
+            
+            data.Packages.push(pkg_data);
+        } catch (err) {
+            Logger.server.error(err.message);
+        }
+    }
 
     res.json({
         data: data
@@ -1168,7 +1554,7 @@ async function PAGE_Settings_Packages(req, res, next) {
 }
 async function PAGE_Settings_Logs(req, res, next) {
     let data = {};
-
+    
     res.json({
         data: data
     });

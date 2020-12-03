@@ -12,13 +12,15 @@
 
     <!-- PAGE CSS-->
     <link href="../styles/Grid/Grid_Default.css" rel="stylesheet">
-    <link href="../styles/settings.css" rel="stylesheet">
+    <link href="../settings/settings.css" rel="stylesheet">
+    <link href="../settings/setup.css" rel="stylesheet">
 
     <!-- GENERAL JS-->
     <script src="../scripts/standard.js"></script>
 
     <!-- PAGE JS-->
-    <script src="../scripts/settings.js"></script>
+    <script src="../settings/settings.js"></script>
+    <script src="../settings/setup.js"></script>
 
     <!-- MISC -->
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
@@ -29,16 +31,13 @@
     <script src="../misc/OUTPUT/OUTPUT.js"></script>
     <link href="../misc/OUTPUT/OUTPUT.css" rel="stylesheet">
 
-    <script src="../misc/BOT_STATUS/BOT_STATUS.js"></script>
-    <link href="../misc/BOT_STATUS/BOT_STATUS.css" rel="stylesheet">
-
     <script src="../misc/HoverProfile/HoverProfile.js"></script>
     <link href="../misc/HoverProfile/HoverProfile.css" rel="stylesheet">
 
     <script src="../misc/SwitchButton/SwitchButton.js"></script>
     <link href="../misc/SwitchButton/SwitchButton.css" rel="stylesheet">
 </head>
-<body onload="Standard_Page_Init({ NAVIGATION_ENABLE_DEFAULT: false }); init();">
+<body onload="Standard_Page_Init({ NAVIGATION_ENABLE_DEFAULT: false }); init(); Setup_init();">
     <!-- MAIN GRID -->
     <div id="grid">
         <!-- NAVI HEADER -->
@@ -72,9 +71,6 @@
                 </div>
             </div>
 
-            <div id="SECTION_CONTROL">
-
-            </div>
             <div id="SECTION_SETUP">
                 <div id="SETUP_CONFIG">
                     <h2>Config</h2>
@@ -157,8 +153,12 @@
                 </div>
 
                 <div id="SETUP_WEBAPP">
-                    <h2>FrikyBot WebApp</h2>
-                    <p>soon<b>TM</b></p>
+                    <h2>FrikyBot WebApp / WebInterface</h2>
+                    <h3>Routing</h3>
+                    <p>This List displays all Routed URLS. <button onclick="SETUP_WEBAPP_Routing_toggle(this)">show</button></p>
+                    <div id="SETUP_WEBAPP_ROUTING" class="hidden">
+                        
+                    </div>
                 </div>
 
                 <div id="SETUP_AUTHENTICATOR">
@@ -211,12 +211,6 @@
                     <h2>Datacollection</h2>
                     <p>soon<b>TM</b></p>
                 </div>
-            </div>
-            <div id="SECTION_PACKAGES">
-
-            </div>
-            <div id="SECTION_LOGS">
-
             </div>
         </div>
     </div>

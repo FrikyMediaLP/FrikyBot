@@ -28,40 +28,6 @@ async function TTV_PROFILE_initProfile() {
 
     return Promise.resolve();
 }
-function TTV_PROFILE_remove() {
-    if (document.getElementById("Profile"))
-        document.getElementById("Profile").remove();
-}
-function TTV_PROFILE_isLoggedIn() {
-    let dta = TTV_PROFILE_getCookieData();
-    if (dta && dta.Details) {
-        return true;
-    } else {
-        return false;
-    }
-}
-function TTV_PROFILE_saveCookieData(details, id_token) {
-    if (COOKIE_ACCEPT && (details || id_token)) {
-        setCookie("TTV_PROFILE", JSON.stringify({
-            Details: details,
-            id_token: id_token
-        }));
-    }
-}
-function TTV_PROFILE_getCookieData() {
-    if (COOKIE_ACCEPT) {
-        try {
-            return JSON.parse(getCookie("TTV_PROFILE"), true);
-        } catch{
-            return null
-        }
-    } else {
-        return null;
-    }
-}
-function TTV_PROFILE_removeCookieData() {
-    removeCookie("TTV_PROFILE");
-}
 
 //Login
 async function TTV_LOGIN_FETCH_USERINFO(id_token) {
@@ -133,11 +99,16 @@ function TTV_LOGIN_SETDATA(elt, userdata, enable_logout = false) {
                                                 until -= m * 60;
 
                                                 let s = until;
-
+                                                
                                                 if (until < 0 || h < 0 || m < 0 || s < 0) {
-                                                    childerererer.innerHTML = (userdata.iat != undefined ? "00H 00M 00S" : "UNKNOWN");
-                                                    clearInterval(interval);
-                                                    TTV_LOGIN_RESET(elt);
+                                                    try {
+                                                        childerererer.innerHTML = (userdata.iat != undefined ? "00H 00M 00S" : "UNKNOWN");
+                                                        TTV_LOGIN_RESET(elt);
+                                                        OUTPUT_showError("Access Token Expired. Please log in again!");
+                                                        clearInterval(interval);
+                                                    } catch (err) {
+                                                        console.log(err);
+                                                    }
                                                 } else {
                                                     if (h < 10) h = '0' + h;
                                                     if (m < 10) m = '0' + m;
@@ -194,6 +165,14 @@ function TTV_LOGIN_RESET(elt) {
             //Collapse
             child.classList.remove("TTV_LOGIN_DATA_EXPAND");
             child.classList.add("TTV_LOGIN_DATA_COLLAPSE");
+        } else if (child instanceof Element && child.classList.contains("TTV_LOGIN_BUTTON")) {
+            for (let childer of child.childNodes)
+                if (childer instanceof Element && childer.tagName === 'CENTER') {
+                    for (let childerer of childer.childNodes)
+                        if (childerer instanceof Element && childerer.tagName === 'SPAN') {
+                            childerer.innerHTML = 'Pls reload the page!';
+                        }
+                }
         }
     }
 }
@@ -222,7 +201,7 @@ async function TTV_LOGIN_CHECK_HASH() {
         return Promise.reject(err);
     }
 }
-async function TTV_LOGIN_CLICKED(elt, type, scopes = {}) {
+async function TTV_LOGIN_CLICKED(elt, type, scopes = {}, forced = true) {
     if (!elt || !(elt instanceof Element)) return;
     if (!type) return;
 
@@ -251,7 +230,49 @@ async function TTV_LOGIN_CLICKED(elt, type, scopes = {}) {
             if (json.err) {
                 return Promise.reject(json.err);
             } else {
-                window.location.href = json.data;
+                let lin = json.data;
+
+                if (forced === false) {
+                    lin = json.data.split('&force_verify=true')[0];
+                }
+                
+                window.location.href = lin;
             }
         });
+}
+
+//Cookies
+function TTV_PROFILE_remove() {
+    if (document.getElementById("Profile"))
+        document.getElementById("Profile").remove();
+}
+function TTV_PROFILE_isLoggedIn() {
+    let dta = TTV_PROFILE_getCookieData();
+    if (dta && dta.Details) {
+        return true;
+    } else {
+        return false;
+    }
+}
+function TTV_PROFILE_saveCookieData(details, id_token) {
+    if (COOKIE_ACCEPT && (details || id_token)) {
+        setCookie("TTV_PROFILE", JSON.stringify({
+            Details: details,
+            id_token: id_token
+        }));
+    }
+}
+function TTV_PROFILE_getCookieData() {
+    if (COOKIE_ACCEPT) {
+        try {
+            return JSON.parse(getCookie("TTV_PROFILE"), true);
+        } catch{
+            return null
+        }
+    } else {
+        return null;
+    }
+}
+function TTV_PROFILE_removeCookieData() {
+    removeCookie("TTV_PROFILE");
 }

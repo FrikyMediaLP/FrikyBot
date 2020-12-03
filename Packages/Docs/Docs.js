@@ -1,7 +1,11 @@
 ﻿const CONSTANTS = require('./../../Util/CONSTANTS.js');
-
 const express = require('express');
 const path = require('path');
+
+const PACKAGE_DETAILS = {
+    name: "Docs",
+    description: "FrikyBot Documentation."
+};
 
 const SETTINGS_REQUIERED = {
     "Data_Dir": "Packages/Docs/Data/",
@@ -10,11 +14,11 @@ const SETTINGS_REQUIERED = {
 };
 
 class Docs extends require('./../PackageBase.js').PackageBase {
-    constructor(expressapp, twitchirc, twitchapi, datacollection, startparameters, logger) {
-        super("Docs", "FrikyBot Documentation.", expressapp, twitchirc, twitchapi, datacollection, startparameters, logger);
+    constructor(expressapp, twitchirc, twitchapi, datacollection, logger) {
+        super(PACKAGE_DETAILS, expressapp, twitchirc, twitchapi, datacollection, logger);
     }
 
-    async Init() {
+    async Init(startparameters) {
         if (!this.isEnabled()) return Promise.resolve();
 
         this.DOCS_NAV = {};
