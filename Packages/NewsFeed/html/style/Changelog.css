@@ -1,9 +1,30 @@
+#Changelog_selector > div, #Changelog_selector > b {
+    margin-right: 5px;
+}
+
+#Changelog_selector #FETCH {
+    display: inline-block;
+    border: 1px solid gold;
+    padding: 0 5px;
+    color: darkgoldenrod;
+    background-color: #ffe138;
+    cursor: pointer;
+    font-weight: bold;
+}
+    #Changelog_selector #FETCH[disabled] {
+        filter: grayscale(100%);
+    }
+
+    #Changelog_selector #FETCH:not([disabled]):hover {
+        filter: brightness(105%);
+    }
+
+
 /*
     -----------------
         Changelog
     -----------------
 */
-
 .CHANGELOG {
     color: #212121;
     background-color: white;
@@ -165,6 +186,20 @@
             background-color: #b310c2;
             color: white;
         }
+
+        .CHANGELOG .CHANGES .WEBAPP {
+            background-color: #028deb;
+            color: white;
+        }
+
+            .CHANGELOG .CHANGES .WEBAPP .IMG img {
+                background-color: #fd7214;
+                height: 60px;
+                width: 60px;
+                padding: 5px;
+                filter: invert(1);
+                border-color: black;
+            }
 
         .CHANGELOG .CHANGES .DATACOLLECTION {
             background-color: orange;

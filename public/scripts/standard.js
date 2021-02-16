@@ -9,11 +9,13 @@ async function Standard_Page_Init(settings = {}){
         if (settings.COOKIE_ENABLE_AUTOCHECK != false) {
             if (hasCookie("CookieAccept") && getCookie("CookieAccept") == "true") {
                 COOKIE_ACCEPT = true;
-                
+
                 //Darkmode
                 if (hasCookie("darkmode") && getCookie("darkmode") == "true") {
                     toggleLightMode(true);
                 }
+            } else {
+                displayCookieNotification(document.getElementById('contentHeader'));
             }
         }
 
@@ -22,8 +24,9 @@ async function Standard_Page_Init(settings = {}){
 
         //Default Navigation
         try {
-            if (settings.NAVIGATION_ENABLE_DEFAULT != false)
+            if (settings.NAVIGATION_ENABLE_DEFAULT != false) {
                 await NAVIVATION_init();
+            }
         } catch (err) {
             console.log(err);
         }
@@ -37,10 +40,10 @@ async function Standard_Page_Init(settings = {}){
         }
 
         //Default Hover Profile
-        if (settings.PROFILE_ENABLE != false && TTV_PROFILE_isLoggedIn()) {
+        if (settings.PROFILE_ENABLE != false && LOGIN_isLoggedIn()) {
 
             try {
-                await TTV_PROFILE_initProfile();
+                await HOVERPROFILE_init();
 
                 //Update Navi
                 if (document.getElementById("MAINNAV_Settings_Login")) {
@@ -70,7 +73,6 @@ async function NAVIVATION_init() {
     if (COOKIE_ACCEPT) {
         let dta = NAVIVATION_getCookiesData();
         if (dta) {
-            document.getElementById("mainNavi").innerHTML = NAVIGATIONV2_create(json.data, "MAINNAV");
             NAVIGATIONV2_SCROLL_HL_CHECK(true);
             return Promise.resolve();
         }
@@ -78,9 +80,10 @@ async function NAVIVATION_init() {
 
     //FETCH NAVI
     let opt = {};
-    if (TTV_PROFILE_getCookieData())
-        opt = { headers: { "Authorization": "Baerer " + TTV_PROFILE_getCookieData().id_token } };
-    return fetch("/api/Navi", opt)
+    if (LOGIN_getCookies())
+        opt = { headers: { "authorization": "Bearer " + LOGIN_getCookies().id_token } };
+
+    return fetch("/api/pages/navigation", opt)
         .then(data => data.json())
         .then(json => {
             if (json.err) {
@@ -91,49 +94,20 @@ async function NAVIVATION_init() {
                 
                 //SAVE IN COOKIES
                 NAVIVATION_saveCookiesData(json.data);
+                return Promise.resolve();
             }
-        })
-        .catch(err => console.log(err));
-}
-
-function NAVIVATION_createCaption(name, contents) {
-
-    if (!contents || contents.length == 0) {
-        return "";
-    }
-
-    let s = '<div class="mainNaviHeader"><span>' + name + '</span></div>';
-
-    for (let content of contents) {
-        s += NAVIVATION_createContent(content);
-    }
-    return s;
-}
-function NAVIVATION_createContent(content) {
-    let s = '<div class="caption" ' + (content.name == "Login" ? 'id="Login_Bot_Navi"' : "") + ' >';
-    s += '<a href="./' + ROOT + content.href + '">';
-    s += '<img src="' + ROOT + content.icon + '" />';
-    s += '<span>' + content.name + '</span>';
-    s += '</a>';
-    s += '</div>';
-    return s;
+        });
 }
 
 function NAVIVATION_getCookiesData() {
-    if (COOKIE_ACCEPT) {
-        try {
-            return JSON.parse(getCookie("NAVIVATION"), true);
-        } catch{
-            return null
-        }
-    } else {
-        return null;
+    try {
+        return JSON.parse(getCookie("NAVIVATION"), true);
+    } catch (err) {
+        return null
     }
 }
 function NAVIVATION_saveCookiesData(data) {
-    if (COOKIE_ACCEPT) {
-        setCookie("NAVIVATION", JSON.stringify(data), true);
-    }
+    setCookie("NAVIVATION", JSON.stringify(data), true);
 }
 
 //COOKIES
@@ -191,12 +165,57 @@ function clearAllCookies() {
     sessionStorage.clear();
 }
 
+//Fetch
+async function STANDARD_FETCH_RESPONSE_CHECKER(response) {
+    if (response.status === 200) {
+        //Return JSON Payload
+
+        let json;
+
+        try {
+            json = await response.json();
+            if (json.err !== undefined) return Promise.reject(new Error(json.err));
+        } catch (err) {
+
+        }
+        
+        return Promise.resolve(json);
+    } else if (response.status === 401) {
+        //Unauthorized Error
+        let error = null;
+
+        try {
+            error = await response.text();
+        } catch (err) {
+
+        }
+
+        return Promise.reject(new Error("Unauthorized" + (error && error !== 'Unauthorized' ? ": " + error : '')));
+    } else {
+        //Other Fetch Error
+        let error = null;
+
+        try {
+            error = await response.text();
+        } catch (err) {
+
+        }
+
+        return Promise.reject(new Error("Error: " + response.status + " - " + error));
+    }
+}
+function getAuthHeader() {
+    if (LOGIN_getCookies && LOGIN_getCookies())
+        return { headers: { "Authorization": "Bearer " + LOGIN_getCookies().id_token } };
+
+    return { headers: {} };
+}
+
 //URL
 function GetURLParams() {
     return window.location.search.substring(1).split('&');
 }
 function GetURLParamContent(paramName) {
-
     for (let param of GetURLParams()) {
         if (param.substring(0, param.indexOf('=')) == paramName) {
             return param.substring(param.indexOf('=') + 1);
@@ -214,6 +233,29 @@ function HasURLParam(ParamName) {
             return sParamName[1];
         }
     }
+}
+
+function GetURLHash() {
+    return window.location.hash;
+}
+function GetURLHashArray() {
+    if (GetURLHash() === "") return []; 
+
+    let arr = GetURLHash().split('&');
+
+    arr[0] = arr[0].substring(1);
+
+    for (let i = 0; i < arr.length; i++) {
+        arr[i] = { name: arr[i].split('=')[0], value: arr[i].split('=')[1].split(',') };
+    }
+
+    return arr;
+}
+function HasURLHash(name = '') {
+    return GetURLHashArray().find(elt => elt.name === name) !== undefined;
+}
+function GetURLHashContent(name = '') {
+    return GetURLHashArray().find(elt => elt.name === name) || null;
 }
 
 //HTML
@@ -250,8 +292,36 @@ function toggleLightMode(dark) {
         setCookie("darkmode", document.getElementsByTagName('body')[0].classList.contains('darkmode'));
     }
 }
+function HTMLArray2RealArray(arr = []) {
+    let output = [];
+
+    for (let elt of arr) {
+        output.push(elt);
+    }
+
+    return output;
+}
 
 //Data
+function findFormattedStringVariableTree(formattedString = "") {
+    let start = formattedString.indexOf('{');
+    let end = formattedString.lastIndexOf('}');
+
+    if (start < 0 || end < 0 || start > end || (start == 0 && end == formattedString.length - 1)) return formattedString;
+
+    let output = [];
+
+    if (end + 1 === formattedString.length) {
+        output.push(formattedString.substring(0, start));                                           //Prev Text
+        output.push(findFormattedStringVariableTree(formattedString.substring(start)));             //Variable Tree
+    } else {
+        output.push(formattedString.substring(0, start));                                           //Prev Text
+        output.push(findFormattedStringVariableTree(formattedString.substring(start, end + 1)));    //Variable Tree
+        output.push(formattedString.substring(end + 1));                                            //Post Text
+    }
+
+    return output;
+}
 function FillFormattedString(string, vars = {}) {
     let outstring = "";
 
@@ -341,17 +411,7 @@ function toggleClass(elt, className, parentSelect = 0) {
 }
 
 //MISC
-function PROFILE_IMAGES(id) {
+function PROFILE_IMAGES(id, transparent = false) {
     let colors = ["blue", "green", "orange", "purple", "red", "yellow"];
-
-    if (isNaN(id)) {
-        return ROOT + "images/no_image_found.png";
-    } else if (typeof (id) == "string") {
-        try {
-            id = parseInt(id);
-            return ROOT + "images/Profiles/" + colors[id > colors.length - 1 ? id % (colors.length - 1) : id] + ".png";
-        } catch{
-            return ROOT + "images/no_image_found.png";
-        }
-    }
+    return ROOT + "images/Profiles/" + (colors[id > colors.length - 1 ? id % (colors.length - 1) : id] || colors[0]) + (transparent ? '_transparent' : '') + ".png";
 }

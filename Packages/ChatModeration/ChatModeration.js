@@ -61,7 +61,8 @@ class ChatModeration extends require('./../PackageBase.js').PackageBase {
         };
 
         //Twitch Chat Listener
-        this.TwitchIRC.on('chat', (channel, userstate, message, self) => this.MessageEventHandler(channel, userstate, message, self));
+        if (this.TwitchIRC)
+            this.TwitchIRC.on('chat', (channel, userstate, message, self) => this.MessageEventHandler(channel, userstate, message, self));
 
         //API ENDPOINTS
         let APIRouter = express.Router();
@@ -795,7 +796,7 @@ class SpamFilter extends Filter {
                 console.error(state);
             this.Settings.enabled = false;
         } else {
-            this.reload();
+            this.reload().catch(err => this.Logger.error(err.message));
         }
     }
 
@@ -846,8 +847,12 @@ class SpamFilter extends Filter {
         this.BTTV_Emotes = [];
         this.FFZ_Emotes = [];
 
+        if (!this.TwitchIRC) return Promise.reject(new Error("Twitch IRC not available. BTTV and FFZ Emotes not available."));
+
         //Current Chat Channel
         let channelLogin = this.TwitchIRC.getChannel();
+        if (!channelLogin) return Promise.resolve();
+
         if (channelLogin.charAt(0) == "#") {
             channelLogin = channelLogin.substring(1);
         }
@@ -870,6 +875,7 @@ class SpamFilter extends Filter {
         }
 
 
+        if (!this.TwitchAPI) return Promise.reject(new Error("Twitch API not available. BTTV Emotes not available."));
         //BTTV Emotes - Get Chat Channel ID -> Get BTTV Emotes
         try {
             let response = await this.TwitchAPI.GetUsers({ login: channelLogin });

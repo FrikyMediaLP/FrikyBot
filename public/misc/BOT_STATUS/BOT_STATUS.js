@@ -124,7 +124,7 @@ function BOT_STATUS_DETAILS_createNormal(data) {
     if (document.getElementById("BOT_STATUS_DETAILS_NORMAL") && !document.getElementById("Bot_Status_Detail_Username")) {
         let s = '<div id="top"><div id="left"><div class="Detail"><p class="top">BOT USERNAME</p><p class="bottom" id="Bot_Status_Detail_Username">- - - - -</p></div><br /><div class="Detail"><p class="top">CURRENT CHANNEL</p>';
         s += '<p class="bottom" id="Bot_Status_Detail_Channel">- - - - -</p></div><br /><div class="Detail">';
-        s += '<p class="top">BOT USER DESCRIPTION</p><p class="bottom" id="Bot_Status_Detail_Description">- - - - -</p></div></div><div id="right"><img id="Bot_Status_Detail_Image" src="images/no_image_found.png" /></div></div>';
+        s += '<p class="top">CHANNEL STATUS</p><p class="bottom" id="Bot_Status_Detail_Live">- - - - -</p></div></div><div id="right"><img id="Bot_Status_Detail_Image" src="images/no_image_found.png" /></div></div>';
         s +=  '<div id="bottom"><p style="grid-area: title;"><b>STATUS</b></p><p id="Bot_Status_Bar_Title" style="grid-area: value; text-align: right;">-</p><div id="Bot_Status_Bar"><center>-</center><span id="Info">NO DATA FETCHED</span></div></div>';
         document.getElementById("BOT_STATUS_DETAILS_NORMAL").innerHTML = s;
         BOT_STATUS_DETAILS_createNormal(data);
@@ -138,11 +138,13 @@ function BOT_STATUS_DETAILS_createNormal(data) {
                 document.getElementById("Bot_Status_Detail_Username").innerHTML += " ✅";
             }
         }
-
+        
         if (data.Channel)
             document.getElementById("Bot_Status_Detail_Channel").innerHTML = data.Channel;
-        if (data.Description)
-            document.getElementById("Bot_Status_Detail_Description").innerHTML = data.Description;
+        if (data.Live !== null) {
+            document.getElementById("Bot_Status_Detail_Live").innerHTML = data.Live === true ? '<a href="http://www.twitch.tv/' + data.Channel + '">LIVE</span>' : 'OFFLINE';
+            document.getElementById("Bot_Status_Detail_Live").classList.add(data.Live === true ? 'LIVE' : 'OFFLINE');
+        }
         if (data.Image)
             document.getElementById("Bot_Status_Detail_Image").src = data.Image;
 

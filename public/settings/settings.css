@@ -9,3 +9,11 @@ body.darkmode #content {
     background-color: #363636 !important;
     color: white;
 }
+
+#grid #content a {
+    color: #2ee6c0;
+}
+
+    #grid #content a:hover {
+        color: #2ab89b;
+    }

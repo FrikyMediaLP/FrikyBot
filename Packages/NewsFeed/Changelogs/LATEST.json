@@ -1,0 +1,347 @@
+{
+  "date": "TBD",
+  "title": "TWITCH FEATURE UPDATE - TBD",
+  "version": "0.1",
+  "chapters": {
+    "Introduction": [
+      {
+        "type": "PLAIN",
+        "paragraphs": [
+          "Secound Update to the FrikyBot now including Twitch API and Chat Features! Packages can also use Authentication Protected API Endpoints. Also a new Settings Page, to interact with the bot, is now available!",
+          "Check the <a href='../Docs'>Documentation</a> for more details!"
+        ]
+      }
+    ],
+    "CORE MODULE CHANGES": [
+      {
+        "type": "CHANGES",
+        "module_type": "SERVER",
+        "contents": [
+          {
+            "type": "HEADER",
+            "text": "Twitch API"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added Twitch API controlling Tokens/Authentication with Twitch and providing an Interface to use Twitch Helix API Endpoints."
+              }
+            ]
+          },
+          {
+            "type": "HEADER",
+            "text": "Twitch IRC"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added Twitch IRC Module interfacing with the Twitch Chat and providing a Message Class combining informations, attributes and methods into one unit."
+              }
+            ]
+          },
+          {
+            "type": "HEADER",
+            "text": "WEBAPP"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "FrikyBot Website/API exported into this Module. WebAppInteractor and Authenticator are now used in Packages instead."
+              },
+              {
+                "type": "ADDED",
+                "text": "Added Login using Twitch."
+              },
+              {
+                "type": "ADDED",
+                "text": "Added API Authorization based on a set Userlevel/UserID."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "CHANGES",
+        "module_type": "TWITCHAPI",
+        "contents": [
+          {
+            "type": "HEADER",
+            "text": "General"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added Twitch Access Token Handling, API Interfaces and Authentication using Twitch Login."
+              }
+            ]
+          },
+          {
+            "type": "HEADER",
+            "text": "Twitch Endpoints"
+          },
+          {
+            "type": "LIST",
+            "elements": [
+              {
+                "type": "ADDED",
+                "text": "'MOST' TTV New Api Endpoints are now useable!"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "CHANGES",
+        "module_type": "TWITCHIRC",
+        "contents": [
+          {
+            "type": "HEADER",
+            "text": "General"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added Twitch Chat Interface using TMI.js. Message Class containing all inforamations of a sent message."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "CHANGES",
+        "module_type": "WEBAPP",
+        "contents": [
+          {
+            "type": "HEADER",
+            "text": "General"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added 6 Routes: Main, Static Files, Custom Files, API, Authenticated API and NOT FOUND."
+              }
+            ]
+          },
+          {
+            "type": "HEADER",
+            "text": "WebAppInteractor"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added Main Routes Interface for Packages called WebAppInteractor."
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "PACKAGE CHANGES": [
+      {
+        "type": "CHANGES",
+        "module_type": "PACKAGE",
+        "packagename": "PACKAGEBASE",
+        "contents": [
+          {
+            "type": "HEADER",
+            "text": "General"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "CHANGED",
+                "detailed": true,
+                "text": "Changed constructor() / Init(startparamerter) - Init now uses the Starparamerters instead of the constructor"
+              },
+              {
+                "type": "CHANGED",
+                "detailed": true,
+                "text": "Renamed some Functions (mostly WebApp Stuff and PackageInterconnect)"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added Cookies Information to be transparently displayed to the Website user."
+              }
+            ]
+          },
+          {
+            "type": "HEADER",
+            "text": "API"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "CHANGED",
+                "text": "API now in the Format: '/api/[PACKAGENAME]'"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "CHANGES",
+        "module_type": "PACKAGE",
+        "packagename": "NEWSFEED",
+        "contents": [
+          {
+            "type": "HEADER",
+            "text": "NewsMaker"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "NewsMaker Tool for Staff to ... make News!"
+              }
+            ]
+          },
+          {
+            "type": "HEADER",
+            "text": "API"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "CHANGED",
+                "text": "GET: /Changelog - returns all Changelogs available"
+              },
+              {
+                "type": "CHANGED",
+                "text": "GET: /Changelog/:changelog - 'latest' returns the latest Changelog"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "CHANGES",
+        "module_type": "PACKAGE",
+        "packagename": "CHATMODERATION",
+        "contents": [
+          {
+            "type": "HEADER",
+            "text": "General"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added ChatModeration Filters checking Messages for any violations."
+              }
+            ]
+          },
+          {
+            "type": "HEADER",
+            "text": "Filters"
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added Word Filter - Checking the Message for Words on a Blacklist."
+              }
+            ]
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added Link Filter - Checking the Message for Links."
+              }
+            ]
+          },
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "ADDED",
+                "text": "Added Spam Filter - Checking the Message for Spam."
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "3rdParty": [
+      {
+        "type": "CHANGES",
+        "module_type": "ThirdParty",
+        "packagename": "BTTV",
+        "contents": [
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "HEADER",
+                "text": "General"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added BTTV API Endpoints in a 'library' to be used by the CORE/Packages/…"
+              }
+            ]
+          },
+          {
+            "type": "PLAIN",
+            "paragraphs": [
+              {
+                "type": "WARNING",
+                "text": "THIS IS NOT A COMPLETE/OFFICIAL LIBRARY/API - So no Documentation or any grantuees"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "CHANGES",
+        "module_type": "ThirdParty",
+        "packagename": "FFZ",
+        "contents": [
+          {
+            "type": "DASHED_PLAIN",
+            "paragraphs": [
+              {
+                "type": "HEADER",
+                "text": "General"
+              },
+              {
+                "type": "ADDED",
+                "text": "Added FFZ API Endpoints in a 'library' to be used by the CORE/Packages/…"
+              }
+            ]
+          },
+          {
+            "type": "PLAIN",
+            "paragraphs": [
+              {
+                "type": "WARNING",
+                "text": "THIS IS NOT A COMPLETE/OFFICIAL LIBRARY/API - But the FFZ API Documentation is pretty good, so might make a Full Thing later"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

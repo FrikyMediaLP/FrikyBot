@@ -32,8 +32,8 @@
     <script src="misc/BOT_STATUS/BOT_STATUS.js"></script>
     <link href="misc/BOT_STATUS/BOT_STATUS.css" rel="stylesheet">
 
-    <script src="misc/HoverProfile/HoverProfile.js"></script>
-    <link href="misc/HoverProfile/HoverProfile.css" rel="stylesheet">
+    <script src="misc/Login/Login.js"></script>
+    <link href="misc/Login/Login.css" rel="stylesheet">
 
     <script src="misc/SwitchButton/SwitchButton.js"></script>
     <link href="misc/SwitchButton/SwitchButton.css" rel="stylesheet">
@@ -64,43 +64,51 @@
 
         <!-- ACTUAL CONTENT -->
         <div class="cellM" id="content" onscroll="NAVIGATIONV2_SCROLL_HL_CHECK()">
-            <h1>FrikyBot Login!</h1>
-            <p><b style="color: red;">NOTE:</b> Using your Twitch Account the Bot can check who you are! We only request a "WHO ARE YOU"-Token (so called ID-Token), the bot <b>cant</b> use it to access your account, it can only Authenticate/Authorize you for this Website. It <b>does not</b> store your Token received from Twitch! More about how the Bot uses/stores your User Information, check the <a href="Data-and-Cookies">Data and Cookies</a> Page!</p>
-
             <div id="OUTPUT">
 
             </div>
 
-            <div class="TTV_LOGIN TTV_LOGIN_FALSE">
-                <div class="TTV_LOGIN_DATA">
-                    <center class="TTV_LOGIN_DATA_USERNAME">Logged in as: <b>UNKNWON</b></center>
+            <div id="TWITCH_LOGIN_WRAP">
+                <h2>Twitch Login</h2>
+                <p>You can log in using your own Twitch Account. Your Access to Restricted Features is set by an Admin/Staff Member based on your <b>Twitch User ID</b> - thats why we NEED to know it! Also we request your Twitch Profile Picture to be displayed in the top right corner. <b>NO E-mail</b> or else is sent to us if you log in using Twitch!</p>
+                <p><b>ALSO</b>: For Authentication to work across sites, you <b>NEED to allow Cookies</b> to be used! Otherwise, the Website just doesnt know who you are! <a href="Cookies">Read Cookie Usage</a></p>
+                <div class="TTV_LOGIN TTV_LOGIN_FALSE">
+                    <div class="TTV_LOGIN_DATA">
+                        <center class="TTV_LOGIN_DATA_USERNAME">Logged in as: <b>UNKNWON</b></center>
 
-                    <div class="TTV_LOGIN_DATA_SPLITTER">
-                        <div class="TTV_LOGIN_DATA_LEFT">
-                            <center class="TTV_LOGIN_DATA_ID">
-                                <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                <p class="TTV_LOGIN_DATA_BOTTOM">User ID</p>
-                            </center>
-                            <center class="TTV_LOGIN_DATA_IAT">
-                                <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                <p class="TTV_LOGIN_DATA_BOTTOM">ISSUED AT</p>
-                            </center>
-                            <center class="TTV_LOGIN_DATA_EXP">
-                                <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                <p class="TTV_LOGIN_DATA_BOTTOM">EXPIRES IN</p>
-                            </center>
-                        </div>
-                        <div class="TTV_LOGIN_DATA_RIGHT">
-                            <img src="images/no_image_found_alpha.png" />
+                        <div class="TTV_LOGIN_DATA_SPLITTER">
+                            <div class="TTV_LOGIN_DATA_LEFT">
+                                <center class="TTV_LOGIN_DATA_ID">
+                                    <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
+                                    <p class="TTV_LOGIN_DATA_BOTTOM">User ID</p>
+                                </center>
+                                <center class="TTV_LOGIN_DATA_IAT">
+                                    <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
+                                    <p class="TTV_LOGIN_DATA_BOTTOM">ISSUED AT</p>
+                                </center>
+                                <center class="TTV_LOGIN_DATA_EXP">
+                                    <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
+                                    <p class="TTV_LOGIN_DATA_BOTTOM">EXPIRES IN</p>
+                                </center>
+                            </div>
+                            <div class="TTV_LOGIN_DATA_RIGHT">
+                                <img src="images/no_image_found_alpha.png" />
+                            </div>
                         </div>
                     </div>
+                    <div class="TTV_LOGIN_BUTTON">
+                        <center onclick="TTV_LOGIN_CLICKED(this, 'Client')">
+                            <span>LOG IN USING TWITCH</span>
+                            <img src="images/icons/twitch.svg" data-type="svg" />
+                        </center>
+                    </div>
                 </div>
-                <div class="TTV_LOGIN_BUTTON">
-                    <center onclick="TTV_LOGIN_CLICKED(this, 'Client')">
-                        <span>LOG IN USING TWITCH</span>
-                        <img src="images/icons/twitch.svg" data-type="svg" />
-                    </center>
-                </div>
+            </div>
+
+            <div id="AuthorizationCode">
+                <center id="AuthorizationCode_Header">Authorization Code</center>
+                <center><input id="AuthorizationCode_Input" type="text" /><button onclick="AuthorizationCode(this)">CHECK</button></center>
+                <center>This is only available when TTV Login isnt and only used for Bot Setup. You need Console access, to request a Code.</center>
             </div>
         </div>
     </div>

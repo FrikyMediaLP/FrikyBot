@@ -210,14 +210,14 @@ body, html {
         overflow-y: scroll;
     }
 
-        #grid #content::-webkit-scrollbar {
+        #grid ::-webkit-scrollbar {
             width: 10px;
         }
 
-        #grid #content::-webkit-scrollbar-track {
+        #grid ::-webkit-scrollbar-track {
             background: none;
         }
 
-        #grid #content::-webkit-scrollbar-thumb {
+        #grid ::-webkit-scrollbar-thumb {
             background: #888;
         }

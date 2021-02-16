@@ -10,42 +10,41 @@ function init() {
 
     DisplayChatModeration()
         .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err);
+            //console.log(err);
+            //OUTPUT_showError(err);
+            document.getElementById('WAITING_WRAPPER').remove();
+            document.getElementById('ChatModerationSettingsV2').innerHTML += '<h4>Disabled</h4>';
         });
 }
 
-async function DisplayChatModeration(){
+async function DisplayChatModeration() {
 	return fetch("/api/ChatModeration/filters")
         .then(data => data.json())
         .then(json => {
-            console.log(json);
-            if (json.err) {
-                OUTPUT_showError(json.err);
-            } else if (json.data) {
-                let s = '<h2>Chat Moderation Overview</h2>';
-                let content = null;
-                
-                if (document.getElementById("ChatModerationSettingsV1")) {
-                    content = getRecursiveObjectContentV1(json.data.Filter);
-                    if (content != null)
-                        document.getElementById("ChatModerationSettingsV1").innerHTML = s + content;
-                } else if (document.getElementById("ChatModerationSettingsV2")) {
+            if (json.err) return Promise.reject(new Error(json.err)); 
 
-                    if (json.data.enabled) {
-                        content = getRecursiveObjectContentV2(json.data.Filter);
-                    } else {
-                        content = '<h3 style="color: lightcoral;">DISABLED</h3>';
-                    }
+            let s = '<h2>Chat Moderation Overview</h2>';
+            let content = null;
 
-                    if (content != null)
-                        document.getElementById("ChatModerationSettingsV2").innerHTML = s + content;
+            if (document.getElementById("ChatModerationSettingsV1")) {
+                content = getRecursiveObjectContentV1(json.data.Filter);
+                if (content != null)
+                    document.getElementById("ChatModerationSettingsV1").innerHTML = s + content;
+            } else if (document.getElementById("ChatModerationSettingsV2")) {
+
+                if (json.data.enabled) {
+                    content = getRecursiveObjectContentV2(json.data.Filter);
+                } else {
+                    content = '<h3 style="color: lightcoral;">DISABLED</h3>';
                 }
 
-                //RESIZE
-                for (let elt of document.getElementsByClassName("autoSizePls")) {
-                    autoSizeFont(elt);
-                }
+                if (content != null)
+                    document.getElementById("ChatModerationSettingsV2").innerHTML = s + content;
+            }
+
+            //RESIZE
+            for (let elt of document.getElementsByClassName("autoSizePls")) {
+                autoSizeFont(elt);
             }
         });
 }

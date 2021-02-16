@@ -127,10 +127,61 @@
 
 /* 
     -----------------------
-        Trash Button
+       Switch Button V2
     -----------------------
 */
 
+SWITCHBUTTON {
+    display: inline-block;
+    background-color: white;
+    border-radius: 5px;
+    border: 1px solid gray;
+    width: 50px;
+    height: 20px;
+    position: relative;
+    cursor: pointer;
+}
+
+SWITCHBUTTON[disabled] {
+    cursor: default !important;
+}
+
+    SWITCHBUTTON SWITCHBUTTONCURSOR {
+        background-color: white;
+        border-radius: 5px;
+        border: 1px solid gray;
+        width: 20px;
+        height: 18px;
+        position: absolute;
+        top: 0;
+        left: 28px;
+    }
+
+    SWITCHBUTTON[value=true] {
+        background-color: green;
+    }
+
+        SWITCHBUTTON[value=true] SWITCHBUTTONCURSOR {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+SWITCHBUTTON[value=false] {
+    background-color: #d42828;
+}
+
+    SWITCHBUTTON[value=false] SWITCHBUTTONCURSOR {
+        position: absolute;
+        top: 0;
+        left: 28px;
+    }
+
+/* 
+    -----------------------
+        Trash Button
+    -----------------------
+*/
 .MISC_TRASH_BUTTON {
     height: 100%;
     width: 100%;
@@ -214,7 +265,7 @@
         animation: LOADING_RING_SPIN 1s infinite;
     }
 
-    .LOADING_RING.lightmode .LOADING_RING_SPINNER {
+    .LOADING_RING.lightmode .LOADING_RING_SPINNER, body:not(.darkmode) .LOADING_RING .LOADING_RING_SPINNER {
         border: 2px solid rgba(0,0,0,0.2);
         border-top-color: gray;
     }
@@ -399,3 +450,45 @@
         background-color: darkgreen;
     }
 }
+
+/* 
+    -----------------------
+            SELECT
+    -----------------------
+*/
+
+.MISC_SELECT {
+    display: inline-block;
+    position: relative;
+}
+    .MISC_SELECT .MISC_SELECT_CURSOR {
+        border: 1px solid #028deb;
+        padding: 0px 5px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .MISC_SELECT .MISC_SELECT_OPTIONS {
+        height: 0;
+        overflow: hidden;
+        display: grid;
+
+        z-index: 1;
+        position: absolute;
+        top: 100%;
+        background-color: white;
+    }
+
+    .MISC_SELECT:hover .MISC_SELECT_OPTIONS {
+        height: auto;
+        border: 1px solid #028deb;
+        border-top: none;
+    }
+
+    .MISC_SELECT .MISC_SELECT_OPTIONS > div {
+        padding: 0px 5px;
+    }
+        .MISC_SELECT .MISC_SELECT_OPTIONS > div:hover {
+            background-color: lightgray;
+            cursor: pointer;
+        }

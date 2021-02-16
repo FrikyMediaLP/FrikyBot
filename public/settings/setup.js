@@ -66,40 +66,86 @@
     }
 };
 
-let TTV_API_APP_TOKEN = {
-    iat: NaN,
-    exp: NaN
-}; 
-let TTV_API_USER_TOKEN = {
-    iat: NaN,
-    exp: NaN
-};
-let AUTHENTICATOR_DATA = [];
-let AUTHENTICATOR_CUR_SORT_ELT;
+const SETTINGTYPES = [
+    {
+        name: 'number', options: [
+            { name: 'type', check: (x, optionSet) => typeof (x) === 'number' && !isNaN(x) ? true : 'type missmatch' },
+            { name: 'min', check: (x, optionSet) => x >= parseInt(optionSet.min) || 'number too small' },
+            { name: 'max', check: (x, optionSet) => x <= parseInt(optionSet.min) || 'number too big' },
+            { name: 'range', check: (x, optionSet) => (x >= parseInt(optionSet.range.substring(0, optionSet.range.indexOf(':'))) && x <= parseInt(optionSet.range.substring(optionSet.range.indexOf(':') + 1))) || 'number out of bounds' },
+            { name: 'selection', check: (x, optionSet) => optionSet.selection.find(elt => elt === x) !== undefined || 'number not in the selection' }
+        ], convert: parseInt, default: 0
+    }, {
+        name: 'boolean', options: [
+            { name: 'type', check: (x, optionSet) => typeof (x) === 'boolean' || 'type missmatch' }
+        ], convert: x => x === "true", default: false
+    }, {
+        name: 'string', options: [
+            { name: 'type', check: (x, optionSet) => typeof (x) === 'string' || 'type missmatch' },
+            { name: 'minlength', check: (x, optionSet) => x.length >= optionSet.minlength || 'too short' }
+        ], convert: x => x.toString(), default: ''
+    }, {
+        name: 'object', options: [
+            { name: 'type', check: (x, optionSet) => typeof (x) === 'object' || 'type missmatch' }
+        ], convert: x => x === "true", default: {}
+    }, {
+        name: 'array', options: [
+            { name: 'type', check: (x, optionSet) => x instanceof Array || 'type missmatch' },
+            {
+                name: 'selection', check: (x, optionSet) => {
+                    if (x.length == 0 && optionSet.selection.length > 0) return 'array is no subset of the selection';
+                    for (let elt of x) if (optionSet.selection.find(el => el === elt) === undefined) return 'array is no subset of the selection';
+                    return true;
+                }
+            },
+            {
+                name: 'typeArray', check: (x, optionSet) => {
+                    for (let elt of x) {
+                        if (optionSet.typeArray === 'array' && !(elt instanceof Array)) return 'array elements type missmatch';
+                        else if (optionSet.typeArray !== 'array' && typeof elt !== optionSet.typeArray) return 'array elements type missmatch';
+                    }
 
-async function Setup_init() {
-    //Data
-    try {
-        let data = await FetchSettings();
-        console.log(data);
-
-        SETUP_TTV_API(data.TwitchAPI);
-        SETUP_TTV_IRC(data.TwitchIRC);
-        SETUP_AUTHENTICATOR(data.Authenticator);
-        SETUP_WEBAPP(data.WebApp);
-    } catch (err) {
-        OUTPUT_showError(err.message);
-        return Promise.resolve();
+                    return true;
+                }
+            }
+        ], default: []
     }
+];
 
-    //DONE
-    document.getElementById('WAITING_FOR_DATA').remove();
-    document.getElementById('SECTION_SETUP').style.display = 'block';
-}
+let CUR_CONFIG = {};
+
+let WIZARD_CURSOR = [0, 0];
+let WIZARD_NAV_DATA = [];
+
+const WIZARD_PatchPanel = {
+    WebApp: {
+        Port: 'FrikyBot_WebApp_Port',
+        authentication_enable: 'FrikyBot_WebApp_authentication_enable',
+        authentication_secret: 'FrikyBot_WebApp_authentication_secret'
+    },
+    TwitchIRC: {
+        login: '',
+        oauth: '',
+        channel: 'TwitchIRC_Channel_Channel',
+        support_BTTV: 'TwitchIRC_Misc_and_Emotes_BTTV',
+        support_FFZ: 'TwitchIRC_Misc_and_Emotes_FFZ'
+    },
+    TwitchAPI: {
+        ClientID: 'TwitchAPI_Your_Application_ID',
+        Secret: 'TwitchAPI_Your_Application_Secret',
+        Scopes: 'TwitchAPI_Your_Application_URL'
+    },
+    DataCollection: {
+
+    },
+    Packages: {
+
+    }
+};
 
 async function FetchSettings() {
-    return fetch("/api/settings/setup", getFetchHeader())
-        .then(checkResponse)
+    return fetch("/api/pages/settings/setup", getAuthHeader())
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
         .then(json => {
             if (json.err) {
                 return Promise.reject(new Error(json.err));
@@ -108,6 +154,441 @@ async function FetchSettings() {
             }
         })
 }
+async function Setup_init() {
+    //Data
+    try {
+        let data = await FetchSettings();
+        console.log(data);
+        
+        WIZARD_create(data.tmpl, data.cfg);
+        CUR_CONFIG = data.cfg;
+
+        //Seperate Groups
+        for (let module of data.tmpl) {
+            let grps = [];
+
+            for (let i = 0; i < module.options.groups.length; i++) {
+                let grp = module.options.groups[i];
+                grps.push({ name: grp.name, settings: module.settings.filter(elt => elt.group + 1 === i) });
+            }
+
+            WIZARD_NAV_DATA.push({ name: module.name, groups: grps });
+        }
+    } catch (err) {
+        OUTPUT_showError(err.message);
+        console.log(err);
+        return Promise.resolve();
+    }
+    
+    WIZARD_go2Hash();
+
+    //DONE
+    document.getElementById('WAITING_FOR_DATA').remove();
+    document.getElementById('SETUP').style.display = 'block';
+
+    SWITCHBUTTON_AUTOFILL();
+}
+
+//Setup General
+function switchMode(elt) {
+    
+}
+
+
+
+
+
+
+
+
+//Wiz2
+function WIZARD_create(template, config = {}) {
+    WIZARD_createNaviation(template);
+    WIZARD_updateContent(config);
+}
+function WIZARD_createNaviation(modules) {
+    let mainsHTML = '';
+    let groupsHTML = '';
+
+    //Mains
+    for (let i = 0; i < modules.length; i++) {
+        mainsHTML += '<div class="WIZ_NAV_MODULE" ' + (i == 0 ? 'selected' : '') + '>' + modules[i].name + '</div>';
+    }
+
+    //Groups
+    for (let i = 0; i < modules.length; i++) {
+        let cols = '';
+        if(!modules[i].options.groups) modules[i].options.groups = [];
+        let groups = modules[i].options.groups;
+
+        //Add Extra Groups
+        groups.unshift({ name: 'Introduction' });
+        if (modules[i].name === 'TwitchAPI') groups.splice(2, 0, { name: 'Reboot' });
+
+        for (let j = 0; j < groups.length; j++) cols += (j !== 0 ? ' ' : '') + ((1 / groups.length) * 100) + '%';
+        
+        groupsHTML += '<div class="WIZ_NAV_GROUP" style="grid-template-columns: ' + cols + ';" ' + (i != WIZARD_CURSOR[0] ? ' hidden' : '') + '>';
+        for (let j = 0; j < groups.length; j++) {
+            groupsHTML += '<div ' + (i == WIZARD_CURSOR[0] && j == WIZARD_CURSOR[1] ? 'selected' : '') + ' ' + ((modules[i].options.opt || modules[i].options.wip) && j !== 0 ? ' disabled' : '') + '>' + groups[j].name + '</div>';
+        }
+        groupsHTML += '</div>';
+    }
+
+    document.getElementById('WIZ_NAV_MODULES').innerHTML = mainsHTML;
+    document.getElementById('WIZ_NAV_GROUPS').innerHTML = groupsHTML;
+}
+
+function WIZARD_updateContent(cfg) {
+    
+}
+function WIZARD_createSetting(setting, id_root = "", value) {
+    id_root = replaceAll(id_root, ' ', '_');
+
+    let s = '<h4>' + setting.name + '</h4>';
+
+    let stgTemplate = SETTINGTYPES.find(elt => elt.name === setting.type);
+
+    let defau = setting.default || stgTemplate.default;
+
+    if (setting.type === 'number') {
+        s += '<input type="number" id="' + id_root + setting.name + '" placeholder="' + (value || defau) + '" value="' + (value || defau) + '"';
+        if (setting.min) s += 'min="' + setting.min + '" ';
+        if (setting.max) s += 'max="' + setting.max + '" ';
+        if (setting.range) s += 'min="' + setting.range.substring(0, setting.range.indexOf(':')) + '" max="' + setting.range.substring(setting.range.indexOf(':') + 1) + '" ';
+        s += '></input>';
+    } else if (setting.type === 'boolean') {
+        s += '<switchbutton id="' + id_root + setting.name + '" value="' + (value || defau) + '"></switchbutton>';
+    } else if (setting.type === 'array') {
+        //Selection
+        if (setting.selection) {
+            s += '<div id="' + id_root + setting.name + '" class="ARRAY_SELECTION">';
+            if (!value) value = [];
+
+            for (let i = 0; i < setting.selection.length; i++) {
+                s += '<span>' + (setting.selectionDescription ? setting.selectionDescription[i] : setting.selection[i]) + '</span>';
+                s += '<switchbutton id="' + id_root + setting.name + "_" + setting.selection[i] + '" value="' + (value.find(elt => elt === setting.selection[i]) !== undefined ) + '"></switchbutton>';
+            }
+            s += '</div>';
+        }
+        //Add / Remove
+        else {
+            s += '<h4>WiP</h4>';
+        }
+    } else {
+        s += '<input type="text" id="' + id_root + setting.name + '" placeholder="' + (value || defau) + '" value="' + (value || defau) + '"';
+        s += '></input>';
+    }
+
+    return s;
+}
+
+//WIZARD DSIPLAY
+function WIZARD_show(module, group, hold = false) {
+    let moduleName = WIZARD_NAV_DATA[WIZARD_CURSOR[0]].name;
+
+    //Hide Current
+    document.getElementsByClassName('WIZ_NAV_MODULE')[WIZARD_CURSOR[0]].removeAttribute('selected');
+    document.getElementsByClassName('WIZ_NAV_GROUP')[WIZARD_CURSOR[0]].setAttribute('hidden', '');
+    document.getElementsByClassName('WIZ_NAV_GROUP')[WIZARD_CURSOR[0]].childNodes[WIZARD_CURSOR[1]].removeAttribute('selected');
+    document.getElementsByClassName('WIZ_GROUP_' + moduleName)[WIZARD_CURSOR[1]].setAttribute('hidden', '');
+    
+    //Template Check - and get new target location
+    if (module > WIZARD_CURSOR[0] || (module == WIZARD_CURSOR[0] && group > WIZARD_CURSOR[1])) {
+        let result = WIZARD_check(module, group, hold);
+
+        module = result[0];
+        group = result[1];
+    }
+    
+    WIZARD_CURSOR[0] = module;
+    WIZARD_CURSOR[1] = group;
+    moduleName = WIZARD_NAV_DATA[WIZARD_CURSOR[0]].name;
+
+    //Show New
+    document.getElementsByClassName('WIZ_NAV_MODULE')[WIZARD_CURSOR[0]].setAttribute('selected', '');
+    document.getElementsByClassName('WIZ_NAV_GROUP')[WIZARD_CURSOR[0]].removeAttribute('hidden');
+    document.getElementsByClassName('WIZ_NAV_GROUP')[WIZARD_CURSOR[0]].childNodes[WIZARD_CURSOR[1]].setAttribute('selected', '');
+    document.getElementsByClassName('WIZ_GROUP_' + moduleName)[WIZARD_CURSOR[1]].removeAttribute('hidden');
+
+    console.log(document.getElementsByClassName('WIZ_GROUP_' + moduleName)[WIZARD_CURSOR[1]]);
+
+    //Update UI
+    WIZARD_updateUI();
+
+    //Util
+    WIZARD_onShow();
+}
+function WIZARD_updateUI() {
+    let mainIdx = WIZARD_CURSOR[0];
+    let groupIdx = WIZARD_CURSOR[1];
+
+    //Buttons
+    let buttons = [];
+    let cols = '';
+
+    if (mainIdx > 0 || groupIdx > 0) buttons.push('BACK');
+    if (!(mainIdx == WIZARD_NAV_DATA.length - 1 && groupIdx === WIZARD_NAV_DATA[mainIdx].groups.length - 1)) buttons.push('NEXT');
+    else buttons.push('SAVE');
+
+    //Hide all buttons
+    for (let elt of document.getElementsByClassName('WIZ_UI_BTN')) elt.setAttribute('hidden', '');
+
+    //Show enabled
+    for (let btn of buttons) {
+        cols += ' 90px';
+        document.getElementById('WIZ_UI_' + btn).removeAttribute('hidden');
+    }
+
+    //Add Buttons with new Grid-Cols and Width
+    document.getElementById('WIZ_UI_GRID').style.gridTemplateColumns = cols;
+    document.getElementById('WIZ_UI_GRID').style.width = (buttons.length * 90 + (buttons.length - 1) * 10) + 'px';
+}
+function WIZARD_prev() {
+    let nextModule = WIZARD_CURSOR[0];
+    let nextGroup = WIZARD_CURSOR[1];
+
+    if (nextGroup - 1 >= 0)
+        nextGroup -= 1;
+    else if (nextModule - 1 >= 0) {
+        nextModule -= 1; nextGroup = WIZARD_NAV_DATA[nextModule].groups.length - 1;
+    }
+
+    WIZARD_show(nextModule, nextGroup);
+}
+function WIZARD_next() {
+    let nextModule = WIZARD_CURSOR[0];
+    let nextGroup = WIZARD_CURSOR[1];
+    
+    if (nextGroup + 1 < WIZARD_NAV_DATA[nextModule].groups.length)
+        nextGroup += 1;
+    else if (nextModule + 1 < WIZARD_NAV_DATA.length) {
+        nextModule += 1; nextGroup = 0;
+    }
+    
+    WIZARD_show(nextModule, nextGroup);
+}
+function WIZARD_go2Hash() {
+    let hMdl = GetURLHashContent('_m');
+    let hGrp = GetURLHashContent('_g');
+
+    if (hMdl) hMdl = hMdl.value[0];
+    if (hGrp) hGrp = hGrp.value[0];
+
+    WIZARD_show(parseInt(hMdl) || 0, parseInt(hGrp) || 0);
+}
+
+//Template Check
+function WIZARD_check(targetModule, targetGroup, hold) {
+    let curModule = WIZARD_CURSOR[0];
+    let curGroup = WIZARD_CURSOR[1];
+    
+    do {
+        let moduleName = WIZARD_NAV_DATA[curModule].name;
+        let settings = WIZARD_NAV_DATA[curModule].groups[curGroup].settings;
+        let test_result = WIZARD_check_Group(settings, curModule);
+
+        let status = true;
+
+        for (let rslt of test_result) {
+            if (rslt.result === true) {
+                //Color Complete
+                document.getElementById(WIZARD_PatchPanel[moduleName][rslt.name]).removeAttribute('requiered');
+            } else {
+                //Color Requiered
+                status = false;
+                document.getElementById(WIZARD_PatchPanel[moduleName][rslt.name]).setAttribute('requiered', '');
+            }
+        }
+
+        if (status) document.getElementsByClassName('WIZ_NAV_GROUP')[curModule].childNodes[curGroup].setAttribute('complete', '');
+        else document.getElementsByClassName('WIZ_NAV_GROUP')[curModule].childNodes[curGroup].removeAttribute('complete');
+
+    } while (false && curModule < targetModule && curGroup < targetGroup);
+
+    return [targetModule, targetGroup];
+}
+function WIZARD_check_Group(settings, module) {
+    let errors = [];
+    let moduleName = WIZARD_NAV_DATA[module].name;
+
+    for (let stg of settings) {
+        //Get current Value
+        let elt = document.getElementById(WIZARD_PatchPanel[moduleName][stg.name]) || {};
+        let value = elt.value;
+        errors.push({ name: stg.name, result: WIZARD_check_Setting(stg.type, value, stg) });
+    }
+
+    return errors;
+}
+function WIZARD_check_Setting(name, value, options) {
+    //Skip unknown Types
+    if (!name) return true;
+
+    let TYPE = SETTINGTYPES.find(elt => elt.name === name);
+
+    let converted_type = TYPE.convert(value);
+    
+    //Check Variable Types
+    for (let type in options) {
+        //Skip general info
+        if (type === 'name' || type === 'opt' || type === 'default') continue;
+
+        //Find Type - skip unknowns
+        let TYPEtype = TYPE.options.find(elt => elt.name === type);
+        if (!TYPEtype) continue;
+
+        //Check and return result on error
+        let result = TYPEtype.check(converted_type, options);
+        if (result !== true) return result;
+    }
+
+    return true;
+}
+
+function WIZARD_onShow() {
+
+}
+function WIZARD_onRestart() {
+    let moduleName = WIZARD_NAV_DATA[WIZARD_CURSOR[0]].name;
+
+    if (moduleName === 'WebApp' && WIZARD_CURSOR[1] === 1) {
+        let opt = getAuthHeader();
+        opt.method = 'POST';
+        opt.headers['Content-Type'] = 'application/json';
+        opt.body = JSON.stringify({ port: parseInt(document.getElementById(WIZARD_PatchPanel.WebApp.Port).value) });
+
+        fetch('/api/settings/webapp/port', opt)
+            .then(STANDARD_FETCH_RESPONSE_CHECKER)
+            .then(json => {
+                if (json.msg === '200') {
+                    let outS = 'Bot Restarting at Port: ' + json.port;
+                    outS += '</br><b>Since Cookies arent shared between Ports, you have to <a href="http://localhost:' + json.port + '/login" target="_blank">log in</a> again! </b>';
+                    outS += '</br>Go <a href="http://localhost:' + json.port + '/settings/setup#_m=0&_g=1">here</a> after login to resume Setup at this Step!';
+                    OUTPUT_showInfo(outS);
+                } else OUTPUT_showError('500 - Internal Error.');
+            })
+            .catch(err => {
+                OUTPUT_showError(err.message);
+            });
+    }
+}
+function WIZARD_onSave() {
+
+}
+
+//WIZARD UTIL
+function WIZARD_NAV_MODULE(e) {
+    let target = e.target;
+    let targetIdx;
+    let modules = document.getElementsByClassName('WIZ_NAV_MODULE');
+
+    //Find Index
+    for (let i = 0; i < modules.length; i++)
+        if (modules[i] === target) { targetIdx = i; break; }
+
+    //Show
+    WIZARD_show(targetIdx, 0, true);
+}
+function WIZARD_NAV_GROUP(e) {
+    let target = e.target;
+    let targetIdx;
+    let groups = document.getElementsByClassName('WIZ_NAV_GROUP')[WIZARD_CURSOR[0]].childNodes;
+    
+    //Find Index
+    for (let i = 0; i < groups.length; i++)
+        if (groups[i] === target) { targetIdx = i; break; }
+
+    //Show
+    WIZARD_show(WIZARD_CURSOR[0], targetIdx, true);
+}
+
+//WebApp
+function port_change(value) {
+    if (value == CUR_CONFIG.WebApp.Port) {
+        document.getElementById('WIZ_UI_RESTART').setAttribute('hidden', '');
+        document.getElementById('WIZ_UI_NEXT').removeAttribute('hidden');
+        document.getElementById('FrikyBot_WebApp_Port_Hint').setAttribute('hidden', '');
+        return;
+    }
+
+    document.getElementById('FrikyBot_WebApp_Port_Hint').removeAttribute('hidden');
+    document.getElementById('WIZ_UI_NEXT').setAttribute('hidden', '');
+    document.getElementById('WIZ_UI_RESTART').removeAttribute('hidden');
+}
+function FrikyBot_auth_show(btn) {
+    let elt = document.getElementById('FrikyBot_WebApp_authentication_secret');
+    if (elt) {
+        elt.type = elt.type === 'password' ? 'text' : 'password';
+        btn.innerHTML = elt.type === 'password' ? 'SHOW SECRET' : 'HIDE SECRET';
+    }
+}
+function FrikyBot_auth_enable(elt) {
+    console.log(elt.value);
+}
+function FrikyBot_auth_regen() {
+    fetch('/api/settings/webapp/fbauth/regen', getAuthHeader())
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            console.log(json);
+            if (json.new_secret !== undefined && json.new_token !== undefined) {
+                document.getElementById('FrikyBot_WebApp_authentication_secret').value = json.new_secret;
+
+                LOGIN_logout();
+                return LOGIN_login(json.new_token);
+            }
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
+
+//TTV API
+function TwitchAPI_UserLogin_createScopes() {
+    let s = '';
+
+    for (let scope in TTV_API_SCOPES) {
+        if (TTV_API_SCOPES[scope].enabled !== true) continue;
+
+        s += '<div>' + TTV_API_SCOPES[scope].desc + '</div>';
+        s += '<SWITCHBUTTON class="TTV_API_SCOPE" value="' + (TTV_API_SCOPES[scope].state === true) + '" data-id="' + scope + '"></SWITCHBUTTON>';
+    }
+    
+    s += '<span style="color: red;">For new Scopes to have Effect, you have to log in again!</span><div></div>';
+    document.getElementById('TWITCHAPI_USERLOGIN_SCOPES').innerHTML = s;
+}
+function TwitchAPI_UserLogin_getScopes() {
+    return HTMLArray2RealArray(document.getElementsByClassName('TTV_API_SCOPE')).reduce((acc, elt) => {
+        if(elt.value === true) acc.push(elt.dataset.id)
+    }, []);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //TTV API
 function SETUP_TTV_API(data) {

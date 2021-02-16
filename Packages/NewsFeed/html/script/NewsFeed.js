@@ -67,6 +67,12 @@ async function NEWS_FEED_FETCH(endpoint, querry) {
 }
 
 async function NEWS_FEED_FETCH_Feed(endpoint, querry, replace) {
+    try {
+        document.getElementById("NEWS_FEED_Feed").innerHTML = '<div id="NEWS_FEED_Feed_WAITER">' + MISC_LOADING_RING_CREATE() + '</div>';
+    } catch (err) {
+
+    }
+
     return NEWS_FEED_FETCH(endpoint, querry)
         .then(json => {
             if (document.getElementById("NEWS_FEED_Feed") && json.data.News && Array.isArray(json.data.News)) {
@@ -90,14 +96,22 @@ async function NEWS_FEED_FETCH_Feed(endpoint, querry, replace) {
                     document.getElementById("NEWS_FEED_Feed").innerHTML += s;
                 }
             }
-
+            
+            if (document.getElementById("NEWS_FEED_Feed_WAITER")) document.getElementById("NEWS_FEED_Feed_WAITER").remove();
             return json.data;
         })
         .catch(err => {
+            if (document.getElementById("NEWS_FEED_Feed_WAITER")) document.getElementById("NEWS_FEED_Feed_WAITER").remove();
             return Promise.reject(err);
         });
 }
 async function NEWS_FEED_FETCH_FullPage(page) {
+    try {
+        document.getElementById("NEWS_FEED_Feed").innerHTML = '<div id="NEWS_FEED_Feed_WAITER">' + MISC_LOADING_RING_CREATE() + '</div>';
+    } catch (err) {
+
+    }
+
     return NEWS_FEED_FETCH("News", 'page=' + page)
         .then(json => {
             if (document.getElementById("NEWS_FEED_FullPage") && json.data.News && json.data.News[0]) {

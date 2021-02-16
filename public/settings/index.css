@@ -1,73 +1,165 @@
-#SECTION_DASHBOARD {
+#grid #content {
+    background-color: #f5f5f5;
+}
+
+    #grid #content button {
+        cursor: pointer;
+    }
+
+#DASHBOARD {
     display: none;
 }
 
-#grid #content button {
-    cursor: pointer;
-}
-
-#CONTROL {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, 200px);
-    grid-template-rows: auto;
-    grid-column-gap: 5px;
-    grid-row-gap: 5px;
-}
-    #CONTROL .Core {
-        height: auto;
-        display: grid;
-        grid-template-columns: 100%;
-        grid-template-rows: 30px auto;
-        border: 1px solid gray;
-        padding-bottom: 5px;
+    #DASHBOARD #HEADER {
+        background-color: #00497a;
+        font-size: 30px;
+        color: white;
     }
 
-        #CONTROL .Core .Header {
-            font-size: 25px;
-            font-weight: bold;
-            border-bottom: 1px solid gray;
+    /*MODULES*/
+    #DASHBOARD #Modules {
+        width: 100%;
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        grid-column-gap: 15px;
+        grid-row-gap: 5px;
+    }
+
+        #DASHBOARD #Modules .Module {
+            width: 100%;
+            background-color: white;
+            display: grid;
+            grid-template-columns: 100px auto;
+            grid-template-rows: 25px auto;
+            grid-template-areas: "header header" "control misc";
         }
-            #CONTROL .Core .Header.ENABLED {
-                color: green;
-                background-color: rgba(0, 155, 0, 0.5)
-            }
-            #CONTROL .Core .Header.DISABLED {
-                color: red;
-                background-color: rgba(255, 0, 0, 0.2);
+            #DASHBOARD #Modules .Module:not([installed]) {
+                filter: grayscale(1);
             }
 
-        #CONTROL .Core .Misc {
-            height: auto;
-            max-height: 200px;
-            overflow-y: scroll;
-        }
-
-            #CONTROL .Core .Misc::-webkit-scrollbar {
-                width: 5px;
+            #DASHBOARD #Modules .Module[disabled] .hdr {
+                background-color: #bd0000;
             }
 
-            #CONTROL .Core .Misc::-webkit-scrollbar-track {
-                background: none;
+            #DASHBOARD #Modules .Module .hdr {
+                grid-area: header;
+                text-align: center;
+                background-color: #00497a;
+                color: white;
+                padding-top: 3px;
             }
 
-            #CONTROL .Core .Misc::-webkit-scrollbar-thumb {
-                background: #888;
+            #DASHBOARD #Modules .Module .ctrl {
+                grid-area: control;
+                border-right: 1px solid lightgray;
+            }
+                #DASHBOARD #Modules .Module .ctrl button {
+                    width: calc(100% - 10px);
+                    margin: 5px;
+                }
+
+            #DASHBOARD #Modules .Module .misc {
+                grid-area: misc;
+                padding: 5px;
             }
 
-            #CONTROL .Core .Misc p {
-                margin: 5px;
-            }
+                #DASHBOARD #Modules .Module .misc green {
+                    color: green;
+                    font-weight: bold;
+                }
 
-            #CONTROL .Core .Misc .Buttons {
-                height: auto;
-                margin: 5px;
-                margin-right: 0px;
-                display: grid;
+                #DASHBOARD #Modules .Module .misc red {
+                    color: red;
+                    font-weight: bold;
+                }
+
+                #DASHBOARD #Modules .Module .misc blue {
+                    color: #028deb;
+                }
+
+                #DASHBOARD #Modules .Module .misc.onlineTable {
+                    display: grid;
+                    grid-template-columns: auto auto;
+                    grid-template-rows: auto auto;
+                }
+
+            /*WEBAPP*/
+            #DASHBOARD #Modules .Module#Module_WebApp {
                 grid-template-columns: 100%;
-                grid-auto-rows: 30px;
-                grid-row-gap: 5px;
+                grid-template-areas: "header" "misc";
             }
 
-            #CONTROL .Core .Misc .SettingsLink a {
-                color: #2ab89b;
+            /*CONFIG*/
+            #DASHBOARD #Modules .Module#Module_Config {
+                grid-template-columns: 100%;
+                grid-template-areas: "header" "misc";
             }
+
+                #DASHBOARD #Modules .Module#Module_Config .misc {
+                    padding: 5px;
+                    display: grid;
+                    grid-template-columns: 50%;
+                    grid-template-rows: auto auto;
+                    justify-content: center;
+                    text-align: center;
+                }
+
+    /*PACKAGES*/
+    #DASHBOARD #Packages {
+        width: 100%;
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 600px));
+        grid-template-rows: auto;
+        grid-column-gap: 15px;
+        grid-row-gap: 5px;
+    }
+
+        #DASHBOARD #Packages .Package {
+            width: 100%;
+            background-color: white;
+            display: grid;
+            grid-template-columns: 100px auto;
+            grid-template-rows: 25px auto;
+            grid-template-areas: "header header" "control misc";
+            overflow: hidden;
+        }
+
+            #DASHBOARD #Packages .Package .hdr {
+                grid-area: header;
+                text-align: center;
+                background-color: #00497a;
+                color: white;
+                padding-top: 3px;
+            }
+
+            #DASHBOARD #Packages .Package .ctrl {
+                grid-area: control;
+                border-right: 1px solid lightgray;
+            }
+
+                #DASHBOARD #Packages .Package .ctrl button {
+                    width: calc(100% - 10px);
+                    margin: 5px;
+                }
+
+            #DASHBOARD #Packages .Package .misc {
+                grid-area: misc;
+            }
+
+            /*ADD*/
+            #DASHBOARD #Packages .Package#ADD_PACKAGE {
+                width: 200px;
+                grid-template-columns: auto;
+                grid-template-areas: "header" "misc";
+            }
+                #DASHBOARD #Packages .Package#ADD_PACKAGE .misc {
+                    width: 100%;
+                    padding: 5px;
+                }
+
+                    #DASHBOARD #Packages .Package#ADD_PACKAGE .misc button {
+                        width: calc(100% - 10px);
+                        height: 100%;
+                    }

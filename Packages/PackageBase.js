@@ -21,7 +21,7 @@ class PackageBase {
         };
 
         //LOGGER
-        if (logger && logger.identify != undefined && logger.identify() == "FrikyBotLogger") {
+        if (logger && logger && logger.identify != undefined && logger.identify() == "FrikyBotLogger") {
             logger.addSources({
                 [this.getName()]: {
                     display: () => (" " + this.getName() + " ").inverse.yellow

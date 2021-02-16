@@ -8,23 +8,21 @@ function init() {
     fetch("/api/Packages", opt)
         .then(data => data.json())
         .then(json => {
-            if (json.err) {
-                ERROR_OUTPUT_showError("<b>INTERNAL ERROR:</b> " + json.err);
-            } else {
-                console.log(json.data);
+            if (json.err) return Promise.reject(new Error(json.err));
 
-                let state = showPackages(json.data.Packages);
+            let state = showPackages(json.data.Packages);
 
-                if (typeof (state) == "string") {
-                    ERROR_OUTPUT_showError(state);
-                } else if (state == false) {
-                    document.getElementsByTagName("h1")[0].innerHTML = "<center>NO PACKAGES INSTALLED</center>";
-                }
+            if (typeof (state) == "string") {
+                ERROR_OUTPUT_showError(state);
+            } else if (state == false) {
+                document.getElementsByTagName("h1")[0].innerHTML = "<center>NO PACKAGES INSTALLED</center>";
             }
+            document.getElementById('WAITING_WRAPPER').remove();
         })
         .catch(err => {
             OUTPUT_showError(err);
             console.log(err);
+            document.getElementById('WAITING_WRAPPER').remove();
         });
 }
 

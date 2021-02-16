@@ -54,8 +54,11 @@
 
 #grid #contentHeader {
     background-color: #19a3ff;
+    z-index: 1;
 }
-
+    #grid #contentHeader .HOVERPROFILE {
+        float: right;
+    }
 /* 
     ////////////////////////////////////
             MAIN GRID CONTENT

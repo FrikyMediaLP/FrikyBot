@@ -31,8 +31,8 @@
     <script src="../misc/OUTPUT/OUTPUT.js"></script>
     <link href="../misc/OUTPUT/OUTPUT.css" rel="stylesheet">
 
-    <script src="../misc/HoverProfile/HoverProfile.js"></script>
-    <link href="../misc/HoverProfile/HoverProfile.css" rel="stylesheet">
+    <script src="../misc/Login/Login.js"></script>
+    <link href="../misc/Login/Login.css" rel="stylesheet">
 
     <script src="../misc/SwitchButton/SwitchButton.js"></script>
     <link href="../misc/SwitchButton/SwitchButton.css" rel="stylesheet">
@@ -69,91 +69,73 @@
                 </div>
             </div>
 
-            <div id="SECTION_DASHBOARD">
-                <h1>Control</h1>
-                <div id="CONTROL">
-                    <div class="Core">
-                        <center class="Header ENABLED">Twitch API</center>
-                        <div class="Misc">
-                            <div class="Buttons">
-                                <button>STOP</button>
-                                <button>Check Tokens</button>
-                            </div>
-                            <p><b>User Token:</b> <b style="color: forestgreen;">ACTIVE</b></p>
-                            <p><b>App Token:</b> <b style="color: red;">INACTIVE</b></p>
-                            <center class="SettingsLink">
-                                <a href="settings/setup#SETUP_TWITCH_IRC">Settings</a>
-                            </center>
+            <div id="DASHBOARD">
+                <center id="HEADER">FRIKYBOT DASHBOARD</center>
+
+                <h2>Core Modules</h2>
+                <div id="Modules">
+                    <div class="Module" id="Module_WebApp">
+                        <span class="hdr">WebApp</span>
+                        <div class="misc onlineTable">
+                            <span>API Status:</span><green>ONLINE</green>
+                            <span>Authenticator:</span><blue>FrikyBot Auth.</blue>
+                            <span>Authenticator Status:</span><green>ONLINE</green>
+                            <span>Errors:</span><span>NONE</span>
                         </div>
                     </div>
-
-
-                    <div class="Core">
-                        <center class="Header ENABLED">Twitch IRC</center>
-                        <div class="Misc">
-                            <div class="Buttons">
-                                <button>STOP</button>
-                            </div>
-                            <p><b>Bot User:</b> Unknown</p>
-                            <p><b>Channel:</b> Unknown</p>
-                            <center class="SettingsLink">
-                                <a href="settings/setup#SETUP_TWITCH_IRC">Settings</a>
-                            </center>
+                    <div class="Module" id="Module_TwitchAPI">
+                        <span class="hdr">Twitch API</span>
+                        <div class="ctrl">
+                            <button>install</button>
+                        </div>
+                        <div class="misc">
+                            <center>not installed</center>
                         </div>
                     </div>
-
-                    <div class="Core">
-                        <center class="Header ENABLED">WebApp</center>
-                        <div class="Misc">
-                            <div class="Buttons">
-                                <button>STOP</button>
-                            </div>
-                            <p><b>Page Status:</b> <b style="color: forestgreen;">ACTIVE</b></p>
-                            <p><b>Page Calls/Min:</b> <b style="color: forestgreen;">0</b></p>
-                            <p><b>API Status:</b> <b style="color: forestgreen;">ACTIVE</b></p>
-                            <p><b>API Calls/Min:</b> <b style="color: forestgreen;">0</b></p>
-                            <center class="SettingsLink">
-                                <a href="settings/setup#SETUP_WEBAPP">Settings</a>
-                            </center>
+                    <div class="Module" id="Module_TwitchIRC">
+                        <span class="hdr">Twitch IRC</span>
+                        <div class="ctrl">
+                            <button>install</button>
+                        </div>
+                        <div class="misc">
+                            <center>not installed</center>
                         </div>
                     </div>
-
-                    <div class="Core">
-                        <center class="Header ENABLED">Authenticator</center>
-                        <div class="Misc">
-                            <div class="Buttons">
-                                <button title="Disabling Authentication LOCKS ALL Restricted Pages/API Endpoints! INCLUDING THIS PAGE!">STOP</button>
-                            </div>
-                            <p><b>Authentications/Min:</b> <b style="color: forestgreen;">0</b></p>
-                            <p><b>Failed Auth./Min:</b> <b style="color: red;">0</b></p>
-                            <center class="SettingsLink">
-                                <a href="settings/setup#SETUP_AUTHENTICATOR">Settings</a>
-                            </center>
+                    <div class="Module" id="Module_DataCollection">
+                        <span class="hdr">DataCollection</span>
+                        <div class="ctrl">
+                            <button>install</button>
+                        </div>
+                        <div class="misc">
+                            <center>not installed</center>
                         </div>
                     </div>
-
-                    <div class="Core">
-                        <center class="Header DISABLED">DataCollection</center>
-                        <div></div>
+                    <div class="Module" id="Module_Config" installed>
+                        <span class="hdr">Config</span>
+                        <div class="misc">
+                            <button>Reset</button>
+                            <a href="settings/setup">Change Settings</a>
+                        </div>
                     </div>
                 </div>
 
-                <h1>Bot Status</h1>
-                <ul>
-                    <li>TTV API: <b style="color: forestgreen;">CHECK</b></li>
-                    <li>TTV IRC: <b style="color: forestgreen;">CHECK</b></li>
-                    <li>WebApp: <b style="color: forestgreen;">CHECK</b></li>
-                    <li>Athenticator: <b style="color: forestgreen;">CHECK</b></li>
-                    <li>DataCollection: <b style="color: forestgreen;">CHECK</b></li>
-                </ul>
-
-                <h1>WebApp Logs</h1>
-                <h4>API Calls</h4>
-                <h4>Pages Visited</h4>
-                <h4>Authenticated Users</h4>
-
-                <h1>Bot Logs</h1>
-
+                <h2>Packages</h2>
+                <h4>No Packages installed</h4>
+                <div id="Packages">
+                    <div class="Package" style="display: none;">
+                        <span class="hdr">NewsFeed</span>
+                        <div class="ctrl">
+                            <button>START</button>
+                        </div>
+                        <div class="misc"></div>
+                    </div>
+                    <div class="Package" id="ADD_PACKAGE">
+                        <span class="hdr">Add Packages</span>
+                        <div class="misc">
+                            <button>+</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

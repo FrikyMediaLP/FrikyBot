@@ -1,14 +1,15 @@
 ﻿
 /* GENERAL */
+#SECTION_SETUP, #SETUP {
+    margin-top: 10px;
+    display: none;
+}
+
 #SECTION_SETUP #HEADER {
     font-family: Roboto, sans-serif;
     color: white;
     font-size: 30px;
     padding: 7px 15px;
-}
-
-#SECTION_CONTROL, #SECTION_SETUP, #SECTION_PACKAGES, #SECTION_LOGS {
-    display: none;
 }
 
     /*MISC*/
@@ -45,15 +46,317 @@ body.darkmode #SECTION_SETUP  h2 {
             filter: brightness(0.9);
         }
 
-/* 
-    ----------------------
-         Config
-    ----------------------
+/*WIZARD*/
+#WIZARD {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 100%;
+    grid-template-rows: 58px auto;
+    overflow: hidden;
+    font-family: 'Roboto', sans-serif;
+    background-color: white;
+    color: black;
+}
+
+    /* NAV */
+    #WIZARD #WIZ_NAV {
+        display: grid;
+        grid-template-columns: 100%;
+        grid-template-rows: 30px 28px;
+    }
+
+        /* MAIN */
+        #WIZARD #WIZ_NAV #WIZ_NAV_MODULES {
+            display: grid;
+            grid-template-columns: 20% 20% 20% 20% 20%;
+            grid-template-rows: 30px;
+            background-color: #19a3ff;
+            color: white;
+            justify-content: center;
+            border-bottom: 1px solid rgb(245,245,245);
+        }
+
+            #WIZARD #WIZ_NAV #WIZ_NAV_MODULES .WIZ_NAV_MODULE {
+                display: inline-block;
+                padding: 5px;
+                text-align: center;
+                cursor: pointer;
+                border-right: 1px solid white;
+                border-bottom: 1px solid white;
+                text-transform: uppercase;
+            }
+
+                #WIZARD #WIZ_NAV #WIZ_NAV_MODULES .WIZ_NAV_MODULE[complete] {
+                    color: lime !important;
+                }
+
+                #WIZARD #WIZ_NAV #WIZ_NAV_MODULES .WIZ_NAV_MODULE:last-child {
+                    border-right: none;
+                }
+
+                #WIZARD #WIZ_NAV #WIZ_NAV_MODULES .WIZ_NAV_MODULE:hover {
+                    color: #00497a;
+                }
+
+                #WIZARD #WIZ_NAV #WIZ_NAV_MODULES .WIZ_NAV_MODULE[selected] {
+                    color: white;
+                    border-bottom: none;
+                    background-color: #028deb;
+                }
+
+        /* DET */
+        #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS {
+            background-color: #028deb;
+        }
+
+            #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS .WIZ_NAV_GROUP {
+                display: grid;
+                grid-template-rows: 100%;
+                justify-content: center;
+            }
+
+                #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS .WIZ_NAV_GROUP[hidden] {
+                    display: none;
+                }
+
+                #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS .WIZ_NAV_GROUP > div {
+                    text-align: center;
+                    cursor: pointer;
+                    padding: 5px;
+                    font-size: 15px;
+                    color: #ededed;
+                    text-transform: uppercase;
+                }
+
+                    #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS .WIZ_NAV_GROUP > div:not([disabled]):hover {
+                        color: #00497a;
+                    }
+
+                    #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS .WIZ_NAV_GROUP > div[selected] {
+                        color: white;
+                        background-color: #0098ff;
+                    }
+
+                    #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS .WIZ_NAV_GROUP > div[disabled] {
+                        background-color: gray;
+                        cursor: default;
+                    }
+
+                    #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS .WIZ_NAV_GROUP > div[complete] {
+                        color: lime;
+                    }
+
+    /* CONTENT */
+    #WIZARD #WIZ_CONTENT {
+        overflow: hidden;
+        background-color: white;
+        width: 100%;
+        height: 400px;
+    }
+
+        #WIZARD #WIZ_CONTENT ::-webkit-scrollbar {
+            width: 2px;
+        }
+
+
+        #WIZARD #WIZ_CONTENT .Con_Cat {
+            overflow-y: scroll;
+            height: 100%;
+            width: 100%;
+            margin-bottom: 35px;
+            position: relative;
+        }
+            #WIZARD #WIZ_CONTENT .Con_Cat[hidden] {
+                display: none;
+            }
+
+            #WIZARD #WIZ_CONTENT .Con_Cat > div {
+                padding: 5px;
+            }
+
+            #WIZARD #WIZ_CONTENT .Con_Cat .LOADING_RING_WRAPPER {
+                margin: 0 auto;
+                margin-top: 10vh;
+                width: 20%;
+            }
+
+        #WIZARD #WIZ_CONTENT h3 {
+            margin: 0px;
+            text-align: center;
+        }
+
+        #WIZARD #WIZ_CONTENT h4 {
+            margin: 0px;
+        }
+
+        #WIZARD #WIZ_CONTENT p {
+            margin-top: 5px;
+            margin-bottom: 0px;
+            color: rgb(0,0,0);
+        }
+
+        #WIZARD #WIZ_CONTENT button {
+            cursor: pointer;
+        }
+
+        #WIZARD #WIZ_CONTENT a {
+            color: #2ee6c0;
+        }
+
+        #WIZARD #WIZ_CONTENT a:hover {
+            color: #2ab89b;
+        }
+
+        #WIZARD #WIZ_CONTENT input {
+            margin-bottom: 10px;
+            width: 100%;
+            outline: none;
+            border: 1px solid lightgray;
+        }
+
+        #WIZARD #WIZ_CONTENT input.missing {
+            color: red;
+            border-color: red;
+        }
+
+        #WIZARD #WIZ_CONTENT .Wiz_Hint {
+            color: red;
+            display: none;
+        }
+
+    #WIZARD #WIZ_CONTENT button.COPY_CAT_BUTTON {
+        color: #2ee6c0;
+        border: none;
+        text-decoration: underline;
+        background: none !important;
+        cursor: pointer;
+    }
+
+            #WIZARD #WIZ_CONTENT button.COPY_CAT_BUTTON:hover {
+                color: #2ab89b;
+            }
+
+        #WIZARD #WIZ_CONTENT .Con_Cat_Description {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 50% 50%;
+            grid-template-rows: 100%;
+            overflow: hidden;
+        }
+
+            #WIZARD #WIZ_CONTENT .Con_Cat_Description > div {
+                height: 100%;
+                width: calc(100% - 15px);
+                padding: 5px;
+                margin-left: 5px;
+                overflow-y: scroll;
+                overflow-x: hidden;
+            }
+
+                #WIZARD #WIZ_CONTENT .Con_Cat_Description > div:first-child {
+                    border-right: 1px solid lightgray;
+                }
+
+                #WIZARD #WIZ_CONTENT .Con_Cat_Description > div:last-child {
+                    padding: 5px 20px 5px 0px;
+                }
+
+/*SCOPES*/
+        #WIZARD #WIZ_CONTENT #TWITCHAPI_USERLOGIN_SCOPES {
+            margin-top: 5px;
+            width: calc(100% - 2px);
+            max-height: 300px;
+            overflow-y: scroll;
+            display: grid;
+            grid-template-columns: auto 57px;
+            grid-template-rows: auto;
+        }
+
+            #WIZARD #WIZ_CONTENT #TWITCHAPI_USERLOGIN_SCOPES::-webkit-scrollbar {
+                width: 10px;
+            }
+
+            #WIZARD #WIZ_CONTENT #TWITCHAPI_USERLOGIN_SCOPES::-webkit-scrollbar-track {
+                background: none;
+            }
+
+            #WIZARD #WIZ_CONTENT #TWITCHAPI_USERLOGIN_SCOPES::-webkit-scrollbar-thumb {
+                background: #888;
+            }
+
+            #WIZARD #WIZ_CONTENT #TWITCHAPI_USERLOGIN_SCOPES > div {
+                padding: 5px 0px;
+            }
+
+                #WIZARD #WIZ_CONTENT #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(2n+1) {
+                    padding-top: 8px;
+                    padding-left: 5px;
+                }
+
+                #WIZARD #WIZ_CONTENT #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+3), #WIZARD #WIZ_CONTENT #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+4) {
+                    background-color: #fefaff;
+                }
+
+                #WIZARD #WIZ_CONTENT #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+1), #WIZARD #WIZ_CONTENT #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+2) {
+                    background-color: #f2f0f2;
+                }
+
+                #WIZARD #WIZ_CONTENT #TWITCHAPI_USERLOGIN_SCOPES > div:nth-last-child(-n+1), #WIZARD #WIZ_CONTENT #TWITCHAPI_USERLOGIN_SCOPES > div:nth-last-child(-n+2) {
+                    background-color: white;
+                    border-bottom: none;
+                }
+
+
+        #WIZARD #WIZ_CONTENT .ARRAY_SELECTION {
+            width: 100%;
+            display: grid;
+            grid-template-columns: auto 50px;
+            grid-row-gap: 15px;
+        }
+
+
+/* UI */
+#WIZARD #WIZ_UI {
+    border-top: 1px solid lightgray;
+    border-bottom: 1px solid lightgray;
+    padding: 10px;
+}
+
+    #WIZARD #WIZ_UI #WIZ_UI_GRID{
+        margin: 0 auto;
+        display: grid;
+        width: 90px;
+        grid-template-columns: 90px;
+        grid-column-gap: 10px;
+    }
+
+    #WIZARD #WIZ_UI .WIZ_UI_BTN {
+        cursor: pointer;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+----------------------
+      Config
+---------------------- 
 */
 
-#SETUP_CONFIG {
-    display: none;
-}
+        #SETUP_CONFIG {
+            display: none;
+        }
 
 /* 
     ------------------

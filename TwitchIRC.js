@@ -1,13 +1,22 @@
 const tmi = require('tmi.js');
 const CONSTANTS = require('./Util/CONSTANTS.js');
+const CONFIGHANDLER = require('./ConfigHandler.js');
 
 const BTTV = require('./3rdParty/BTTV.js');
 const FFZ = require('./3rdParty/FFZ.js');
 
 class TwitchIRC {
-    constructor(user, pw, channel = [], logger) {
+    constructor(configJSON, logger) {
+        this.Config = new CONFIGHANDLER.Config('TwitchIRC', [
+            { name: 'login', type: 'string', minlength: 1, group: 0 },
+            { name: 'oauth', type: 'string', minlength: 1, private: true, group: 0 },
+            { name: 'channel', type: 'string', minlength: 1, group: 1, requiered: true },
+            { name: 'support_BTTV', type: 'boolean', default: true, group: 2 },
+            { name: 'support_FFZ', type: 'boolean', default: true, group: 2 }
+        ], { groups: [{ name: 'User Login' }, { name: 'Channel' }, { name: 'Emotes and Misc' }], preloaded: configJSON });
+
         //LOGGER
-        if (logger.identify && logger.identify() === "FrikyBotLogger") {
+        if (logger && logger.identify && logger.identify() === "FrikyBotLogger") {
             logger.addSources({
                 TwitchIRC: {
                     display: () => " TwitchIRC ".inverse.brightMagenta
@@ -20,13 +29,29 @@ class TwitchIRC {
         
         //Connection client
         this.client = undefined;
-        if (!this.SetupClient(user, pw, channel)) {
-            this.Logger.warn("Client not Setup correctly!");
-        }
+        this.eventHandlers = [];
+
+        //Util
+        this.Enabled = true;
     }
 
-    SetupClient(user, pw, channel) {
-        if (!(user && pw && channel)) {
+    async Init(WebInter) {
+        //Check Config
+        if (this.Config.check().length > 0) {
+            this.Enabled = false;
+            this.Logger.error('Twitch IRC disabled: Config Errors!');
+        }
+
+        if (this.Enabled !== true) return Promise.reject(new Error('TwitchIRC is disabled.'));
+
+        //Setup TMI.js Client and Connect
+        return this.Connect();
+    }
+
+    SetupClient() {
+        let cfg = this.Config.GetConfig();
+
+        if (!cfg.channel) {
             return false;
         }
 
@@ -35,41 +60,58 @@ class TwitchIRC {
                 reconnect: true,
                 secure: true
             },
-            identity: {
-                username: user,
-                password: pw
-            },
-            channels: channel
+            channels: [ cfg.channel ]
         };
+
+        //Sending Allowed
+        if (cfg.login && cfg.oauth) {
+            options['identity'] = {
+                username: cfg.login,
+                password: cfg.oauth
+            };
+        }
 
         if (this.Logger) {
             options.logger = this.Logger.TwitchIRC;
         }
-
-        if (Array.isArray(channel)) {
-            options.channels = channel;
-        } else {
-            options.channels = [channel];
-        }
-
+        
         this.client = new tmi.client(options);
+        this.UpdateHandlers();
+
         return true;
     }
-    async Connect(user, pw, channel) {
-        //Change Login settings?
-        this.SetupClient(user, pw, channel);
-
+    async Connect() {
+        if (!this.client) this.SetupClient();
+        
         //Client defined?
         if (this.client) {
             return this.client.connect();
         } else {
-            return Promise.reject(new Error("Client not defined! Client init went wrong or client disconnected?"));
+            return Promise.reject(new Error("Client not defined! Client init went wrong(check settings) or client disconnected(try again)"));
         }
     }
+    async Part() {
+        if (!this.client) return Promise.resolve();
 
-    on(eventName, callback) {
+        return this.client.part(this.getChannel())
+            .then(resp => { this.client = null; return Promise.resolve(resp); });
+    }
+
+    UpdateHandlers() {
+        if (!this.client) return false;
+
+        for (let eH of this.eventHandlers) {
+            this.client.on(eH.name, eH.callback);
+        }
+
+        return true;
+    }
+
+    on(name, callback) {
+        this.eventHandlers.push({ name, callback });
+
         if (this.client) {
-            this.client.on(eventName, callback);
+            this.client.on(name, callback);
             return true;
         }
 
@@ -78,11 +120,13 @@ class TwitchIRC {
     
     //COMMANDS
     async say(message = "", channel = this.getChannel()) {
-        if (this.client) {
-            return this.client.say(channel, message.toString());
-        }
+        if (!this.client) return Promise.reject(new Error("Client not Setup correctly!"));
 
-        return Promise.reject(new Error("Client not Setup correctly!"));
+        return new Promise((resolve, reject) => {
+            this.client.say(channel, message.toString())
+                .then(data => resolve())
+                .catch(err => reject(new Error(err)));
+        });
     }
     saySync(message = "", channel = this.getChannel()) {
         this.say(message, channel)
@@ -92,7 +136,13 @@ class TwitchIRC {
     }
 
     async deleteMessage(id, channel = this.getChannel()) {
-        return this.client.deletemessage(channel, id);
+        if (!this.client) return Promise.reject(new Error("Client not Setup correctly!"));
+
+        return new Promise((resolve, reject) => {
+            this.client.deletemessage(channel, id)
+                .then(data => resolve())
+                .catch(err => reject(new Error(err)));
+        });
     }
     deleteMessageSync(id, channel = this.getChannel()) {
         this.deleteMessage(channel, id)
@@ -104,7 +154,13 @@ class TwitchIRC {
     }
 
     async timeout(username, length, reason, channel = this.getChannel()) {
-        return this.client.timeout(channel, username, length, reason);
+        if (!this.client) return Promise.reject(new Error("Client not Setup correctly!"));
+
+        return new Promise((resolve, reject) => {
+            this.client.timeout(channel, username, length, reason)
+                .then(data => resolve())
+                .catch(err => reject(new Error(err)));
+        });
     }
     timeoutSync(username, length, reason, channel = this.getChannel()) {
         this.timeout(username, length, reason, channel)
@@ -116,7 +172,13 @@ class TwitchIRC {
     }
 
     async ban(username, reason, channel = this.getChannel()) {
-        return this.client.ban(channel, username, reason);
+        if (!this.client) return Promise.reject(new Error("Client not Setup correctly!"));
+
+        return new Promise((resolve, reject) => {
+            this.client.ban(channel, username, reason)
+                .then(data => resolve())
+                .catch(err => reject(new Error(err)));
+        });
     }
     banSync(username, reason, channel = this.getChannel()) {
         this.ban(username, reason, channel)
@@ -161,6 +223,13 @@ class TwitchIRC {
     }
 
     //UTIL
+    isEnabled() {
+        return this.Enabled === true;
+    }
+    GetConfig(json = true) {
+        if (json) return this.Config.GetConfig();
+        return this.Config;
+    }
     setLogger(loggerObject) {
         if (loggerObject && loggerObject.info && loggerObject.warn && loggerObject.error) {
             this.Logger = loggerObject;
@@ -243,7 +312,7 @@ class Message {
     }
 
     getUser() {
-        return userstate;
+        return this.userstate;
     }
     getUserID() {
         return this.userstate["user-id"];

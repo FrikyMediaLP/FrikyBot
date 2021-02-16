@@ -133,19 +133,19 @@ class NewsFeed extends require('./../PackageBase.js').PackageBase {
                 });
             }
         });
-
+        
         APIRouter.get('/Changelog', async (request, response) => {
-            let data = this.GetLastestChangelog();
-            if (data instanceof Object) {
-                response.json(data);
-            } else {
-                response.json({ error: "404", message: "changelog not found" });
-            }
+            response.json({
+                data: {
+                    DEV: ['LATEST', '13_09_2020'],
+                    RELEASE: []
+                }
+            });
         });
         APIRouter.get('/Changelog/:changelog', async (request, response) => {
-            let data = this.GetChangelog(request.params.changelog);
+            let data = request.params.changelog === 'latest' ? this.GetLastestChangelog() : this.GetChangelog(request.params.changelog);
             if (data instanceof Object) {
-                response.json(data);
+                response.json({ data: data});
             } else {
                 response.json({ error: "404", message: "changelog not found" });
             }

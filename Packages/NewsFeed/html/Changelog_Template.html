@@ -3,7 +3,7 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
-    <title>FrikyBot - Changelog BETA</title>
+    <title>Changelog - FrikyBot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- GENERAL CSS -->
@@ -22,6 +22,9 @@
     <script src="../../misc/NavigationV2/NavigationV2.js"></script>
     <link href="../../misc/NavigationV2/NavigationV2.css" rel="stylesheet">
 
+    <script src="../../misc/SwitchButton/SwitchButton.js"></script>
+    <link href="../../misc/SwitchButton/SwitchButton.css" rel="stylesheet">
+
     <script src="../../misc/OUTPUT/OUTPUT.js"></script>
     <link href="../../misc/OUTPUT/OUTPUT.css" rel="stylesheet">
 
@@ -35,34 +38,94 @@
     <link href="../../News/Changelog_styles" rel="stylesheet">
 
     <script>
+        let DEV_CHANGELOGS = ['NONE'];
+        let RELEASE_CHANGELOGS = ['NONE'];
+
         function init() {
             OUTPUT_create();
 
             Bot_Status_Details_Settings.ErrorOutput = OUTPUT_showError;
             Bot_Status_Details_Settings.Use_Cookies = false;
+            
+            fetchChangelog()
+                .then(json => {
+                    if (json.RELEASE.length > 0)
+                        RELEASE_CHANGELOGS = json.RELEASE;
 
-            let chglog = (window.location.pathname + "/").split("/")[3];
+                    if (json.DEV.length > 0)
+                        DEV_CHANGELOGS = json.DEV;
 
-            fetchChangelog(chglog)
-                .then(data => {
+                    let s = '<b>SELECT CHANGELOG</b>';
 
-                    if (data.err) {
-                        OUTPUT_showError(data.err);
-                        console.log(data.err);
-                    } else {
-                        document.getElementById("content").innerHTML += createChangelog(data);
+                    s += MISC_SELECT_create(DEV_CHANGELOGS, 0, 'SELECT_CHANGELOGS', 'onChangelogChange(this)');
+                    s += MISC_SELECT_create(['DEV', 'RELEASE'], 0, 'SELECT_DEVTOGGLE', 'onBranchChange(this)');
+                    s += '<div id="FETCH" onclick="onFetch()" disabled>FETCH</div>';
 
-                        if (HasURLParam("expanded") && GetURLParamContent("expanded") == "true") {
-                            toggleDetailed(document.getElementById("THISONE"));
-                        }
-
-                        ScollToHash();
+                    document.getElementById("Changelog_selector").innerHTML = s;
+                    
+                    for (let elt of document.getElementsByClassName('MISC_SELECT')) {
+                        MISC_SELECT_WidthCheck(elt);
                     }
+                    
+                    //Display Changelog
+                    DisplayChangelog();
                 })
                 .catch(err => {
                     OUTPUT_showError(err.message);
                     console.log(err);
                 });
+        }
+
+        async function DisplayChangelog() {
+            let selected = MISC_SELECT_GetValue('SELECT_CHANGELOGS');
+
+            if (selected === 'NONE') return;
+
+            fetchChangelog('/' + selected)
+                .then(json => {
+                    document.getElementById("CHANGELOG").innerHTML = createChangelog(json);
+
+                    if (HasURLParam("expanded") && GetURLParamContent("expanded") == "true") {
+                        toggleDetailed(document.getElementById("THISONE"));
+                    }
+
+                    ScollToHash();
+                })
+                .catch(err => {
+                    OUTPUT_showError(err.message);
+                    console.log(err);
+                });
+        }
+
+        function onFetch() {
+            let selected = MISC_SELECT_GetValue('SELECT_CHANGELOGS');
+
+            if (selected === 'NONE' || document.getElementById("FETCH").getAttribute('disabled') !== null) return;
+
+            //Display Changelog
+            DisplayChangelog('/' + selected);
+            document.getElementById("FETCH").setAttribute('disabled', 'true');
+        }
+        function onChangelogChange(selector) {
+            let selected = MISC_SELECT_GetValue(selector);
+
+            if (selected === 'NONE') return;
+
+            //Enable Button
+            document.getElementById("FETCH").removeAttribute('disabled');
+        }
+        function onBranchChange(selector) {
+            let selected = MISC_SELECT_GetValue(selector);
+
+            if (selected === 'RELEASE') {
+                document.getElementById("SELECT_CHANGELOGS").innerHTML = MISC_SELECT_createInner(RELEASE_CHANGELOGS, 0);
+            } else if (selected === 'DEV') {
+                document.getElementById("SELECT_CHANGELOGS").innerHTML = MISC_SELECT_createInner(DEV_CHANGELOGS, 0);
+            }
+
+            for (let elt of document.getElementsByClassName('MISC_SELECT')) {
+                MISC_SELECT_WidthCheck(elt);
+            }
         }
     </script>
 </head>
@@ -71,7 +134,7 @@
     <div id="grid">
         <!-- NAVI HEADER -->
         <div class="cellM" id="naviHeader">
-            <a href="./">FRIKY<span>BOT</span></a>
+            <a href="./../">FRIKY<span>BOT</span></a>
         </div>
 
         <!-- CONTENT HEADER -->
@@ -93,6 +156,13 @@
         <!-- ACTUAL CONTENT -->
         <div class="cellM" id="content">
             <div id="OUTPUT">
+
+            </div>
+            <center id="Changelog_selector">
+
+            </center>
+
+            <div id="CHANGELOG">
 
             </div>
         </div>

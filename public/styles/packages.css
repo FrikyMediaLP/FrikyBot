@@ -16,6 +16,12 @@
         grid-template-rows: auto;
     }
 
+#WAITING_WRAPPER {
+    margin: 10px auto !important;
+    width: 100px !important;
+    height: 100px !important;
+}
+
 /*
     HEADER
 */

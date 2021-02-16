@@ -13,6 +13,18 @@
     <!-- PAGE CSS-->
     <link href="../../styles/Grid/Grid_Default.css" rel="stylesheet">
 
+    <style>
+        #ALL_NEWS_HEADER a {
+            float: right;
+            font-size: 20px;
+            color: #2ab89b;
+        }
+
+            #ALL_NEWS_HEADER a:hover {
+                filter: brightness(90%);
+            }
+    </style>
+
     <!-- GENERAL JS-->
     <script src="../../scripts/standard.js"></script>
 
@@ -33,6 +45,9 @@
 
     <script src="../News/News_scripts"></script>
     <link href="../News/News_styles" rel="stylesheet">
+
+    <script src="../misc/SwitchButton/SwitchButton.js"></script>
+    <link href="../misc/SwitchButton/SwitchButton.css" rel="stylesheet">
 </head>
 <body onload="Standard_Page_Init(); init();">
     <!-- MAIN GRID -->
@@ -84,7 +99,7 @@
                                     document.getElementById("nextButton").setAttribute("hidden", "true");
                                 }
                             })
-                            .catch(err => ERROR_OUTPUT_showError(err.message));
+                            .catch(err => OUTPUT_showError(err.message));
                     } else {
                         if (!document.getElementById("NEWS_FEED_Feed"))
                             document.getElementById("DropItHere").innerHTML = '<div id="NEWS_FEED_FullPage"></div>';
@@ -93,12 +108,12 @@
 
                         NEWS_FEED_FETCH_FullPage(window.location.pathname.split("/")[2])
                             .then(data => { })
-                            .catch(err => ERROR_OUTPUT_showError(err.message));
+                            .catch(err => OUTPUT_showError(err.message));
                     }
                 }
             </script>
 
-            <h1 id="ALL_NEWS_HEADER">ALL NEWS</h1>
+            <h1 id="ALL_NEWS_HEADER">ALL NEWS <a href="../News/Changelog">CHANGELOGS</a></h1>
 
             <div id="OUTPUT">
 

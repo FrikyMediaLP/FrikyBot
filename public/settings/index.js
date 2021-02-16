@@ -1,16 +1,17 @@
 async function Control_init() {
-
-    let cores = [{
-        name: 'Twitch API',
-        enabled: true,
-        buttons: [{ name: 'Check Tokens', type: 'api:tokens/check', hover: '' }],
-        misc: ['<b>Channel:</b> Unknown']
-    }];
-
 	//Data
 	try {
 		let data = await FetchSettings();
-		console.log(data);
+        console.log(data);
+
+        if (!data.Config || data.Config.isSetup !== true) {
+            //window.location.href = 'settings/setup';
+        }
+
+        for (let mdl in data) {
+            updateModule(mdl, data[mdl]);
+        }
+
     } catch (err) {
         OUTPUT_showError(err.message);
         return Promise.resolve();
@@ -18,16 +19,12 @@ async function Control_init() {
 
 	//DONE
 	document.getElementById('WAITING_FOR_DATA').remove();
-    document.getElementById('SECTION_DASHBOARD').style.display = 'block';
-    
-    for (let core of cores) {
-        //document.getElementById('CONTROL').innerHTML += createCore(core);v
-    }
+    document.getElementById('DASHBOARD').style.display = 'block';
 }
 
 async function FetchSettings() {
-    return fetch("/api/settings/dashboard", getFetchHeader())
-        .then(checkResponse)
+    return fetch("/api/pages/settings/dashboard", getAuthHeader())
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
         .then(json => {
             if (json.err) {
                 return Promise.reject(new Error(json.err));
@@ -37,41 +34,30 @@ async function FetchSettings() {
         })
 }
 
-//Create
-function createCore(core) {
-    if (!core) return '';
-
-    let s = '';
-
-    s += '<div class="Core">';
-    s += '<center class="Header ' + (core.enabled === true ? 'ENABLED' : 'DISABLED') + '">' + core.name + '</center>';
-
-    //Misc
-    s += '<div class="Misc">';
-
-    //Misc - Buttons
-    s += '<div class="Buttons">';
-    s += '<button>' + (core.enabled === true ? 'STOP' : 'START') + '</button>';
+//Modules
+function updateModule(name, data) {
+    let elt = document.getElementById('Module_' + name);
+    if (!elt) return;
     
-    if (core.buttons) {
-        for (let btn of core.buttons)
-            s += '<button>' + btn.name + '</button>';
+    if (data.installed === true) {
+        let ctrl;
+        let misc;
+
+        //Get Child Elements
+        for (let child of elt.childNodes) {
+            if (child instanceof Element && child.classList.contains('ctrl')) {
+                ctrl = child;
+            } else if (child instanceof Element && child.classList.contains('misc')) {
+                misc = child;
+            }
+        }
+
+        //Set Installed
+        elt.setAttribute('installed', "");
+        //Enabled/Disabled
+        if (data.enabled === false) elt.setAttribute('disabled', "");
+        //Other Infos
+        //...
+        //Errors
     }
-
-    s += '</div>';
-
-    //Misc - Info
-    for (let misc of core.misc)
-        s += '<p>' + misc + '</p>';
-    
-    //Misc - SettingsLink
-    s += '<center class="SettingsLink">';
-    s += '<a href="settings/setup#SETUP_TWITCH_IRC">Settings</a>';
-    s += '</center>';
-
-    s += '</div>';
-
-    s += '</div>';
-
-    return s;
 }

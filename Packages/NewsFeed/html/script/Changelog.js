@@ -1,4 +1,5 @@
 const CHANGLOG_SETTINGS = {
+    API_ENDPOINT: '/api/news/Changelog',
     ENABLE_FUNCTION_PARAMERS_CSS: true,
     FUNCTION_PARAMERS: ["String", "Integer", "Boolean", "Object", "Array", "TwitchAPI", "ExpressRouter"],
     FUNCTION_PARAMETER_CSS: "color: #ff9a57;",
@@ -13,6 +14,7 @@ const CHANGLOG_SETTINGS = {
         SERVER: ["SERVER.js", "images/icons/server-solid.svg"],
         TWITCHAPI: ["TWITCH API", "images/icons/twitch_colored.png"],
         TWITCHIRC: ["TWITCH IRC", "images/icons/twitch_colored_alt.png"],
+        WEBAPP: ["WEBAPP", "images/icons/wifi-solid.svg"],
         DATACOLLECTION: ["DATACOLLECTION", "images/icons/chart-bar.svg"]
     },
     PACKAGES: {
@@ -34,20 +36,23 @@ const CHANGLOG_SETTINGS = {
 //          CHANGELOG
 ////////////////////////////////////
 
+//API
 async function fetchChangelog(name = "") {
-    return fetch("/News/api/Changelog/" + name)
+    return fetch(CHANGLOG_SETTINGS.API_ENDPOINT + name)
         .then(data => data.json())
         .then(json => {
             if (json.error) {
                 return Promise.reject(new Error(json.error + " - " + json.message));
             } else {
-                return Promise.resolve(json);
+                return Promise.resolve(json.data);
             }
         })
         .catch(err => {
             return Promise.reject(err);
         });
 }
+
+//Create
 function createChangelog(jsonData, prev = "") {
     let s = '<div class="CHANGELOG" id="THISONE">';
     
@@ -227,6 +232,8 @@ function createIDRefLink(name) {
     //MAKE SURE PARENT IS position: relative and add a hover to display: inline it!
     return '<img class="REF_LINK_IMG" src="' + ROOT + 'images/icons/paperclip-solid.svg" onclick="document.location.hash = ' + "'" + MakeIDFriendly(name) + "'" + '; ScollToHash();" title="' + MakeIDFriendly(name) + '"/>';
 }
+
+//UTIL
 function MakeIDFriendly(name) {
     let splitted = name.split(" ");
     let combinded = splitted[0];
@@ -240,7 +247,6 @@ function MakeIDFriendly(name) {
 
     return combinded;
 }
-
 function toggleDetailed(issueElt) {
     for (let child of issueElt.childNodes) {
         if (child.classList) {

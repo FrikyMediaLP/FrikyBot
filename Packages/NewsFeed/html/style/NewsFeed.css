@@ -11,6 +11,10 @@
     color: dimgray;
 }
 
+#NEWS_FEED_Feed #NEWS_FEED_Feed_WAITER {
+    margin: 10px auto;
+    width: 100px !important;
+}
 /*
     ----------------
           SMALL

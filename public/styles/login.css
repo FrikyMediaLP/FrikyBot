@@ -9,3 +9,41 @@
         cursor: pointer;
         color: orange;
     }
+
+#grid #content h2 {
+    margin-bottom: 0;
+}
+
+#grid #content a {
+    color: #2ab89b;
+}
+
+    #grid #content a:hover {
+        filter: brightness(90%);
+    }
+
+#TWITCH_LOGIN_WRAP, #AuthorizationCode {
+    display: none;
+}
+
+#AuthorizationCode {
+    margin-top: 70px;
+}
+
+    #AuthorizationCode #AuthorizationCode_Header {
+        font-size: 30px;
+    }
+
+    #AuthorizationCode input {
+        font-size: 20px;
+        outline: none;
+        width: 70%;
+        max-width: 1000px;
+    }
+
+    #AuthorizationCode button {
+        font-size: 20px;
+        outline: none;
+        cursor: pointer;
+        margin-left: 5px;
+    }
