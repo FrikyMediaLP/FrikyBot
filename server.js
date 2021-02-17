@@ -23,7 +23,7 @@ console.log("///////////////////////////////////////////////////////////////////
  */
 
 //Config
-let CONFIGHANDLER_MODULE = require('./ConfigHandler.js');;
+let CONFIGHANDLER_MODULE = require('./ConfigHandler.js');
 let ConfigHandler;
 
 //LOGGER
@@ -36,10 +36,6 @@ const CONSTANTS = require('./Util/CONSTANTS.js');
 //WebApp
 let WEBAPP;
 let WebApp;
-
-//PACKAGES
-let INSTALLED_AUTHENTICATORS = { };
-
 
 //TWITCH CHAT -> IRC
 let TWITCHIRC;
@@ -78,6 +74,7 @@ let Server_Status = {
 //SETUP WIZARD kinda
 SETUP()
     .then(async data => {
+
         try {
             await INIT();
         } catch (err) {
@@ -122,8 +119,9 @@ async function SETUP() {
         server: { display: () => " SERVER ".inverse.cyan },
         setup: { display: () => " SETUP ".inverse }
     });
-    Logger.setup.info("FrikyBot Statup ... ");
 
+    Logger.setup.info("FrikyBot Startup ... ");
+    
     //REQUIERES CONSTANTS
     try {
         await checkBotFileStructure();
@@ -147,6 +145,7 @@ async function SETUP() {
         WebApp = new WEBAPP.WebApp(waCfg, Logger);
         ConfigHandler.AddConfig(WebApp.Config);
     } catch (err) {
+        console.log(err);
         Logger.server.error("The FrikyBot REQUIERES the WebApp Module! Please check your install!");
         Logger.server.warn("Please check your install!");
         return Promise.reject(err);
@@ -206,7 +205,6 @@ async function SETUP() {
     return Promise.resolve();
 }
 async function checkBotFileStructure(go2create) {
-
     let FILESTRUCTURE = {};
 
     //Constats
@@ -223,10 +221,12 @@ async function checkBotFileStructure(go2create) {
     try {
         for (let dir in FILESTRUCTURE) {
             if (dir === "CONFIG_FILE_PATH") continue;
-
+            
             if (!fs.existsSync(path.resolve(FILESTRUCTURE[dir]))) {
+                //Ask to create
                 if (go2create === undefined) {
                     Logger.setup.warn("Seems like some Directories are missing!");
+                    
                     await Logger.setup.input("Do you want to create them now? (y/n) > ", async (line) => {
                         line = line.toLowerCase();
 
@@ -242,14 +242,23 @@ async function checkBotFileStructure(go2create) {
                         }
                     });
                 }
-                
+
+                //Create
                 if (go2create) {
                     Logger.setup.info("Created Directory: " + FILESTRUCTURE[dir]);
-                    fs.mkdirSync(path.resolve(FILESTRUCTURE[dir]));
+
+                    let splitPath = '';
+
+                    for (let split of FILESTRUCTURE[dir].split('/')) {
+                        if (split === "") continue;
+
+                        splitPath += split + '/' ;
+                        if (!fs.existsSync(path.resolve(splitPath))) fs.mkdirSync(path.resolve(splitPath));
+                    }
                 }
             }
         }
-
+        
         return Promise.resolve();
     } catch (err) {
         return Promise.reject(err);
@@ -263,6 +272,9 @@ async function INIT() {
     //WebApp
     try {
         await INIT_WEBAPP();
+
+        //Authenticator
+        WebApp.addAuthenticator(new WEBAPP.FrikyBot_Auth(Logger, WebApp.GetConfig(false), WebApp.GetInteractor()));
     } catch (err) {
         Logger.website.error(err.message);
     }
@@ -296,14 +308,16 @@ async function INIT() {
     
     //Twitch API
     try {
-        if (TwitchAPI && TwitchAPI.isEnabled()) await TwitchAPI.Init(WebApp.GetInteractor());
+        if (TwitchAPI && TwitchAPI.isEnabled()) {
+            await TwitchAPI.Init(WebApp.GetInteractor());
+
+            //Authenticator
+            WebApp.addAuthenticator(new TWITCHAPI.Authenticator(Logger, TwitchAPI.GetConfig(false), WebApp.GetInteractor(), TwitchAPI));
+        }
     } catch (err) {
         Logger.TwitchAPI.error(err.message);
         Server_Status.errors.outage.TwitchAPI = err.message;
     }
-    //Authenticator
-    INSTALLED_AUTHENTICATORS['TTV Auth.'] = new TWITCHAPI.Authenticator(TwitchAPI, TwitchAPI.GetConfig(false), Logger);
-    INSTALLED_AUTHENTICATORS['TTV Auth.'].setAPI(WebApp.GetInteractor());
 
     //DataCollection
     try {
@@ -394,7 +408,11 @@ async function POST_INIT() {
     Logger.server.info("BOT ONLINE AND READY!");
 
     //WebApp Authenticator
-    switchAuthenticator();
+    let worked = false;
+    if (TwitchAPI && TwitchAPI.isEnabled()) worked = WebApp.switchAuthenticator('TTV Auth.');
+    if (!worked) worked = WebApp.switchAuthenticator('FrikyBot Auth.');
+
+    if (!worked) Logger.Authenticator.error("NO Authenticator could be started...");
 
     return Promise.resolve();
 }
@@ -404,10 +422,6 @@ async function INIT_WEBAPP() {
         await WebApp.Init();
         WebApp.StartServer();
         let WebAppInteractor = WebApp.GetInteractor();
-
-        //Authenticator
-        INSTALLED_AUTHENTICATORS['FrikyBot Auth.'] = new WEBAPP.Authenticator(Logger, WebApp.GetConfig(false));
-        INSTALLED_AUTHENTICATORS['FrikyBot Auth.'].setAPI(WebAppInteractor);
         
         //ROUTING SETUP
         //Main Router
@@ -454,11 +468,6 @@ async function INIT_WEBAPP() {
     } catch (err) {
         return Promise.reject(err);
     }
-}
-function switchAuthenticator(authName) {
-    console.log("AUTH IN USE: " + INSTALLED_AUTHENTICATORS[authName].identify());
-    WebApp.setAuthenticator(INSTALLED_AUTHENTICATORS[authName]);
-    INSTALLED_AUTHENTICATORS[authName].setEnable(true);
 }
 
 //Packages

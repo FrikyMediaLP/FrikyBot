@@ -142,16 +142,25 @@ class WebApp {
     addAuthenticator(authenticator) {
         this.Installed_Authenticators.push(authenticator);
     }
+    switchAuthenticator(name) {
+        let find = this.Installed_Authenticators.find(elt => elt.GetName() === name);
+        if (!find || !find.isEnabled() || !find.isReady()) return false;
+
+        this.setAuthenticator(find);
+        return true;
+    }
     setAuthenticator(authenticator) {
         if (this.Authenticator) {
-            this.Authenticator.setEnable(false);
+            this.Authenticator.setActive(false);
         }
 
         this.Authenticator = authenticator;
         this.WebAppInteractor.Authenticator = authenticator;
+        authenticator.setActive(true);
 
-        this.Logger.warn("New Authenticator in use: " + authenticator.identify());
+        this.Logger.warn("New Authenticator in use: " + authenticator.GetName());
     }
+
     GetInteractor() {
         return this.WebAppInteractor;
     }
@@ -458,18 +467,10 @@ class WebAppInteractor {
 }
 
 class Authenticator {
-    constructor(logger, parentConfigObj) {
-        this.Config = new CONFIGHANDLER.Config('Authenticator', [
-            { name: 'enabled', type: 'boolean', default: true, requiered: true },
-            { name: 'secret', type: 'string', requiered: true, default_func: () => this.regenerateSecret(false) },
-            { name: 'Userlevels', type: 'array', type_array: 'string', default: ['viewer', 'moderator', 'staff', 'admin'] },
-            { name: 'show_auth_message', type: 'boolean', default: false },
-            { name: 'show_prev_token', type: 'boolean', default: true },
-            { name: 'prev_token', type: 'string', private: true, default_func: () => this.generateToken('ConsoleUser') }
-        ], { preloaded: parentConfigObj.GetConfig()['Authenticator'] });
-
-        parentConfigObj.AddChildConfig(this.Config);
-        this.Config.FillConfig();
+    constructor(name, logger) {
+        this.Config = new CONFIGHANDLER.Config('Authenticator', [], );
+        this.name = name;
+        this.active = false;
 
         //LOGGER
         if (logger && logger.identify && logger.identify() === "FrikyBotLogger") {
@@ -482,10 +483,112 @@ class Authenticator {
         } else {
             this.setLogger(logger);
         }
+    }
 
-        //Init Message
-        if (this.Config.GetConfig()['show_prev_token'] !== false)
-            this.Logger.warn("Use the following Authorization Code to Login and Setup your Bot: " + this.Config.GetConfig()['prev_token']);
+    //Auth
+    async AuthorizeRequest(headers = {}, method = {}, user) {
+        return Promise.resolve(user);
+    }
+    async AuthenticateUser(headers = {}) {
+        return Promise.resolve(null);
+    }
+    async AuthorizeUser(user = {}, method = {}) {
+        return Promise.resolve(user);
+    }
+
+    //Util
+    GetName() {
+        return this.name;
+    }
+    GetConfig(json = true) {
+        if (json) return this.Config.GetConfig();
+        return this.Config;
+    }
+
+    setEnable(state) {
+        this.Config.UpdateSetting('enabled', state === true);
+    }
+    isEnabled() {
+        let cfg = this.Config.GetConfig();
+        return cfg.enabled !== false;
+    }
+
+    setActive(state) {
+        this.active = state === false;
+    }
+    isActive() {
+        return this.active;
+    }
+
+    isReady() {
+        return false;
+    }
+
+    setLogger(loggerObject) {
+        if (loggerObject && loggerObject.info && loggerObject.warn && loggerObject.error) {
+            this.Logger = loggerObject;
+        } else {
+            this.Logger = {
+                info: console.log,
+                warn: console.log,
+                error: console.log
+            };
+        }
+    }
+}
+
+
+/*
+ *  ----------------------------------------------------------
+ *            FrikyBot Authenticator Implementation
+ *  ----------------------------------------------------------
+ */
+
+class FrikyBot_Auth extends Authenticator {
+    constructor(logger, parentConfigObj, webInt) {
+        super("FrikyBot Auth.", logger);
+
+        this.Config = new CONFIGHANDLER.Config('Authenticator', [
+            { name: 'enabled', type: 'boolean', default: true, requiered: true },
+            { name: 'secret', type: 'string', requiered: true, default_func: () => this.regenerateSecret(false) },
+            { name: 'Userlevels', type: 'array', type_array: 'string', default: ['viewer', 'moderator', 'staff', 'admin'] },
+            { name: 'show_auth_message', type: 'boolean', default: false },
+            { name: 'show_prev_token', type: 'boolean', default: true },
+            { name: 'prev_token', type: 'string', private: true, default_func: () => this.generateToken('ConsoleUser') }
+        ], { preloaded: parentConfigObj.GetConfig()['Authenticator'] });
+
+        parentConfigObj.AddChildConfig(this.Config);
+        this.Config.FillConfig();
+
+        //Init
+        let noErrs = this.Config.ErrorCheck();
+
+        if (noErrs) {
+            //Token
+            if (this.Config.GetConfig()['show_prev_token'] !== false)
+                this.Logger.warn("Use the following Authorization Code to Login and Setup your Bot: " + this.Config.GetConfig()['prev_token']);
+
+            this.setAPI(webInt);
+            this.isReady = () => true;
+        }
+    }
+
+    setAPI(webInt) {
+        if (!webInt) return;
+
+        //Regenerate Token
+        webInt.addAuthAPIEndpoint('/settings/webapp/fbauth/regen', { user_level: 'staff' }, 'GET', async (req, res) => {
+            let new_scrt = this.regenerateSecret();
+            let new_token = this.generateToken(res.locals.user.preferred_username, res.locals.user.user_level);
+            return res.json({ new_scrt, new_token });
+        });
+
+        //Enable/Disable
+        webInt.addAuthAPIEndpoint('/settings/webapp/fbauth/state', { user_level: 'staff' }, 'POST', async (req, res) => {
+            this.setEnable(req.body.state === true);
+
+            return res.json({ state: this.isEnabled() });
+        });
     }
 
     //Auth
@@ -539,24 +642,7 @@ class Authenticator {
         return Promise.resolve(user);
     }
 
-    setAPI(webInt) {
-        if (!webInt) return;
-
-        //Regenerate Token
-        webInt.addAuthAPIRoute('/settings/webapp/fbauth/regen', { user_level: 'staff' }, 'GET', async (req, res) => {
-            let new_scrt = this.regenerateSecret();
-            let new_token = this.generateToken(res.locals.user.preferred_username, res.locals.user.user_level);
-            return res.json({ new_scrt, new_token });
-        });
-
-        //Enable/Disable
-        webInt.addAuthAPIRoute('/settings/webapp/fbauth/state', { user_level: 'staff' }, 'POST', async (req, res) => {
-            this.setEnable(req.body.state === true);
-            
-            return res.json({ state: this.isEnabled() });
-        });
-    }
-
+    //Interface
     async checkToken(token) {
         if (!token) return Promise.reject(new Error('Token not found'));
         let cfg = this.Config.GetConfig();
@@ -584,7 +670,7 @@ class Authenticator {
         return scrt;
     }
 
-    //Util
+    //Userlevel
     GetUserlevels() {
         let cfg = this.Config.GetConfig();
         return cfg.Userlevels || [];
@@ -617,32 +703,9 @@ class Authenticator {
 
         return true;
     }
-    setLogger(loggerObject) {
-        if (loggerObject && loggerObject.info && loggerObject.warn && loggerObject.error) {
-            this.Logger = loggerObject;
-        } else {
-            this.Logger = {
-                info: console.log,
-                warn: console.log,
-                error: console.log
-            };
-        }
-    }
-
-    setEnable(state) {
-        this.Config.UpdateSetting('enabled', state === true);
-    }
-    isEnabled() {
-        let cfg = this.Config.GetConfig();
-        return cfg.enabled === true;
-    }
-
-    identify() {
-        return "FrikyBot Auth.";
-    }
 }
-
 
 module.exports.WebApp = WebApp;
 module.exports.WebAppInteractor = WebAppInteractor;
 module.exports.Authenticator = Authenticator;
+module.exports.FrikyBot_Auth = FrikyBot_Auth;

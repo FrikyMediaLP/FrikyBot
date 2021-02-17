@@ -413,6 +413,15 @@ class Config {
 
         return true;
     }
+    ErrorCheck() {
+        return this.CheckErrors(this.check());
+    }
+    CheckErrors(errors = {}) {
+        for (let mdl in errors) {
+            if (errors[mdl] !== true) return false;
+        }
+        return true;
+    }
     
     //Config
     GetConfig() {
@@ -471,6 +480,7 @@ class Config {
 
         return copy;
     }
+
     GetTemplate(copy = true) {
         if (copy) return this.Template.slice();
         else return this.Template;

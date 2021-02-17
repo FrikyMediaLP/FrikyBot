@@ -1,5 +1,6 @@
 const CONSTANTS = require('./Util/CONSTANTS.js');
 const CONFIGHANDLER = require('./ConfigHandler.js');
+const WEBAPP = require('./WebApp');
 
 const express = require('express');
 const FETCH = require('node-fetch');
@@ -1231,8 +1232,10 @@ class TwitchAPI {
     }
 }
 
-class Authenticator {
-    constructor(TwitchAPI, parentConfigObj, logger) {
+class Authenticator extends WEBAPP.Authenticator {
+    constructor(logger, parentConfigObj, webInt, TwitchAPI) {
+        super("FrikyBot Auth.", logger);
+
         this.Config = new CONFIGHANDLER.Config('Authenticator', [
             { name: 'show_auth_message', type: 'boolean', default: false },
             { name: 'UserDB_File', type: 'string', default: CONSTANTS.FILESTRUCTURE.DATA_STORAGE_ROOT + "Auth/User.db" },
@@ -1254,235 +1257,17 @@ class Authenticator {
         } else {
             this.setLogger(logger);
         }
-
-        let cfg = this.Config.GetConfig();
         
-        //VARS
-        this.TwitchAPI = TwitchAPI;
-        this.UserDatabase = new Datastore({ filename: path.resolve(cfg.UserDB_File + ".db"), autoload: true });
-    }
+        //Init
+        let noErrs = this.Config.ErrorCheck();
 
-    //Authentication - Base
-    async AuthorizeRequest(headers = {}, method = {}, user) {
-        //Fetch User Data
-        if (!user) {
-            try {
-                user = await this.AuthenticateUser(headers);
-            } catch (err) {
-                return Promise.reject(err);
-            }
-        }
-
-        //Check User and Method
-        return this.AuthenticateUser(user, method);
-    }
-    async AuthenticateUser(headers = {}) {
-        const header = headers['authorization'];
-        const token = header && header.split(" ")[1];
-
-        //Check JWT
-        try {
-            user = await this.TwitchAPI.VerifyTTVJWT(token);
-        } catch (err) {
-            //JWT Validation failed
-            return Promise.reject(err);
-        }
-
-        //Check Database
-        try {
-            let db_users = await this.GetUsers({ user_id: [user.sub] });
-            if (db_users.length > 0) user.user_level = db_users[0].user_level;
-            return Promise.resolve(user);
-        } catch (err) {
-            //Database Error
-            return Promise.reject(err);
+        if (noErrs) {
+            this.TwitchAPI = TwitchAPI;
+            this.UserDatabase = new Datastore({ filename: path.resolve(this.Config.GetConfig()['UserDB_File'] + ".db"), autoload: true });
+            this.setAPI(webInt);
+            this.isReady = () => true;
         }
     }
-    async AuthorizeUser(user = {}, method = {}) {
-        let cfg = this.Config.GetConfig();
-
-        //Check Method
-        for (let meth in method) {
-            try {
-                if (meth === 'user_id') {
-                    await this.Auth_UserID(user.sub, method[meth]);
-                } else if (meth === 'user_level') {
-                    await this.Auth_UserLevel(user.user_level, method[meth], method.user_level_cutoff === true);
-                } else {
-                    return Promise.reject(new Error('Unknown Authorization Method!'));
-                }
-            } catch (err) {
-                return Promise.reject(err);
-            }
-        }
-
-        if (cfg.show_auth_message === true)
-            this.Logger.warn("Authenticated User: (" + user.sub + ") " + user.preferred_username);
-
-        return Promise.resolve(user);
-    }
-
-    async Auth_UserID(user_id, target_id) {
-        //Check UserID
-        if (user_id === target_id) {
-            return Promise.resolve();
-        } else {
-            return Promise.reject(new Error('User ID doesnt match!'));
-        }
-    }
-    async Auth_UserLevel(user_level, target_level, cutoff) {
-        //Check Userlevel
-        if (!this.CompareUserlevels(user_level, target_level, cutoff)) {
-            return Promise.reject(new Error("Userlevel doesnt match"));
-        }
-
-        return Promise.resolve();
-    }
-
-    //User Auth Databse
-    async GetUsers(params = {}) {
-        let query = { $and: [] };
-
-        //Query Parse
-        for (let param in params) {
-            let sub_query = {};
-            if (param === 'user_id' || param === 'user_name' || param === 'user_level' || param === 'added_by') {
-                if (params[param] instanceof Array) {
-                    let temp = [];
-
-                    for (let value of params[param]) {
-                        temp.push({ [param]: value });
-                    }
-
-                    sub_query = { $or: temp };
-                } else {
-                    sub_query = { [param]: params[param] };
-                }
-            } else {
-                return Promise.reject(new Error('Parameter invalid.'));
-            }
-
-            query.$and.push(sub_query);
-        }
-        
-        //Access Database
-        return new Promise((resolve, reject) => {
-            this.UserDatabase.find(query, (err, docs) => {
-                if (err || !docs) return reject(new Error("User Database Error."));
-
-                let users = [];
-
-                for (let doc of docs) {
-                    users.push({
-                        user_id: doc.user_id,
-                        user_name: doc.user_name,
-                        user_level: doc.user_level,
-                        added_by: doc.added_by,
-                        added_at: doc.added_at
-                    });
-                }
-
-                return resolve(users);
-            });
-        });
-    }
-    async addUser(user_id, user_name, user_level, added_by_id, added_by) {
-        //Input Check
-        if (typeof user_level !== 'string') return Promise.reject(new Error('User Level not found'));
-
-        try {
-            let users = await this.fetchUserInfo([user_id, added_by_id], [user_name, added_by]);
-
-            for(let user of users) {
-                if (user.id == user_id || user.login == user_name || user.display_name == user_name) {
-                    user_id = user.id;
-                    user_name = user.login;
-                }
-
-                if (user.id == added_by_id || user.login == added_by || user.display_name == added_by) {
-                    added_by_id = user.id;
-                    added_by = user.login;
-                }
-            }
-        } catch (err) {
-            return Promise.reject(err);
-        }
-
-        if (!user_id || !user_name || !user_level || !added_by_id || !added_by) 
-            return Promise.reject(new Error("User Info not found"));
-
-        //Add User to Database
-        return new Promise((resolve, reject) => {
-            this.UserDatabase.insert({ user_id: user_id, user_name: user_name, user_level: user_level, added_by: added_by, added_by_id: added_by_id, added_at: Math.floor(Date.now() / 1000) }, (err, newDocs) => {
-                if (err) return reject(new Error("User Database Error"));
-                if (newDocs == 0) return reject(new Error("User couldnt be inserted"));
-
-                this.Logger.warn('Added ' + user_id + '(' + user_name + ') User Authorization as ' + user_level + ' by ' + added_by_id + '(' + added_by + ')');
-                
-                return resolve({
-                    added_at: newDocs.added_at,
-                    added_by: newDocs.added_by,
-                    user_id: newDocs.user_id,
-                    user_level: newDocs.user_level,
-                    user_name: newDocs.user_name
-                });
-            });
-        });
-    }
-    async removeUser(user_id, added_by_id, added_by) {
-        if (!user_id || !added_by_id || !added_by)
-            return Promise.reject(new Error("User Info not found"));
-
-        //Add User to Database
-        return new Promise((resolve, reject) => {
-            this.UserDatabase.remove({ user_id: user_id }, (err, numRemoved) => {
-                if (err) return reject(new Error("User Database Error"));
-                if (numRemoved == 0) return reject(new Error("User couldnt be removed"));
-
-                this.Logger.warn('Removed ' + user_id + ' User Authorization by ' + added_by_id + '(' + added_by + ')');
-
-                return resolve(numRemoved);
-            });
-        });
-    }
-    async updateUser(user_id, user_name, user_level, added_by_id, added_by) {
-        //Input Check
-        if (typeof user_level !== 'string') return Promise.reject(new Error('User Level not found'));
-
-        try {
-            let users = await this.fetchUserInfo([user_id, added_by_id], [user_name, added_by]);
-
-            for (let user of users) {
-                if (user.id == user_id || user.login == user_name || user.display_name == user_name) {
-                    user_id = user.id;
-                    user_name = user.login;
-                }
-
-                if (user.id == added_by_id || user.login == added_by || user.display_name == added_by) {
-                    added_by_id = user.id;
-                    added_by = user.login;
-                }
-            }
-        } catch (err) {
-            return Promise.reject(err);
-        }
-
-        if (!user_id || !user_name || !user_level || !added_by_id || !added_by)
-            return Promise.reject(new Error("User Info not found"));
-        
-        //Update User to Database
-        return new Promise((resolve, reject) => {
-            this.UserDatabase.update({ user_id: user_id }, { user_id: user_id, user_name: user_name, user_level: user_level, added_by: added_by, added_by_id: added_by_id, added_at: Math.floor(Date.now() / 1000) }, (err, numReplaced) => {
-                if (err) return reject(new Error("User Database Error"));
-                if (numReplaced == 0) return reject(new Error("User couldnt be updated"));
-
-                this.Logger.warn('Updated ' + user_id + '(' + user_name + ') User Authorization to ' + user_level + ' by ' + added_by_id + '(' + added_by + ')');
-
-                return resolve(numReplaced);
-            });
-        });
-    }
-    
     //API
     setAPI(webInt) {
         if (!webInt) return;
@@ -1494,7 +1279,7 @@ class Authenticator {
                 res.status(500).json({ err: 'Internal Error.' });
                 return Promise.resolve();
             }
-            
+
             let user_ids;
 
             if (typeof (req.query.user_id) === 'string') {
@@ -1588,7 +1373,7 @@ class Authenticator {
                 res.status(500).json({ err: 'Internal Error.' });
                 return Promise.resolve();
             }
-            
+
             let target_user = null;
             let current_user = null;
 
@@ -1640,20 +1425,16 @@ class Authenticator {
 
         //Login using Twitch
         webInt.addAPIEndpoint('/TwitchAPI/login/user', 'GET', (req, res) => {
-            if (!this.isEnabled()) {
-                return res.sendStatus("503");
-                return Promise.resolve();
-            }
+            if (!this.isEnabled()) return res.sendStatus("503");
+            if (!this.TwitchAPI) return res.json({ err: 'Twitch API is not available.' });
 
             response.json({
                 data: this.TwitchAPI.generateUserAccessLinkToken({ id_token: { preferred_username: null, picture: null } })
             });
         });
         webInt.addAuthAPIEndpoint('/TwitchAPI/login/bot', { user_level: 'admin' }, 'POST', (req, res) => {
-            if (!this.isEnabled()) {
-                return res.sendStatus("503");
-                return Promise.resolve();
-            }
+            if (!this.isEnabled()) return res.sendStatus("503");
+            if (!this.TwitchAPI) return res.json({ err: 'Twitch API is not available.' });
 
             let claims = req.body['claims'] ? req.body['claims'] : this.TwitchAPI.getClaims();
             let scopes = req.body['scopes'] ? req.body['scopes'] : this.TwitchAPI.getScopes();
@@ -1664,6 +1445,237 @@ class Authenticator {
         });
     }
 
+    //Authentication - Base
+    async AuthorizeRequest(headers = {}, method = {}, user) {
+        //Fetch User Data
+        if (!user) {
+            try {
+                user = await this.AuthenticateUser(headers);
+            } catch (err) {
+                return Promise.reject(err);
+            }
+        }
+
+        //Check User and Method
+        return this.AuthenticateUser(user, method);
+    }
+    async AuthenticateUser(headers = {}) {
+        if (!this.TwitchAPI) return Promise.reject(new Error('Twitch API is not available.'));
+
+        const header = headers['authorization'];
+        const token = header && header.split(" ")[1];
+
+        //Check JWT
+        try {
+            user = await this.TwitchAPI.VerifyTTVJWT(token);
+        } catch (err) {
+            //JWT Validation failed
+            return Promise.reject(err);
+        }
+
+        //Check Database
+        try {
+            let db_users = await this.GetUsers({ user_id: [user.sub] });
+            if (db_users.length > 0) user.user_level = db_users[0].user_level;
+            return Promise.resolve(user);
+        } catch (err) {
+            //Database Error
+            return Promise.reject(err);
+        }
+    }
+    async AuthorizeUser(user = {}, method = {}) {
+        let cfg = this.Config.GetConfig();
+
+        //Check Method
+        for (let meth in method) {
+            try {
+                if (meth === 'user_id') {
+                    await this.Auth_UserID(user.sub, method[meth]);
+                } else if (meth === 'user_level') {
+                    await this.Auth_UserLevel(user.user_level, method[meth], method.user_level_cutoff === true);
+                } else {
+                    return Promise.reject(new Error('Unknown Authorization Method!'));
+                }
+            } catch (err) {
+                return Promise.reject(err);
+            }
+        }
+
+        if (cfg.show_auth_message === true)
+            this.Logger.warn("Authenticated User: (" + user.sub + ") " + user.preferred_username);
+
+        return Promise.resolve(user);
+    }
+
+    async Auth_UserID(user_id, target_id) {
+        //Check UserID
+        if (user_id === target_id) {
+            return Promise.resolve();
+        } else {
+            return Promise.reject(new Error('User ID doesnt match!'));
+        }
+    }
+    async Auth_UserLevel(user_level, target_level, cutoff) {
+        //Check Userlevel
+        if (!this.CompareUserlevels(user_level, target_level, cutoff)) {
+            return Promise.reject(new Error("Userlevel doesnt match"));
+        }
+
+        return Promise.resolve();
+    }
+
+    //User Auth Database
+    async GetUsers(params = {}) {
+        if (!this.UserDatabase) return Promise.reject(new Error('User Database not available.'));
+ 
+        let query = { $and: [] };
+
+        //Query Parse
+        for (let param in params) {
+            let sub_query = {};
+            if (param === 'user_id' || param === 'user_name' || param === 'user_level' || param === 'added_by') {
+                if (params[param] instanceof Array) {
+                    let temp = [];
+
+                    for (let value of params[param]) {
+                        temp.push({ [param]: value });
+                    }
+
+                    sub_query = { $or: temp };
+                } else {
+                    sub_query = { [param]: params[param] };
+                }
+            } else {
+                return Promise.reject(new Error('Parameter invalid.'));
+            }
+
+            query.$and.push(sub_query);
+        }
+        
+        //Access Database
+        return new Promise((resolve, reject) => {
+            this.UserDatabase.find(query, (err, docs) => {
+                if (err || !docs) return reject(new Error("User Database Error."));
+
+                let users = [];
+
+                for (let doc of docs) {
+                    users.push({
+                        user_id: doc.user_id,
+                        user_name: doc.user_name,
+                        user_level: doc.user_level,
+                        added_by: doc.added_by,
+                        added_at: doc.added_at
+                    });
+                }
+
+                return resolve(users);
+            });
+        });
+    }
+    async addUser(user_id, user_name, user_level, added_by_id, added_by) {
+        if (!this.UserDatabase) return Promise.reject(new Error('User Database not available.'));
+
+        //Input Check
+        if (typeof user_level !== 'string') return Promise.reject(new Error('User Level not found'));
+
+        try {
+            let users = await this.fetchUserInfo([user_id, added_by_id], [user_name, added_by]);
+
+            for(let user of users) {
+                if (user.id == user_id || user.login == user_name || user.display_name == user_name) {
+                    user_id = user.id;
+                    user_name = user.login;
+                }
+
+                if (user.id == added_by_id || user.login == added_by || user.display_name == added_by) {
+                    added_by_id = user.id;
+                    added_by = user.login;
+                }
+            }
+        } catch (err) {
+            return Promise.reject(err);
+        }
+
+        if (!user_id || !user_name || !user_level || !added_by_id || !added_by) 
+            return Promise.reject(new Error("User Info not found"));
+
+        //Add User to Database
+        return new Promise((resolve, reject) => {
+            this.UserDatabase.insert({ user_id: user_id, user_name: user_name, user_level: user_level, added_by: added_by, added_by_id: added_by_id, added_at: Math.floor(Date.now() / 1000) }, (err, newDocs) => {
+                if (err) return reject(new Error("User Database Error"));
+                if (newDocs == 0) return reject(new Error("User couldnt be inserted"));
+
+                this.Logger.warn('Added ' + user_id + '(' + user_name + ') User Authorization as ' + user_level + ' by ' + added_by_id + '(' + added_by + ')');
+                
+                return resolve({
+                    added_at: newDocs.added_at,
+                    added_by: newDocs.added_by,
+                    user_id: newDocs.user_id,
+                    user_level: newDocs.user_level,
+                    user_name: newDocs.user_name
+                });
+            });
+        });
+    }
+    async removeUser(user_id, added_by_id, added_by) {
+        if (!this.UserDatabase) return Promise.reject(new Error('User Database not available.'));
+
+        if (!user_id || !added_by_id || !added_by)
+            return Promise.reject(new Error("User Info not found"));
+
+        //Add User to Database
+        return new Promise((resolve, reject) => {
+            this.UserDatabase.remove({ user_id: user_id }, (err, numRemoved) => {
+                if (err) return reject(new Error("User Database Error"));
+                if (numRemoved == 0) return reject(new Error("User couldnt be removed"));
+
+                this.Logger.warn('Removed ' + user_id + ' User Authorization by ' + added_by_id + '(' + added_by + ')');
+
+                return resolve(numRemoved);
+            });
+        });
+    }
+    async updateUser(user_id, user_name, user_level, added_by_id, added_by) {
+        if (!this.UserDatabase) return Promise.reject(new Error('User Database not available.'));
+
+        //Input Check
+        if (typeof user_level !== 'string') return Promise.reject(new Error('User Level not found'));
+
+        try {
+            let users = await this.fetchUserInfo([user_id, added_by_id], [user_name, added_by]);
+
+            for (let user of users) {
+                if (user.id == user_id || user.login == user_name || user.display_name == user_name) {
+                    user_id = user.id;
+                    user_name = user.login;
+                }
+
+                if (user.id == added_by_id || user.login == added_by || user.display_name == added_by) {
+                    added_by_id = user.id;
+                    added_by = user.login;
+                }
+            }
+        } catch (err) {
+            return Promise.reject(err);
+        }
+
+        if (!user_id || !user_name || !user_level || !added_by_id || !added_by)
+            return Promise.reject(new Error("User Info not found"));
+        
+        //Update User to Database
+        return new Promise((resolve, reject) => {
+            this.UserDatabase.update({ user_id: user_id }, { user_id: user_id, user_name: user_name, user_level: user_level, added_by: added_by, added_by_id: added_by_id, added_at: Math.floor(Date.now() / 1000) }, (err, numReplaced) => {
+                if (err) return reject(new Error("User Database Error"));
+                if (numReplaced == 0) return reject(new Error("User couldnt be updated"));
+
+                this.Logger.warn('Updated ' + user_id + '(' + user_name + ') User Authorization to ' + user_level + ' by ' + added_by_id + '(' + added_by + ')');
+
+                return resolve(numReplaced);
+            });
+        });
+    }
+    
     //UTIL
     GetUserlevels() {
         let cfg = this.Config.GetConfig();
@@ -1699,6 +1711,8 @@ class Authenticator {
     }
 
     async fetchUserInfo(ids = [], names = []) {
+        if (!this.TwitchAPI) return Promise.reject(new Error('Twitch API is not available.'));
+
         let query = {
             id: ids,
             login: names
@@ -1720,34 +1734,6 @@ class Authenticator {
         } catch (err) {
             return Promise.reject(err);
         }
-    }
-    setLogger(loggerObject) {
-        if (loggerObject && loggerObject.info && loggerObject.warn && loggerObject.error) {
-            this.Logger = loggerObject;
-        } else {
-            this.Logger = {
-                info: console.log,
-                warn: console.log,
-                error: console.log
-            };
-        }
-    }
-
-    GetConfig(json = true) {
-        if (json) return this.Config.GetConfig();
-        return this.Config;
-    }
-
-    setEnable(state) {
-        this.Config.UpdateConfig('enabled', state === true);
-    }
-    isEnabled() {
-        let cfg = this.Config.GetConfig();
-        return cfg.enabled === true;
-    }
-
-    identify() {
-        return "TwitchAPI";
     }
 }
 

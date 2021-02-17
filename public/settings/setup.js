@@ -66,7 +66,7 @@
     }
 };
 
-const SETTINGTYPES = [
+const SettingTypes = [
     {
         name: 'number', options: [
             { name: 'type', check: (x, optionSet) => typeof (x) === 'number' && !isNaN(x) ? true : 'type missmatch' },
@@ -74,20 +74,20 @@ const SETTINGTYPES = [
             { name: 'max', check: (x, optionSet) => x <= parseInt(optionSet.min) || 'number too big' },
             { name: 'range', check: (x, optionSet) => (x >= parseInt(optionSet.range.substring(0, optionSet.range.indexOf(':'))) && x <= parseInt(optionSet.range.substring(optionSet.range.indexOf(':') + 1))) || 'number out of bounds' },
             { name: 'selection', check: (x, optionSet) => optionSet.selection.find(elt => elt === x) !== undefined || 'number not in the selection' }
-        ], convert: parseInt, default: 0
+        ], default: 0
     }, {
         name: 'boolean', options: [
             { name: 'type', check: (x, optionSet) => typeof (x) === 'boolean' || 'type missmatch' }
-        ], convert: x => x === "true", default: false
+        ], default: false
     }, {
         name: 'string', options: [
             { name: 'type', check: (x, optionSet) => typeof (x) === 'string' || 'type missmatch' },
             { name: 'minlength', check: (x, optionSet) => x.length >= optionSet.minlength || 'too short' }
-        ], convert: x => x.toString(), default: ''
+        ], default: ''
     }, {
         name: 'object', options: [
             { name: 'type', check: (x, optionSet) => typeof (x) === 'object' || 'type missmatch' }
-        ], convert: x => x === "true", default: {}
+        ], default: {}
     }, {
         name: 'array', options: [
             { name: 'type', check: (x, optionSet) => x instanceof Array || 'type missmatch' },
@@ -108,7 +108,11 @@ const SETTINGTYPES = [
                     return true;
                 }
             }
-        ], default: []
+        ], default: [], compare: (a, b) => { for (let elt of a) if (b.find(el => el === elt) === undefined) return false; return true; }
+    }, {
+        name: 'config', options: [
+            { name: 'type', check: (x, optionSet) => true }
+        ], default: {}
     }
 ];
 
@@ -225,8 +229,10 @@ function WIZARD_createNaviation(modules) {
         groups.unshift({ name: 'Introduction' });
         if (modules[i].name === 'TwitchAPI') groups.splice(2, 0, { name: 'Reboot' });
 
+        //Calculate Column Sizes
         for (let j = 0; j < groups.length; j++) cols += (j !== 0 ? ' ' : '') + ((1 / groups.length) * 100) + '%';
-        
+
+        //Create HTML
         groupsHTML += '<div class="WIZ_NAV_GROUP" style="grid-template-columns: ' + cols + ';" ' + (i != WIZARD_CURSOR[0] ? ' hidden' : '') + '>';
         for (let j = 0; j < groups.length; j++) {
             groupsHTML += '<div ' + (i == WIZARD_CURSOR[0] && j == WIZARD_CURSOR[1] ? 'selected' : '') + ' ' + ((modules[i].options.opt || modules[i].options.wip) && j !== 0 ? ' disabled' : '') + '>' + groups[j].name + '</div>';
@@ -234,6 +240,12 @@ function WIZARD_createNaviation(modules) {
         groupsHTML += '</div>';
     }
 
+    //Calculate Column Sizes
+    let mdlCols = '';
+    for (let i = 0; i < modules.length; i++) mdlCols += (i !== 0 ? ' ' : '') + ((1 / modules.length) * 100) + '%';
+    document.getElementById('WIZ_NAV_MODULES').style.gridTemplateColumns = mdlCols;
+
+    //Add HTML
     document.getElementById('WIZ_NAV_MODULES').innerHTML = mainsHTML;
     document.getElementById('WIZ_NAV_GROUPS').innerHTML = groupsHTML;
 }
@@ -309,9 +321,7 @@ function WIZARD_show(module, group, hold = false) {
     document.getElementsByClassName('WIZ_NAV_GROUP')[WIZARD_CURSOR[0]].removeAttribute('hidden');
     document.getElementsByClassName('WIZ_NAV_GROUP')[WIZARD_CURSOR[0]].childNodes[WIZARD_CURSOR[1]].setAttribute('selected', '');
     document.getElementsByClassName('WIZ_GROUP_' + moduleName)[WIZARD_CURSOR[1]].removeAttribute('hidden');
-
-    console.log(document.getElementsByClassName('WIZ_GROUP_' + moduleName)[WIZARD_CURSOR[1]]);
-
+    
     //Update UI
     WIZARD_updateUI();
 

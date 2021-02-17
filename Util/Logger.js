@@ -86,7 +86,6 @@ class Logger {
 
         let inputLine;
         let done = false;
-        let errs = 0;
 
         do {
             inputLine = null;
@@ -322,6 +321,11 @@ class Logger {
     
     //File Export
     Save2Log(time = new Date(), consoleString, type = "OUTPUT") {
+        //Save to Latest
+        if (!fs.existsSync(path.resolve(this.Settings.FileStructure.ROOT + this.Settings.FileStructure.RAW + "latest.txt"))) return;
+        fs.appendFileSync(path.resolve(this.Settings.FileStructure.ROOT + this.Settings.FileStructure.RAW + "latest.txt"), consoleString);
+
+        //Save to Categorie
         let filename = time.toLocaleDateString();
         let fpath = this.Settings.FileStructure.ROOT;
 
@@ -333,15 +337,11 @@ class Logger {
             } else if (type === "INPUT") {
                 fpath += this.Settings.FileStructure.INPUT;
             } else {
-                fs.appendFileSync(path.resolve(fpath + this.Settings.FileStructure.RAW + "latest.txt"), consoleString);
                 return;
             }
 
             if (!fs.existsSync(path.resolve(fpath + filename + ".txt"))) return;
             fs.appendFileSync(path.resolve(fpath + filename + ".txt"), consoleString);
-            
-            if (!fs.existsSync(path.resolve(this.Settings.FileStructure.ROOT + this.Settings.FileStructure.RAW + "latest.txt"))) return;
-            fs.appendFileSync(path.resolve(this.Settings.FileStructure.ROOT + this.Settings.FileStructure.RAW + "latest.txt"), consoleString);
         }
     }
     Save2DB(time = new Date(), source, type, message) {
