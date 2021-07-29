@@ -12,6 +12,11 @@
     border-radius: 5px;
     background-color: white;
 }
+.darkmode #BOT_STATUS_DETAILS_NORMAL {
+    border: none;
+    background-color: #363636;
+    color: white;
+}
 
     #BOT_STATUS_DETAILS_NORMAL #top {
         padding: 15px;
@@ -38,6 +43,9 @@
             color: gray;
             font-size: 15px;
             font-weight: lighter;
+        }
+        .darkmode #BOT_STATUS_DETAILS_NORMAL #top .Detail .top {
+            color: white;
         }
 
         #BOT_STATUS_DETAILS_NORMAL #top .Detail .bottom {

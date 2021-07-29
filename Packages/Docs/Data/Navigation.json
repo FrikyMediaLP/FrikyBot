@@ -32,6 +32,10 @@
             "href": "Docs/TwitchIRC"
           },
           {
+            "name": "WebApp",
+            "href": "Docs/WebApp"
+          },
+          {
             "name": "DataCollection",
             "href": "Docs/DataCollection"
           }
@@ -41,10 +45,6 @@
         "name": "Packages",
         "type": "subsection",
         "contents": [
-          {
-            "name": "PackageBase",
-            "href": "Docs/PackageBase"
-          },
           {
             "name": "NewsFeed",
             "href": "Docs/NewsFeed"
@@ -74,6 +74,32 @@
           {
             "name": "CONSTANTS",
             "href": "Docs/CONSTANTS"
+          },
+          {
+            "name": "PackageBase",
+            "href": "Docs/PackageBase"
+          },
+          {
+            "name": "ModuleBase",
+            "href": "Docs/ModuleBase"
+          },
+          {
+            "name": "ConfigHandler",
+            "href": "Docs/ConfigHandler"
+          }
+        ]
+      },
+      {
+        "name": "Third Party",
+        "type": "subsection",
+        "contents": [
+          {
+            "name": "BTTV",
+            "href": "Docs/BTTV"
+          },
+          {
+            "name": "FFZ",
+            "href": "Docs/FFZ"
           }
         ]
       }

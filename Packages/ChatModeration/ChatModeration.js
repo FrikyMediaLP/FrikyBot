@@ -1,5 +1,6 @@
 ﻿const CONSTANTS = require('./../../Util/CONSTANTS.js');
-const TWITCHIRC = require('./../../TwitchIRC.js');
+const CONFIGHANDLER = require('./../../Util/ConfigHandler.js');
+const TWITCHIRC = require('./../../Modules/TwitchIRC.js');
 
 const BTTV = require('./../../3rdParty/BTTV.js');
 const FFZ = require('./../../3rdParty/FFZ.js');
@@ -13,11 +14,8 @@ let COMMANDHANDLER;
 
 const PACKAGE_DETAILS = {
     name: "ChatModeration",
-    description: "Chat Moderation Filters checking Chat Messages for Spam, Caps, Bad Words etc."
-};
-
-const SETTINGS_REQUIERED = {
-    "UserLogFile": CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + "ChatModeration/UserLog.db"
+    description: "Chat Moderation Filters checking Chat Messages for Spam, Caps, Bad Words etc.",
+    picture: "/images/icons/user-secret-solid.svg"
 };
 
 const PUNISHMENT = {
@@ -27,68 +25,75 @@ const PUNISHMENT = {
     BAN: "BAN"
 }
 
-class ChatModeration extends require('./../PackageBase.js').PackageBase {
-    constructor(expressapp, twitchirc, twitchapi, datacollection, logger) {
-        super(PACKAGE_DETAILS, expressapp, twitchirc, twitchapi, datacollection, logger);
+class ChatModeration extends require('./../../Util/PackageBase.js').PackageBase {
+    constructor(webappinteractor, twitchirc, twitchapi, datacollection, logger) {
+        super(PACKAGE_DETAILS, webappinteractor, twitchirc, twitchapi, datacollection, logger);
+        
+        this.Config.AddSettingTemplates([
+            { name: 'debug', type: 'boolean', default: false },
+            { name: 'disable_Chat_Commands', type: 'boolean', default: false }
+        ]);
+        this.Config.Load();
+        this.Config.FillConfig();
+
+        this.RESTRICTED_HTML_HOSTING = 'moderator';
     }
 
     async Init(startparameters) {
         if (!this.isEnabled()) return Promise.resolve();
         
-        //UserDatabase
-        this.UserArchive = new Datastore({ filename: PATH.resolve(this.Settings.UserLogFile), autoload: true });
-        
-        //Debug Log
-        if (this.Settings.debug == true) {
-            this.DebugDataBase = new Datastore({ filename: PATH.resolve(this.Settings.DebugLogFile), autoload: true });
-        }
-
         //Permitted
-        this.Permitted = {
-
-        };
+        this.Permitted = {};
 
         //Setup Filter
-        this.Filters = {
-            WordFilter: new WordFilter(this, this.TwitchIRC, this.TwitchAPI, this.Logger),
-            SpamFilter: new SpamFilter(this, this.TwitchIRC, this.TwitchAPI, this.Logger),
-            LinkFilter: new LinkFilter(this, this.TwitchIRC, this.TwitchAPI, this.Logger)
-        };
-
-        //Setup Timers
-        this.Timers = {
-
-        };
-
+        this.Filters = [
+            new WordFilter(this, this.TwitchIRC, this.TwitchAPI, this.Logger),
+            new SpamFilter(this, this.TwitchIRC, this.TwitchAPI, this.Logger),
+            new LinkFilter(this, this.TwitchIRC, this.TwitchAPI, this.Logger)
+        ];
+        
         //Twitch Chat Listener
-        if (this.TwitchIRC)
-            this.TwitchIRC.on('chat', (channel, userstate, message, self) => this.MessageEventHandler(channel, userstate, message, self));
+        if (this.TwitchIRC) this.TwitchIRC.on('chat', (channel, userstate, message, self) => this.MessageEventHandler(channel, userstate, message, self));
 
         //API ENDPOINTS
-        let APIRouter = express.Router();
-        APIRouter.get('/filters', (request, response) => {
-            let data = {
-                enabled: this.isEnabled(),
-                Filter: {
+        let Filter_Settings_Router = express.Router();
+        Filter_Settings_Router.route('/filters/settings')
+            .get(async (req, res) => {
+                let data = {};
+                
+                for (let filter of this.Filters) {
+                    try {
+                        data[filter.GetName()] = await filter.GetSettings();
+                    } catch (err) {
 
+                    }
                 }
-            };
+                res.json(data);
+                return Promise.resolve();
+            })
+            .put(async (req, res) => {
+                const name = req.body['name'];
 
-            for (let filter in this.Filters) {
-                data.Filter[this.Filters[filter].GetName()] = this.Filters[filter].GetPublicSettings();
-                data.Filter[this.Filters[filter].GetName()].enabled = this.Filters[filter].isEnabled();
-            }
+                let filter = this.Filters.find(elt => name === elt.GetName());
 
-            response.json({
-                status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
-                req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                data: data
+                try {
+                    await filter.ChangeSetting(req, res);
+                    res.json({ updated_settings: await filter.GetSettings() });
+                } catch (err) {
+                    res.json({ err: err.message });
+                }
+                
+                return Promise.resolve();
             });
-        });
-        super.setAPIRouter(APIRouter);
+        this.setAuthenticatedAPIRouter(Filter_Settings_Router, { user_level: 'moderator' });
 
+        //STATIC FILE ROUTE
+        this.useDefaultFileRouter();
+        
         //PACKAGE INTERCONNECT - Adding Commands
-        if (this.Settings.disable_Chat_Commands != true) {
+        let cfg = this.Config.GetConfig();
+        if (cfg.disable_Chat_Commands != true) {
+            
             try {
                 COMMANDHANDLER = require('./../CommandHandler/CommandHandler.js');
                 this.addPackageInterconnectRequest("CommandHandler", (CommandHandlerObj) => {
@@ -96,39 +101,29 @@ class ChatModeration extends require('./../PackageBase.js').PackageBase {
                         { description: '<p>Set/Change/Enable/Disable/... Chat Moderation Filters using the Twitch Chat.</p>' }));
                     CommandHandlerObj.addHardcodedCommands("!permit", new COMMANDHANDLER.HCCommand("!permit", (userMessageObj, commandOrigin, parameters) => this.Chat_Command_permit(userMessageObj, commandOrigin, parameters),
                         { description: '<p>Permits a User to post any Message otherwise restricted by the FrikyBot ChatModeration Filters! <b>(this doesn´t stop AutoMod or other Twitch Intern Settings)</b></p>' }));
-                });
+                }, "Add Chat Commands to setup Chat Moderation Features.");
             } catch (err) {
-                if (err.message.startsWith('Cannot find module'))
-                    this.Logger.error("Command Handler not Found! ChatModeration Commands not available!");
-                else
-                    this.Logger.error(err.message);
+                if (err.message.startsWith('Cannot find module')) this.Logger.warn("Command Handler not Found! ChatModeration Commands not available!");
+                else this.Logger.error(err.message);
             }
         }
 
-        return Promise.resolve();
+        return this.reload();
     }
     async reload() {
         if (!this.isEnabled()) return Promise.reject(new Error("Package is disabled!"));
-
+        
         try {
-            for (let filter in this.Filters) {
-                this.Logger.info("Reloading " + this.Filters[filter].GetName() + " ...");
-                await this.Filters[filter].reload();
+            for (let filter of this.Filters) {
+                this.Logger.info("Reloading " + filter.GetName() + " ...");
+                await filter.Init();
             }
         } catch (err) {
-            console.log(err);
+            this.Logger.error(err.message);
         }
 
         this.Logger.info("ChatModeration (Re)Loaded!");
         return Promise.resolve();
-    }
-
-    CheckSettings(settings) {
-        if (settings.debug == true && settings.DebugLogFile == undefined) {
-            settings.DebugLogFile = CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + "ChatModeration/DebugLog.db";
-        }
-
-        return this.AddObjectElementsToOtherObject(settings, SETTINGS_REQUIERED, msg => this.Logger.info("CONFIG UPDATE: " + msg));
     }
     
     //Chat Moderation - Filters
@@ -136,8 +131,8 @@ class ChatModeration extends require('./../PackageBase.js').PackageBase {
         if (!this.isEnabled()) return Promise.resolve();
 
         //Dont Check Bot Messages
-        if (self)
-            return Promise.resolve();
+        if (self) return Promise.resolve();
+        let cfg = this.Config.GetConfig();
         
         //SKIP PERMITTED
         if (this.Permitted[userstate.username] != undefined) {
@@ -150,15 +145,13 @@ class ChatModeration extends require('./../PackageBase.js').PackageBase {
 
         let msgObj = new TWITCHIRC.Message(channel, userstate, message);
 
+        //Skip Moderators and up
+        if (msgObj.matchUserlevel(CONSTANTS.UserLevel.moderator)) return Promise.resolve();
+
         let streamData = null;
 
-        //SKIP WHEN NOT IN DEBUG
-        if (this.Settings.debug != true) {
-            //Skip Moderators and up
-            if (msgObj.matchUserlevel(CONSTANTS.UserLevel.moderator)) {
-                return Promise.resolve();
-            }
-
+        //SKIP WHEN IN DEBUG
+        if (cfg.debug !== true) {
             //Skip when Streamer is Offline
             try {
                 streamData = await this.TwitchAPI.GetStreams({ user_login: channel });
@@ -168,86 +161,48 @@ class ChatModeration extends require('./../PackageBase.js').PackageBase {
                 }
             } catch (err) {
                 this.Logger.error(err.message);
-                console.log(err);
             }
         }
        
-        for (let filter in this.Filters) {
+        for (let filter of this.Filters) {
             try {
-                let filterOutput = await this.Filters[filter].CheckMessage(msgObj, streamData);
-                if (typeof filterOutput == "object") {
-                    this.Logger.warn("Chat Alert -> " + filterOutput.reason + " -> Punishment: " + filterOutput.punishment + (filterOutput.punishment_length ? (" LENGTH: " + filterOutput.punishment_length) : ""));
-
-                    //Debug Log
-                    if (this.DebugDataBase) {
-                        this.insertDebug(channel, userstate, message, this.Filters[filter], filterOutput, streamData);
-                    }
-                    this.insertUser(channel, userstate, message, this.Filters[filter], filterOutput, streamData);
-
+                let issue = await filter.CheckMessage(msgObj, streamData);
+                if (typeof issue == "object") {
+                    await this.executePunishment(msgObj, issue);
+                    this.Logger.warn("Chat Alert -> " + issue.reason + " -> Punishment: " + issue.punishment + (issue.punishment_length ? (" LENGTH: " + issue.punishment_length) : ""));
                     return Promise.resolve();
                 }
             } catch (err) {
                 this.Logger.error(err.message);
-                console.log(err);
             }
         }
 
         return Promise.resolve();
     }
+    async executePunishment(msgObj, issue) {
+        try {
+            if (issue.punishment == PUNISHMENT.DELETE) {
+                await this.TwitchIRC.deleteMessage(msgObj.getID());
+            } else if (issue.punishment == PUNISHMENT.TIMEOUT) {
+                await this.TwitchIRC.timeout(msgObj.getUsername(), issue.punishment_length || 10, issue.reason);
+            } else if (issue.punishment == PUNISHMENT.BAN) {
+                await this.TwitchIRC.ban(msgObj.getUsername(), issue.reason);
+            }
 
+            await this.sendResponse(issue.message, msgObj);
+            return Promise.resolve();
+        } catch (err) {
+            return Promise.reject(err);
+        }
+    }
+    async sendResponse(codedString, msgObj) {
+        while (codedString.indexOf("{user}") >= 0) {
+            codedString = codedString.substring(0, codedString.indexOf("{user}")) + msgObj.getDisplayName() + codedString.substring(codedString.indexOf("{user}") + 6);
+        }
+        return this.TwitchIRC.say(codedString);
+    }
     permitUser(username) {
         this.Permitted[username] = Date.now() + (1000 * 60);
-    }
-
-    insertUser(channel, userstate, message, filterObj, filterOutput, streamData) {
-        this.UserArchive.insert({
-            user: userstate["user-id"],
-            username: userstate.username,
-            filter: filterObj.GetName(),
-            reason: filterOutput.reason,
-            punishment: filterOutput.punishment,
-            specificIssue: filterOutput.specificIssue,
-            message: message,
-            time: userstate["tmi-sent-ts"],
-            stream_id: streamData ? streamData.id : null,
-            occurred_while_debugging: this.DebugDataBase ? true : undefined
-        });
-    }
-    insertDebug(channel, userstate, message, filterObj, filterOutput, streamData) {
-        this.DebugDataBase.insert({
-            user: userstate["user-id"],
-            username: userstate.username,
-            userstate: userstate,
-            filter: filterObj.GetName(),
-            reason: filterOutput.reason,
-            punishment: filterOutput.punishment,
-            specificIssue: filterOutput.specificIssue,
-            message: message,
-            time: userstate["tmi-sent-ts"],
-            stream_id: streamData ? streamData.id : null
-        });
-    }
-    
-    //Chat Moderation - Timers
-    addTimer(name, exec, interval) {
-        this.Timers[name] = new Timer(name, this, exec, interval);
-
-        if (!this.Timers[name].test()) {
-            delete this.Timers[name];
-            return null;
-        } else {
-            return this.Timers[name];
-        }
-    }
-    removeTimer(name) {
-        if (this.Timers[name] != undefined) {
-            this.Logger.warn("Timer " + this.Timers[name].GetName() + " was REMOVED!");
-            this.Timers[name].disable();
-            delete this.Timers[name];
-            return true;
-        }
-
-        return false;
     }
 
     //Commands
@@ -260,9 +215,9 @@ class ChatModeration extends require('./../PackageBase.js').PackageBase {
                 if (this.isEnabled()) {
                     output = "Current Chat Moderation Filters: ";
 
-                    for (let filter in this.Filters) {
-                        if (this.Filters[filter].isEnabled())
-                            output += this.Filters[filter].GetName() + ", "
+                    for (let filter of this.Filters) {
+                        if (filter.isEnabled())
+                            output += filter.GetName() + ", "
                     }
 
                     if (output == "Current Chat Moderation Filters: ")
@@ -326,77 +281,7 @@ class ChatModeration extends require('./../PackageBase.js').PackageBase {
                 }
             }
         }
-
-        //Chat Moderation Timer
-        if (parameters.length >= 3 && parameters[1].toLowerCase() == "timer" && this.Timers[parameters[2]] != undefined) {
-            //Print Status
-            if (parameters.length == 3) {
-                this.TwitchIRC.saySync("Timer '" + this.Timers[parameters[2]].GetName() + "' is currently " + (this.Timers[parameters[2]].isEnabled() ? "ENABLED" : "DISABLED") + "!");
-                return Promise.resolve();
-            }
-
-            //Settings need Mod Status
-            if (!userMessageObj.matchUserlevel(CONSTANTS.UserLevel.moderator)) {
-                return Promise.resolve();
-            }
-
-            //Settings
-            if (parameters[3].toLowerCase() == "enable") {
-                try {
-                    await this.Timers[parameters[2]].enable();
-                    await this.TwitchIRC.say("Timer '" + this.Timers[parameters[2]].GetName() + "' is now ENABLED!");
-                    return Promise.resolve();
-                } catch (err) {
-                    console.log(err);
-                }
-            } else if (parameters[3].toLowerCase() == "disable") {
-                try {
-                    await this.Timers[parameters[2]].disable();
-                    await this.TwitchIRC.say("Timer '" + this.Timers[parameters[2]].GetName() + "' is now DISABLED!");
-                    return Promise.resolve();
-                } catch (err) {
-                    console.log(err);
-                }
-            } else if (parameters[3].toLowerCase() == "start") {
-                if (this.Timers[parameters[2]].start()) {
-                    this.TwitchIRC.saySync("Timer '" + this.Timers[parameters[2]].GetName() + "' is now RUNNING!");
-                    return Promise.resolve();
-                }
-            } else if (parameters[3].toLowerCase() == "stop") {
-                if (this.Timers[parameters[2]].stop()) {
-                    this.TwitchIRC.saySync("Timer '" + this.Timers[parameters[2]].GetName() + "' is now STOPPED!");
-                    return Promise.resolve();
-                }
-            } else if (parameters[3].toLowerCase() == "remove") {
-                if (this.removeTimer(parameters[2])) {
-                    this.TwitchIRC.saySync("Timer '" + this.Timers[parameters[2]].GetName() + "' was REMOVED!");
-                    return Promise.resolve();
-                }
-            }
-        } else if (parameters.length > 3 && parameters[1].toLowerCase() == "timer") {
-            if (parameters[3].toLowerCase() == "set" && !isNaN(parameters[4])) {
-                try {
-                    let message = parameters.reduce((sum, value, index) => {
-                        if (index == 5) {
-                            sum += value;
-                        } else if (index > 5) {
-                            sum += " " + value;
-                        }
-                        return sum;
-                    }, "");
-
-                    if (this.addTimer(parameters[2], () => this.TwitchIRC.saySync(message), parseInt(parameters[4]))) {
-                        if (this.Timers[parameters[2]].start()) {
-                            this.TwitchIRC.saySync("Timer '" + this.Timers[parameters[2]].GetName() + "' was CREATED And STARTED!");
-                            return Promise.resolve();
-                        }
-                    }
-                } catch (err) {
-                    console.log(err);
-                }
-            }
-        }
-
+        
         return Promise.resolve();
     }
     async Chat_Command_permit(userMessageObj, commandOrigin, parameters) {
@@ -412,438 +297,372 @@ class ChatModeration extends require('./../PackageBase.js').PackageBase {
     }
 }
 
-//Parent Class
 class Filter {
-    constructor(ChatModeration, name, TwitchIRC, TwitchAPI, settings = {}, Logger) {
+    constructor(name, ChatModeration, TwitchIRC, TwitchAPI, Logger) {
         this.name = name;
         this.ChatModeration = ChatModeration;
-        this.Settings = {
-            enabled: true
-        };
 
-        //Ensure settings is an object
-        if (typeof settings == "object" && settings.length == undefined) {
-            for (let setting in settings) {
-
-                //one time nesting
-                if (typeof settings[setting] == "object" && settings[setting].length == undefined) {
-                    for (let innerSetting in settings[setting]) {
-                        //Create New
-                        if (this.Settings[setting] == undefined) {
-                            this.Settings[setting] = {};
-                        }
-
-                        //Add Value
-                        if (typeof this.Settings[setting] == "object" && this.Settings[setting].length == undefined) {
-                            this.Settings[setting][innerSetting] = settings[setting][innerSetting];
-                        }
-                    }
-                } else {
-                    this.Settings[setting] = settings[setting];
-                }
-            }
-        }
-
+        //Config
+        this.Config = new CONFIGHANDLER.Config(this.GetName(), [], { preloaded: ChatModeration.Config.GetConfig()[name] });
+        this.Config.AddSettingTemplates([
+            { name: 'enabled', type: 'boolean', requiered: true, default: true },
+            { name: 'File_Dir', type: 'string', default: CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + "ChatModeration/" + this.GetName() + "/" },
+        ]);
+        ChatModeration.Config.AddChildConfig(this.Config);
+        this.Config.Load();
+        this.Config.FillConfig();
+        
         this.TwitchIRC = TwitchIRC;
         this.TwitchAPI = TwitchAPI;
         this.Logger = Logger;
+        
+        //Ready
+        this.READY_REQUIREMENTS = [];
+        this.addReadyRequirement(() => {
+            return this.Config.ErrorCheck() === true;
+        });
     }
 
-    async CheckMessage(msgObj) {
+    async CheckMessage(msgObj, streamData) {
         return Promise.resolve();
+    }
+    async Init() {
+        return this.reload();
     }
     async reload() {
         return Promise.resolve();
     }
-
-    Issue(msgObj, punishment, reason, specificIssue, punishment_length) {
-        return {
-            punishment: punishment,
-            punishment_length: punishment_length,
-            reason: reason,
-            specificIssue: specificIssue
-        };
-    }
-    async sendResponse(codedString, msgObj) {
-        while (codedString.indexOf("{user}") >= 0) {
-            codedString = codedString.substring(0, codedString.indexOf("{user}")) + msgObj.getDisplayName() + codedString.substring(codedString.indexOf("{user}") + 6);
-        }
-        return this.TwitchIRC.say(codedString);
-    }
-    async getUserRecord(user_id, stream_id) {
-        return new Promise((resolve, reject) => {
-            this.ChatModeration.UserArchive.find({ user: user_id, filter: this.name, stream_id: stream_id }, (err, docs) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(docs);
-                }
-            });
-        });
-    }
-    async executePunishment(msgObj, chat_response, punishment, punishment_length, reason) {
-        try {
-            if (punishment == PUNISHMENT.WARNING) {
-
-            } else if (punishment == PUNISHMENT.DELETE) {
-                await this.TwitchIRC.deleteMessage(msgObj.getID());
-            } else if (punishment == PUNISHMENT.TIMEOUT) {
-                await this.TwitchIRC.timeout(msgObj.getUsername(), punishment_length, reason);
-            } else if (punishment == PUNISHMENT.BAN) {
-                await this.TwitchIRC.ban(msgObj.getUsername(), reason);
-            } 
-            
-            await this.sendResponse(chat_response, msgObj);
-            return Promise.resolve();
-        } catch (err) {
-            return Promise.reject(err);
-        }
-    }
-
+    
     GetName() {
         return this.name;
     }
-    GetSettings() {
-        return this.Settings;
+    async GetSettings() {
+        return Promise.resolve({});
     }
-    GetPublicSettings() {
-        return { };
-    }
-    enable() {
-        this.Settings.enabled = true;
-    }
-    disable() {
-        this.Settings.enabled = false;
-    }
-    isEnabled() {
-        return this.Settings.enabled == true;
-    }
-}
-class Timer {
-    constructor(name, ChatModeration, exec, interval, settings = {}) {
-        this.Name = name;
-        this.ChatModeration = ChatModeration;
-        
-        this.error = false;
-
-        this.Settings = {
-            enabled: true
-        };
-
-        this.running = false;
-        
-        if (settings.enabled) {
-            this.Settings.enabled = settings.enabled == true;
-        }
-        
-        if (typeof interval == "number") {
-            this.Settings.interval = interval;
-        } else {
-            this.Settings.enabled = false;
-            this.error = true;
-        }
-
-        if (exec instanceof Function) {
-            this.exec = exec;
-        } else {
-            this.Settings.enabled = false;
-            this.error = true;
-        }
-    }
-
-    start() {
-        if (this.isEnabled() && !this.running) {
-            this.ChatModeration.Logger.warn("Timer " + this.Name + " was STARTED!");
-            this.interval = setInterval(this.exec, this.Settings.interval);
-            this.running = true;
-            return true;
-        }
-
-        return false;
-    }
-    stop() {
-        if (this.interval || this.running) {
-            this.ChatModeration.Logger.warn("Timer " + this.Name + " was STOPPED!");
-            clearInterval(this.interval);
-            this.running = false;
-            return true;
-        }
-
-        return false;
-    }
-
-    test() {
-        return this.error == false;
-    }
-
-    isEnabled() {
-        return this.Settings.enabled == true;
-    }
-    enable() {
-        this.Settings.enabled = true;
-    }
-    disable() {
-        this.Settings.enabled = true;
-        this.stop();
-    }
-
-    GetName() {
-        return this.Name;
-    }
-}
-
-//Word Filter
-class WordFilter extends Filter {
-    constructor(ChatModeration, TwitchIRC, TwitchAPI, Logger) {
-        let settings = {
-            use_Default_Bad_Words: true,
-            File_Dir: CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + "ChatModeration/Word Filter/",
-            Blacklist_File: "Blacklist.db",
-            Default_Bad_Words_File: "Default_Bad_Words.txt",
-            CaseSentitive: true,
-            message: "{user} - a word u used is on the Blacklist!"
-        };
-
-        super(ChatModeration, "Word Filter", TwitchIRC, TwitchAPI, settings, Logger);
-        
-        let state = this.CheckSetupAndEnviroument();
-
-        if (typeof state == "string") {
-            if (this.Logger != null)
-                this.Logger.error("Word Filter: " + state);
-            else
-                console.error(state);
-            this.Settings.enabled = false;
-        } else {
-            this.reload();
-        }
-    }
-
-    //SETUP
-    CheckSetupAndEnviroument() {
-        //Settings
-        if (this.Settings == undefined) {
-            return "Corrupted Installation: Settings corrupted!";
-        }
-        if (typeof this.Settings.File_Dir != "string") {
-            return "Corrupted Installation: File_Dir corrupted!";
-        }
-
-        //Settings Values
-        if (!fs.existsSync(PATH.resolve(this.Settings.File_Dir))) {
-            try {
-                fs.mkdirSync(PATH.resolve(this.Settings.File_Dir));
-            } catch (err) {
-                return "Corrupted Installation: Word Filter Folder couldnt be created!";
-            }
-        }
-
-        if (this.Settings.use_Default_Bad_Words == true && !fs.existsSync(PATH.resolve(this.Settings.File_Dir + this.Settings.Default_Bad_Words_File))) {
-            try {
-                fs.writeFileSync(PATH.resolve(this.Settings.File_Dir + this.Settings.Default_Bad_Words_File), "");
-            } catch (err) {
-                return "Corrupted Installation: Default Bad Words File couldnt be created!";
-            }
-        }
-
+    async ChangeSetting(req, res) {
         return true;
     }
-    async reload() {
-        let insert = [];
-        if (!fs.existsSync(PATH.resolve(this.Settings.File_Dir + this.Settings.Blacklist_File))) {
-            let defaultData = this.loadDefaultBlacklist();
 
-            for (let word of defaultData) {
-                if (word === "") continue;
-                insert.push({
-                    word: word,
-                    blocked_by: "DEFAULT",
-                    blocked_at: Date.now()
-                });
-            }
-        }
-
-        if(!this.Blacklist)
-            this.Blacklist = new Datastore({ filename: PATH.resolve(this.Settings.File_Dir + this.Settings.Blacklist_File) });
-
-        return new Promise((resolve, reject) => {
-            if (this.Blacklist) {
-                this.Blacklist.loadDatabase(err => { if (err) return reject(new Error("Database Loading Error!")); });
-
-                if (insert.length > 0)
-                    this.Blacklist.insert(insert, err => { if (err) return reject(new Error("Database Insert Error!")); });
-            }
-
-            return resolve();
-        });
+    enable() {
+        this.setEnabled(true);
     }
-    GetPublicSettings() {
-        return {
-            "Case Sensitive Blocking": this.Settings.CaseSentitive
-        };
+    disable() {
+        this.setEnabled(false);
     }
-
-    //Filter
-    async CheckMessage(msgObj) {
-        if (!this.isEnabled() || !this.Blacklist) {
-            return Promise.resolve();
-        }
-
-        let messageString = msgObj.getMessage();
-
-        //Use Case Sensitivity?
-        if (this.Settings.CaseSentitive == false)
-            messageString = messageString.toLowerCase();
-        
-        //Is Blacklisted?
-        try {
-            let blocked = await this.CheckOneDBSearch(this.Blacklist, {});
-
-            for (let block of blocked) {
-                if (messageString.indexOf(block.word) >= 0) {
-                    await this.executePunishment(msgObj, this.Settings.message, PUNISHMENT.DELETE);
-                    return Promise.resolve(this.Issue(msgObj, PUNISHMENT.DELETE, "Used a word on the Blacklist", block.word));
-                }
-            }
-        } catch(err) {
-            console.log(err);
-        }
-
-        return Promise.resolve();
+    setEnabled(state) {
+        return this.Config.UpdateSetting('enabled', state === true);
     }
-
-    //UTIL
-    loadDefaultBlacklist() {
-        try {
-            let input = fs.readFileSync(this.Settings.File_Dir + this.Settings.Default_Bad_Words_File).toString();
-            return this.ChatModeration.replaceAll(input, "\r", "").split("\n");
-        } catch (err) {
-            this.Logger.error(err.message);
-        }
-
-        return [];
+    isEnabled() {
+        return this.Config.GetConfig()['enabled'] !== false;
     }
+    
     async CheckOneDBSearch(db, querry) {
         return new Promise((resolve, reject) => {
             db.find(querry, (err, docs) => {
                 if (err) {
                     reject(err);
                 } else {
+                    for (let doc of docs) delete doc['_id'];
                     resolve(docs);
                 }
             });
         });
     }
 
-    addWord(word, username) {
-        this.Blacklist.insert({
-            word: word,
-            blocked_by: username,
-            blocked_at: Date.now()
+    //Ready/Status
+    addReadyRequirement(func) {
+        if (func instanceof Function) this.READY_REQUIREMENTS.push(func);
+    }
+    removeReadyRequirement(index) {
+        this.READY_REQUIREMENTS.splice(index, 1);
+    }
+    isReady() {
+        for (let func of this.READY_REQUIREMENTS) {
+            if (func instanceof Function && func() === false) return false;
+        }
+
+        return true;
+    }
+
+}
+
+//Word Filter
+class WordFilter extends Filter {
+    constructor(ChatModeration, TwitchIRC, TwitchAPI, Logger) {
+        super("Word Filter", ChatModeration, TwitchIRC, TwitchAPI, Logger);
+
+        //Config
+        this.Config.AddSettingTemplates([
+            { name: 'Blacklist_File', type: 'string', default: "Blacklist.db" },
+            { name: 'message', type: 'string', default: "{user} - a word u used is on the Blacklist!" }
+        ]);
+        this.Config.Load();
+        this.Config.FillConfig();
+        
+        //Ready
+        this.addReadyRequirement(() => {
+            let cfg = this.Config.GetConfig();
+            
+            if (!fs.existsSync(PATH.resolve(cfg['File_Dir']))) {
+                try {
+                    fs.mkdirSync(PATH.resolve(cfg['File_Dir']));
+                } catch (err) {
+                    this.Logger.error("Corrupted Installation: Word Filter Folder couldnt be created!");
+                    return false;
+                }
+            }
+
+            if (!this.Blacklist) return false;
+            
+            return true;
         });
     }
-    removeWord(word) {
-        this.Blacklist.remove({word: word});
+
+    //SETUP
+    async Init() {
+        let cfg = this.Config.GetConfig();
+
+        if (!fs.existsSync(PATH.resolve(cfg['File_Dir']))) {
+            try {
+                fs.mkdirSync(PATH.resolve(cfg['File_Dir']));
+            } catch (err) {
+                this.Logger.warn("Corrupted Installation: Word Filter Folder couldnt be created!");
+                this.disable();
+            }
+        }
+
+        return this.reload();
+    }
+    async reload() {
+        if (!this.isEnabled()) return Promise.reject(new Error("Filter is disabled!"));
+        let cfg = this.Config.GetConfig();
+        
+        if(!this.Blacklist)
+            this.Blacklist = new Datastore({ filename: PATH.resolve(cfg['File_Dir'] + cfg['Blacklist_File']), autoload: true });
+        
+        return Promise.resolve();
+    }
+    
+    async GetSettings() {
+        let cfg = this.Config.GetConfig();
+
+        let data = {
+            message: cfg['message'],
+            enabled: this.isEnabled(),
+            ready: this.isReady()
+        };
+
+        try {
+            data['Blacklist'] = await this.CheckOneDBSearch(this.Blacklist, {});
+        } catch (err) {
+
+        }
+
+        return Promise.resolve(data);
+    }
+    async ChangeSetting(req, res) {
+        const action = req.body['action'];
+
+        try {
+            if (action === 'add_word') {
+                await this.addWord(req.body['word'], req.body['casesensitive'], req.body['in_word_use'], req.body['block_patterns'], req.body['ignore_emotes'], req.body['emote_only'], req.body['include_BTTV'], req.body['include_FFZ'], (res.locals.user || {}).preferred_username);
+            } else if (action === 'remove_word') {
+                await this.removeWord(req.body['word']);
+            } else if (action === 'clear') {
+                await this.clearBlacklist();
+            } else if (action === 'enable') {
+                if (req.body['value'] === true) this.enable();
+                else if (req.body['value'] === false) this.disable();
+            } else if (action === 'message') {
+                this.Config.UpdateSetting('message', req.body['value']);
+            } else {
+                return Promise.reject(new Error('Action not found.'));
+            }
+        } catch (err) {
+            return Promise.reject(err);
+        }
+        return Promise.resolve();
+    }
+
+    //Filter
+    async CheckMessage(msgObj, streamData){
+        if (!this.isEnabled() || !this.isReady()) return Promise.resolve();
+
+        let blacklist = [];
+        let cfg = this.Config.GetConfig();
+
+        try {
+            blacklist = await this.CheckOneDBSearch(this.Blacklist, {});
+        } catch (err) {
+
+        }
+
+        //EXCLUDE EMOTES IF NOT ALLOWED / EMOTES ONLY / ONLY BTTV / FFZ EMOTES
+        let words = msgObj.getMessage().split(" ");
+        let TTV_emotes = {};
+        let BTTV_emotes = {};
+        let FFZ_emotes = {};
+
+        try {
+            words = (await msgObj.getMessageWithoutEmotes(false, false)).split(" ");
+            TTV_emotes = await msgObj.getEmotes();
+            BTTV_emotes = await msgObj.getEmotes(true);
+            FFZ_emotes = await msgObj.getEmotes(false, true);
+        } catch (err) {
+
+        }
+        
+        //Is Blacklisted?
+        try {
+            for (let bl_word of blacklist) {
+                for (let word of words) {
+                    if (!word) continue;
+
+                    //Check Emotes
+                    if (!bl_word.ignore_emotes) {
+                        //TTV
+                        for (let emote in TTV_emotes) {
+                            let emote_start = TTV_emotes[emote][0].split('-')[0];
+                            let emote_end = TTV_emotes[emote][0].split('-')[1]
+                            let emote_name = msgObj.getMessage().substring(emote_start, emote_end + 1);
+
+                            if (emote_name === bl_word.word || (!bl_word.in_word_use && emote_name.indexOf(bl_word.word) >= 0) || (bl_word.block_patterns && emote_name.indexOf(bl_word.word) !== emote_name.lastIndexOf(bl_word.word))) {
+                                return Promise.resolve({ msgObj, message: cfg.message, punishment: PUNISHMENT.DELETE, reason: "Used a word on the Blacklist", exact_reason: bl_word.word });
+                            }
+                        }
+
+                        //BTTV
+                        if (bl_word.include_BTTV) {
+                            for (let emote_name in BTTV_emotes) {
+                                if (!isNaN(emote_name)) continue;
+                                if (emote_name === bl_word.word || (!bl_word.in_word_use && emote_name.indexOf(bl_word.word) >= 0) || (bl_word.block_patterns && emote_name.indexOf(bl_word.word) !== emote_name.lastIndexOf(bl_word.word))) {
+                                    return Promise.resolve({ msgObj, message: cfg.message, punishment: PUNISHMENT.DELETE, reason: "Used a word on the Blacklist", exact_reason: bl_word.word });
+                                }
+                            }
+                        }
+
+                        //FFZ
+                        if (bl_word.include_FFZ) {
+                            for (let emote_name in FFZ_emotes) {
+                                if (!isNaN(emote_name)) continue;
+                                if (emote_name === bl_word.word || (!bl_word.in_word_use && emote_name.indexOf(bl_word.word) >= 0) || (bl_word.block_patterns && emote_name.indexOf(bl_word.word) !== emote_name.lastIndexOf(bl_word.word))) {
+                                    return Promise.resolve({ msgObj, message: cfg.message, punishment: PUNISHMENT.DELETE, reason: "Used a word on the Blacklist", exact_reason: bl_word.word });
+                                }
+                            }
+                        }
+                    }
+
+                    if (bl_word.emote_only) continue;
+
+                    //Check Words
+                    if (bl_word.casesensitive === false) {
+                        bl_word.word = bl_word.word.toLowerCase();
+                        word = word.toLowerCase();
+                    }
+
+                    if (word === bl_word.word || (!bl_word.in_word_use && word.indexOf(bl_word.word) >= 0) || (bl_word.block_patterns && word.indexOf(bl_word.word) !== word.lastIndexOf(bl_word.word))) {
+                        return Promise.resolve({ msgObj, message: cfg.message, punishment: PUNISHMENT.DELETE, reason: "Used a word on the Blacklist", exact_reason: bl_word.word });
+                    }
+                }
+            }
+        } catch (err) {
+            this.Logger.error(err.message);
+        }
+
+        return Promise.resolve();
+    }
+
+    //Blacklist
+    async addWord(word, casesensitive = true, in_word_use = true, block_patterns = true, ignore_emotes = true, emote_only = false, include_BTTV = false, include_FFZ = false, username) {
+        try {
+            let words = await this.CheckOneDBSearch(this.Blacklist, { word });
+            if (words.length > 0) return Promise.reject(new Error('Word allready on the Blacklist!'));
+        } catch (err) {
+            return Promise.reject(err);
+        }
+        
+        return new Promise((resolve, reject) => {
+            this.Blacklist.insert({ word: word, blocked_by: username || 'UNKNOWN', blocked_at: Date.now(), casesensitive, in_word_use, block_patterns, ignore_emotes, emote_only, include_BTTV, include_FFZ }, function (err, newDocs) {
+                if (err) return reject(new Error(err));
+                else return resolve();
+            });
+        });
+    }
+    async removeWord(word) {
+        return new Promise((resolve, reject) => {
+            this.Blacklist.remove({ word: word }, {}, function (err, numRemoved) {
+                if (err) return reject(new Error(err));
+                else return resolve();
+            });
+        });
+    }
+    async clearBlacklist() {
+        return new Promise((resolve, reject) => {
+            this.Blacklist.remove({}, { multi: true }, function (err, numRemoved) {
+                if (err) return reject(new Error(err));
+                else return resolve();
+            });
+        });
     }
 }
 
 //Spam Filter
 class SpamFilter extends Filter {
     constructor(ChatModeration, TwitchIRC, TwitchAPI, Logger) {
-        let settings = {
-            ExcessiveSymbols: {
-                enabled: true,
-                Emotes: {
-                    enabled: true,
-                    include_TTV_Emotes: true,
-                    TTV_Emote_Limit: 6,
-                    include_FFZ_Emotes: true,
-                    FFZ_Emote_Limit: 6,
-                    include_BTTV_Emotes: true,
-                    BTTV_Emote_Limit: 6,
-                    global_Emote_Limit: 15,
-                    message: "{user} - Hey hey, slow with these Emotes or you might hurt yourself!"
-                },
-                Caps: {
-                    enabled: true,
-                    include_Emote_Caps: false,
-                    include_TTV_Emotes: true,
-                    include_BTTV_Emotes: true,
-                    include_FFZ_Emotes: true,
-                    Caps_Limit: 20,
-                    message: "{user} - Hey hey, stop shouting D:"
-                }
-            },
-            Messages: {
-                enabled: false,
-                max_message_length: 100,
-                include_Emote_Name_length: true,
-                include_TTV_Emotes: true,
-                include_BTTV_Emotes: true,
-                include_FFZ_Emotes: true,
-                message: "{user} - Hey, keep it short please :)"
-            }
-        };
+        super("Spam Filter", ChatModeration, TwitchIRC, TwitchAPI, Logger);
+        
+        //Caps Config
+        this.Caps_Config = new CONFIGHANDLER.Config('Caps', [], { preloaded: this.Config.GetConfig()['Caps'] });
+        this.Caps_Config.AddSettingTemplates([
+            { name: 'enabled', type: 'boolean', requiered: true, default: true },
+            { name: 'Caps_Limit', type: 'number', default: 20 },
+            { name: 'Caps_Limit_%', type: 'number', default: 80 },
+            { name: 'include_TTV_Emotes', type: 'boolean', default: true },
+            { name: 'include_BTTV_Emotes', type: 'boolean', default: true },
+            { name: 'include_FFZ_Emotes', type: 'boolean', default: true },
+            { name: 'message', type: 'string', default: "{user} - Hey hey, stop shouting D:" }
+        ]);
+        this.Config.AddChildConfig(this.Caps_Config);
 
-        super(ChatModeration, "Spam Filter", TwitchIRC, TwitchAPI, settings, Logger);
+        //Emotes Config
+        this.Emotes_Config = new CONFIGHANDLER.Config('Emotes', [], { preloaded: this.Config.GetConfig()['Emotes'] });
+        this.Emotes_Config.AddSettingTemplates([
+            { name: 'enabled', type: 'boolean', requiered: true, default: false },
+            { name: 'include_TTV_Emotes', type: 'boolean', default: true },
+            { name: 'TTV_Emote_Limit', type: 'number', default: 6 },
+            { name: 'include_BTTV_Emotes', type: 'boolean', default: false },
+            { name: 'BTTV_Emote_Limit', type: 'number', default: 6 },
+            { name: 'include_FFZ_Emotes', type: 'boolean', default: false },
+            { name: 'FFZ_Emote_Limit', type: 'number', default: 6 },
+            { name: 'global_Emote_Limit', type: 'number', default: 15 },
+            { name: 'message', type: 'string', default: "{user} - Hey hey, slow with these Emotes or you might hurt yourself!" }
+        ]);
+        this.Config.AddChildConfig(this.Emotes_Config);
 
-        let state = this.CheckSetupAndEnviroument();
-
-        if (typeof state == "string") {
-            if (this.Logger != null)
-                this.Logger.error("Spam Filter: " + state);
-            else
-                console.error(state);
-            this.Settings.enabled = false;
-        } else {
-            this.reload().catch(err => this.Logger.error(err.message));
-        }
+        //Patterns Config
+        this.Patterns_Config = new CONFIGHANDLER.Config('Patterns', [], { preloaded: this.Config.GetConfig()['Patterns'] });
+        this.Patterns_Config.AddSettingTemplates([
+            { name: 'enabled', type: 'boolean', requiered: true, default: false }
+        ]);
+        this.Config.AddChildConfig(this.Patterns_Config);
+        
+        //Messages Config
+        this.Messages_Config = new CONFIGHANDLER.Config('Messages', [], { preloaded: this.Config.GetConfig()['Messages'] });
+        this.Messages_Config.AddSettingTemplates([
+            { name: 'enabled', type: 'boolean', requiered: true, default: true },
+            { name: 'max_message_length', type: 'number', default: 100 },
+            { name: 'include_TTV_Emotes', type: 'boolean', default: false },
+            { name: 'include_BTTV_Emotes', type: 'boolean', default: true },
+            { name: 'include_FFZ_Emotes', type: 'boolean', default: true },
+            { name: 'message', type: 'string', default: "{user} - Hey, keep it short please :)" }
+        ]);
+        this.Config.AddChildConfig(this.Messages_Config);
     }
 
     //SETUP
-    CheckSetupAndEnviroument() {
-        //Settings
-        if (this.Settings == undefined) {
-            return "Corrupted Installation: Settings corrupted!";
-        }
-        
-        return true;
-    }
-    GetPublicSettings() {
-        return {
-            ExcessiveSymbols: {
-                enabled: this.Settings.ExcessiveSymbols.enabled,
-                Emotes: {
-                    enabled: this.Settings.ExcessiveSymbols.Emotes.enabled,
-                    "include Twitch Emotes": this.Settings.ExcessiveSymbols.Emotes.include_TTV_Emotes,
-                    "Twitch Emote Limit": this.Settings.ExcessiveSymbols.Emotes.TTV_Emote_Limit,
-                    "include FFZ Emotes": this.Settings.ExcessiveSymbols.Emotes.include_FFZ_Emotes,
-                    "FFZ Emote Limit": this.Settings.ExcessiveSymbols.Emotes.FFZ_Emote_Limit,
-                    "include BTTV Emotes": this.Settings.ExcessiveSymbols.Emotes.include_BTTV_Emotes,
-                    "BTTV Emote Limit": this.Settings.ExcessiveSymbols.Emotes.BTTV_Emote_Limit,
-                    "global Emote Limit": this.Settings.ExcessiveSymbols.Emotes.global_Emote_Limit
-                },
-                Caps: {
-                    enabled: this.Settings.ExcessiveSymbols.Caps.enabled,
-                    "include Emote Caps": this.Settings.ExcessiveSymbols.Caps.include_Emote_Caps,
-                    "include Twitch Emote Caps": this.Settings.ExcessiveSymbols.Caps.include_TTV_Emotes,
-                    "include BTTV Emote Caps": this.Settings.ExcessiveSymbols.Caps.include_BTTV_Emotes,
-                    "include FFZ Emote Caps": this.Settings.ExcessiveSymbols.Caps.include_FFZ_Emotes,
-                    "Caps Limit": this.Settings.ExcessiveSymbols.Caps.Caps_Limit
-                }
-            },
-            Messages: {
-                enabled: this.Settings.Messages.enabled,
-                "maximum message length": this.Settings.Messages.max_message_length,
-                "include Emotename length": this.Settings.Messages.include_Emote_Name_length,
-                "include Twitch Emotenames": this.Settings.Messages.include_TTV_Emotes,
-                "include BTTV Emotenames": this.Settings.Messages.include_BTTV_Emotes,
-                "include FFZ Emotenames": this.Settings.Messages.include_FFZ_Emotes
-            }
-        };
-    }
-
     async reload() {
+        return Promise.resolve();
+        
         this.BTTV_Emotes = [];
         this.FFZ_Emotes = [];
 
@@ -870,10 +689,8 @@ class SpamFilter extends Filter {
         } catch (err) {
             if (this.Logger != null)
                 this.Logger.error("Spam Filter: " + err.message);
-            else
-                console.error(err);
+            else console.error(err);
         }
-
 
         if (!this.TwitchAPI) return Promise.reject(new Error("Twitch API not available. BTTV Emotes not available."));
         //BTTV Emotes - Get Chat Channel ID -> Get BTTV Emotes
@@ -889,198 +706,174 @@ class SpamFilter extends Filter {
         } catch (err) {
             if (this.Logger != null)
                 this.Logger.error("Spam Filter: " + err.message);
-            else
-                console.error(err);
+            else console.error(err);
         }
+    }
+
+    async GetSettings() {
+        let cfg = this.Config.GetConfig();
+
+        cfg.ready = this.isReady();
+
+        return Promise.resolve(cfg);
+    }
+    async ChangeSetting(req, res) {
+        const action = req.body['action'];
+        const origin = req.body['origin'];
+
+        if (origin === 'Caps') {
+            this.Caps_Config.UpdateSetting(action, req.body['value']);
+        } else if (origin === 'Emotes') {
+            this.Emotes_Config.UpdateSetting(action, req.body['value']);
+        } else if (origin === 'Messages') {
+            this.Messages_Config.UpdateSetting(action, req.body['value']);
+        } else if (action === 'enable') {
+            if (req.body['value'] === true) this.enable();
+            else if (req.body['value'] === false) this.disable();
+        } else {
+            return Promise.reject(new Error('origin not found.'));
+        }
+
+        return Promise.resolve();
     }
 
     //Filter
     async CheckMessage(msgObj, streamData) {
-        if (!this.isEnabled()) {
-            return Promise.resolve();
-        }
+        if (!this.isEnabled()) return Promise.resolve();
 
-        let UserRecord = [];
-        let streamID = streamData ? streamData.data ? streamData.data.length > 0 ? streamData.data[0].id : null : null : null;
+        const CHECKS = [async (msgObj) => this.Check_Symbols_Caps(msgObj), async (msgObj) => this.Check_Symbols_Patterns(msgObj), async (msgObj) => this.Check_Symbols_Emotes(msgObj), async (msgObj) => this.Check_Message_Length(msgObj)];
 
-        try {
-            UserRecord = await this.getUserRecord(msgObj.getUserID(), streamID);
-        } catch (err) {
-            console.log(err);
-        }
-
-        let min_penalty = PUNISHMENT.WARNING;
-        let punishment_length = undefined;
-
-        if (UserRecord.length >= 2 && UserRecord.length < 5) {
-            min_penalty = PUNISHMENT.DELETE;
-        } else if (UserRecord.length >= 5 && UserRecord.length < 15) {
-            min_penalty = PUNISHMENT.TIMEOUT;
-
-            switch (UserRecord.length) {
-                case 5: punishment_length = 10;
-                    break;
-                case 6: punishment_length = 30;
-                    break;
-                case 7: punishment_length = 60;
-                    break;
-                case 8: punishment_length = 600;
-                    break;
-                case 9: punishment_length = 1800;
-                    break;
-                case 10: punishment_length = 3600;
-                    break;
-                case 11: punishment_length = 7200;
-                    break;
-                case 12: punishment_length = 18000;
-                    break;
-                case 13: punishment_length = 36000;
-                    break;
-                case 14: punishment_length = 864000;
-                    break;
+        for (let check of CHECKS) {
+            try {
+                let issue = await check(msgObj);
+                if (!issue) continue;
+                return Promise.resolve(issue);
+            } catch (err) {
+                this.Logger.error(err.message);
             }
-
-        } else if (UserRecord.length >= 15) {
-            min_penalty = PUNISHMENT.BAN;
         }
         
-        //Excessive Symbols
-        if (this.Settings.ExcessiveSymbols.enabled == true) {
-            //Caps
-            if (this.Settings.ExcessiveSymbols.Caps.enabled == true) {
+        return Promise.resolve();
+    }
 
-                let messageString = msgObj.getMessage();
+    async Check_Symbols_Caps(msgObj) {
+        let cfg = this.Config.GetConfig();
+        if (cfg.Caps.enabled) return Promise.resolve();
 
-                if (this.Settings.ExcessiveSymbols.Caps.include_Emote_Caps == false) {
-                    try {
-                        messageString = await msgObj.getMessageWithoutEmotes(!this.Settings.ExcessiveSymbols.Caps.include_BTTV_Emotes, !this.Settings.ExcessiveSymbols.Caps.include_FFZ_Emotes);
-                    } catch (err) {
-                        console.log(err);
-                    }
-                }
+        let messageString = msgObj.getMessage();
 
-                if ((messageString.match(/[A-Z]/g) || []).length > this.Settings.ExcessiveSymbols.Caps.Caps_Limit) {
-                    try {
-                        await this.executePunishment(msgObj, this.Settings.ExcessiveSymbols.Caps.message, min_penalty, punishment_length, "Used too much CAPS! Count: " + (messageString.match(/[A-Z]/g) || []).length);
-                        return Promise.resolve(this.Issue(msgObj, min_penalty, "Used too much CAPS", (messageString.match(/[A-Z]/g) || []).length, punishment_length));
-                    } catch (err) {
-                        this.Logger.error(err.message ? err.message : err);
-                    }
-                }
-            }
-
-            //Emotes
-            if (this.Settings.ExcessiveSymbols.Emotes.enabled == true) {
-                let emoteCount = 0;
-
-                //TTV Emotes
-                if (this.Settings.ExcessiveSymbols.Emotes.include_TTV_Emotes == true) {
-                    let emotes = msgObj.getEmotesSync();
-
-                    let TTVEmotes = 0;
-
-                    for (let emote in emotes) {
-                        TTVEmotes += emotes[emote].length;
-                    }
-
-                    if (TTVEmotes > this.Settings.ExcessiveSymbols.Emotes.TTV_Emote_Limit) {
-                        try {
-                            await this.executePunishment(msgObj, this.Settings.ExcessiveSymbols.Emotes.message, min_penalty, punishment_length, "Used too many TTV Emotes! Count: " + TTVEmotes);
-                            return Promise.resolve(this.Issue(msgObj, min_penalty, "Used too many TTV Emotes", TTVEmotes, punishment_length));
-                        } catch (err) {
-                            this.Logger.error(err.message ? err.message : err);
-                        }
-                    }
-
-                    emoteCount += TTVEmotes;
-                }
-
-                //BTTV Emotes
-                if (this.Settings.ExcessiveSymbols.Emotes.include_BTTV_Emotes == true) {
-                    try {
-                        let emotes = await msgObj.getBTTVEmotes();
-                        let BTTVEmotes = 0;
-
-                        for (let emote in emotes) {
-                            BTTVEmotes += emotes[emote].length;
-                        }
-
-                        if (BTTVEmotes > this.Settings.ExcessiveSymbols.Emotes.BTTV_Emote_Limit) {
-                            try {
-                                await this.executePunishment(msgObj, this.Settings.ExcessiveSymbols.Emotes.message, min_penalty, punishment_length, "Used too many BTTV Emotes! Count: " + BTTVEmotes);
-                                return Promise.resolve(this.Issue(msgObj, min_penalty, "Used too many BTTV Emotes", BTTVEmotes, punishment_length));
-                            } catch (err) {
-                                this.Logger.error(err.message ? err.message : err);
-                            }
-                        }
-
-                        emoteCount += BTTVEmotes;
-                    } catch (err) {
-                        console.log(err);
-                    }
-                }
-
-                //FFZ Emotes
-                if (this.Settings.ExcessiveSymbols.Emotes.include_FFZ_Emotes == true) {
-                    try {
-                        let emotes = await msgObj.getFFZEmotes();
-                        let FFZEmotes = 0;
-
-                        for (let emote in emotes) {
-                            FFZEmotes += emotes[emote].length;
-                        }
-
-                        if (FFZEmotes > this.Settings.ExcessiveSymbols.Emotes.FFZ_Emote_Limit) {
-                            try {
-                                await this.executePunishment(msgObj, this.Settings.ExcessiveSymbols.Emotes.message, min_penalty, punishment_length, "Used too many FFZ Emotes! Count: " + FFZEmotes);
-                                return Promise.resolve(this.Issue(msgObj, min_penalty, "Used too many FFZ Emotes", FFZEmotes, punishment_length));
-                            } catch (err) {
-                                this.Logger.error(err.message ? err.message : err);
-                            }
-                        }
-
-                        emoteCount += FFZEmotes;
-                    } catch (err) {
-                        console.log(err);
-                    }
-                }
-
-                //Global Emote Limit
-                if (emoteCount > this.Settings.ExcessiveSymbols.Emotes.global_Emote_Limit) {
-                    try {
-                        await this.executePunishment(msgObj, this.Settings.ExcessiveSymbols.Emotes.message, min_penalty, punishment_length, "Used too many Emotes! Count: " + emoteCount);
-                        return Promise.resolve(this.Issue(msgObj, min_penalty, "Used too many Emotes", emoteCount, punishment_length));
-                    } catch (err) {
-                        this.Logger.error(err.message ? err.message : err);
-                    }
-                }
+        if (cfg.Caps.include_TTV_Emotes == false || cfg.Caps.include_BTTV_Emotes == false || cfg.Caps.include_FFZ_Emotes == false) {
+            try {
+                messageString = await msgObj.getMessageWithoutEmotes(cfg.Caps.include_BTTV_Emotes, cfg.Caps.include_FFZ_Emotes, cfg.Caps.include_TTV_Emotes);
+            } catch (err) {
+                this.Logger.error(err.message ? err.message : err);
             }
         }
 
-        //Messages
-        if (this.Settings.Messages.enabled == true) {
-            if (this.Settings.Messages.max_message_length > 0) {
-                let messageLen = 0;
+        let count = (messageString.match(/[A-Z]/g) || []).length;
 
-                if (this.Settings.Messages.include_Emote_Name_length == true) {
-                    messageLen = msgObj.getMessage().length;
-                } else {
-                    try {
-                        messageLen = await msgObj.getMessageWithoutEmotes(!this.Settings.Messages.include_BTTV_Emotes, !this.Settings.Messages.include_FFZ_Emotes).length;
-                    } catch (err) {
-                        console.log(err);
-                    }
-                }
+        if (count > cfg.Caps.Caps_Limit || count > cfg['Caps.Caps_Limit_%'] * messageString.length) {
+            return Promise.resolve({ msgObj, message: cfg.Caps.message, punishment: PUNISHMENT.DELETE, reason: "Used too much CAPS", exact_reason: count });
+        }
 
-                if (this.Settings.Messages.max_message_length < messageLen) {
-                    try {
-                        await this.executePunishment(msgObj, this.Settings.Messages.message, min_penalty, punishment_length);
-                        return Promise.resolve(this.Issue(msgObj, "WARNING", "Message too long", messageLen));
-                    } catch (err) {
-                        this.Logger.error(err.message ? err.message : err);
-                    }
-                }
+        return Promise.resolve();
+    }
+    async Check_Symbols_Patterns(msgObj) {
+        let cfg = this.Config.GetConfig();
+        if (cfg.Patterns.enabled) return Promise.resolve();
+
+        return Promise.resolve();
+    }
+    async Check_Symbols_Emotes(msgObj) {
+        let cfg = this.Config.GetConfig();
+        if (cfg.Emotes.enabled) return Promise.resolve();
+
+        let emoteCount = 0;
+
+        //TTV Emotes
+        if (cfg.Emotes.include_TTV_Emotes == true) {
+            let emotes = msgObj.getEmotesSync();
+
+            let TTVEmotes = 0;
+
+            for (let emote in emotes) {
+                TTVEmotes += emotes[emote].length;
             }
+
+            if (TTVEmotes > cfg.Emotes.TTV_Emote_Limit) {
+                return Promise.resolve({ msgObj, message: cfg.Emotes.message, punishment: PUNISHMENT.DELETE, reason: "Used too many TTV Emotes", exact_reason: TTVEmotes });
+            }
+
+            emoteCount += TTVEmotes;
+        }
+
+        //BTTV Emotes
+        if (cfg.Emotes.include_BTTV_Emotes == true) {
+            try {
+                let emotes = await msgObj.getBTTVEmotes();
+                let BTTVEmotes = 0;
+
+                for (let emote in emotes) {
+                    BTTVEmotes += emotes[emote].length;
+                }
+
+                if (BTTVEmotes > cfg.Emotes.BTTV_Emote_Limit) {
+                    return Promise.resolve({ msgObj, message: cfg.Emotes.message, punishment: PUNISHMENT.DELETE, reason: "Used too many BTTV Emotes", exact_reason: BTTVEmotes });
+                }
+
+                emoteCount += BTTVEmotes;
+            } catch (err) {
+                this.Logger.error(err.message ? err.message : err);
+            }
+        }
+
+        //FFZ Emotes
+        if (cfg.Emotes.include_FFZ_Emotes == true) {
+            try {
+                let emotes = await msgObj.getFFZEmotes();
+                let FFZEmotes = 0;
+
+                for (let emote in emotes) {
+                    FFZEmotes += emotes[emote].length;
+                }
+
+                if (FFZEmotes > cfg.Emotes.FFZ_Emote_Limit) {
+                    return Promise.resolve({ msgObj, message: cfg.Emotes.message, punishment: PUNISHMENT.DELETE, reason: "Used too many FFZ Emotes", exact_reason: FFZEmotes });
+                }
+
+                emoteCount += FFZEmotes;
+            } catch (err) {
+                this.Logger.error(err.message ? err.message : err);
+            }
+        }
+
+        //Global Emote Limit
+        if (emoteCount > cfg.Emotes.global_Emote_Limit) {
+            return Promise.resolve({ msgObj, message: cfg.Emotes.message, punishment: PUNISHMENT.DELETE, reason: "Used too many Emotes", exact_reason: emoteCount });
+        }
+
+
+        return Promise.resolve();
+    }
+
+    async Check_Message_Length(msgObj) {
+        let cfg = this.Config.GetConfig();
+        if (cfg.Messages.enabled && cfg.Messages.max_message_length < 0) return Promise.resolve();
+
+        let messageLen = 0;
+
+        if (cfg.Messages.include_TTV_Emotes == false || cfg.Messages.include_BTTV_Emotes == false || cfg.Messages.include_FFZ_Emotes == false ) {
+            try {
+                messageLen = (await msgObj.getMessageWithoutEmotes(!cfg.Messages.include_BTTV_Emotes, !cfg.Messages.include_FFZ_Emotes, !cfg.Messages.include_TTV_Emotes)).length;
+            } catch (err) {
+                this.Logger.error(err.message ? err.message : err);
+            }
+        } else {
+            messageLen = msgObj.getMessage().length;
+        }
+        
+        if (cfg.Messages.max_message_length < messageLen) {
+            return Promise.resolve({ msgObj, message: cfg.Messages.message, punishment: PUNISHMENT.DELETE, reason: "Message too long", exact_reason: messageLen });
         }
 
         return Promise.resolve();
@@ -1090,210 +883,185 @@ class SpamFilter extends Filter {
 //Link Filter
 class LinkFilter extends Filter {
     constructor(ChatModeration, TwitchIRC, TwitchAPI, Logger) {
-        let settings = {
-            File_Dir: CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + "ChatModeration/Link Filter/",
-            Blacklist_File: "Blacklist.db",
-            Whitelist_File: "Whitelist.db",
-            selectionBlock: true,
-            domain_block_message: "{user} - This Domain has been blocked!",
-            subdomain_block_message: "{user} - This Sub-Domain has been blocked!",
-            url_block_message: "{user} - This URL has been blocked!",
-            all_block_message: "{user} - Links are NOT allowed!"
-        };
+        super("Link Filter", ChatModeration, TwitchIRC, TwitchAPI, Logger);
 
-        super(ChatModeration, "Link Filter", TwitchIRC, TwitchAPI, settings, Logger);
-        
-        let state = this.CheckSetupAndEnviroument();
+        //Config
+        this.Config.AddSettingTemplates([
+            { name: 'block_all', type: 'boolean', default: true },
+            { name: 'domain_block_message', type: 'string', default: "{user} - This Domain has been blocked!" },
+            { name: 'subdomain_block_message', type: 'string', default: "{user} - This Sub-Domain has been blocked!" },
+            { name: 'url_block_message', type: 'string', default: "{user} - This URL has been blocked!" },
+            { name: 'all_block_message', type: 'string', default: "{user} - Links are NOT allowed!" }
+        ]);
+        this.Config.Load();
+        this.Config.FillConfig();
 
-        if (typeof state == "string") {
-            if (this.Logger != null)
-                this.Logger.error("Link Filter: " + state);
-            else
-                console.error(state);
-            this.Settings.enabled = false;
-        } else {
-            this.reload();
-        }
+        //Ready
+        this.addReadyRequirement(() => {
+            let cfg = this.Config.GetConfig();
+
+            if (!fs.existsSync(PATH.resolve(cfg['File_Dir']))) {
+                try {
+                    fs.mkdirSync(PATH.resolve(cfg['File_Dir']));
+                } catch (err) {
+                    this.Logger.error("Corrupted Installation: Word Filter Folder couldnt be created!");
+                    return false;
+                }
+            }
+
+            if (!this.Blacklist) return false;
+
+            return true;
+        });
     }
 
     //SETUP
-    CheckSetupAndEnviroument() {
-        //Settings
-        if (this.Settings == undefined) {
-            return "Corrupted Installation: Settings corrupted!";
-        }
+    async Init() {
+        let cfg = this.Config.GetConfig();
 
-        if (typeof this.Settings.File_Dir != "string") {
-            return "Corrupted Installation: File_Dir corrupted!";
-        }
-
-        //Settings Values
-        if (!fs.existsSync(PATH.resolve(this.Settings.File_Dir))) {
+        if (!fs.existsSync(PATH.resolve(cfg['File_Dir']))) {
             try {
-                fs.mkdirSync(PATH.resolve(this.Settings.File_Dir));
+                fs.mkdirSync(PATH.resolve(cfg['File_Dir']));
             } catch (err) {
-                return "Corrupted Installation: Word Filter Folder couldnt be created!";
+                this.Logger.warn("Corrupted Installation: Link Filter Folder couldnt be created!");
+                this.disable();
             }
         }
 
-        return true;
+        return this.reload();
     }
-    GetPublicSettings() {
-        return {
-            "Selection Block Mode": this.Settings.selectionBlock
-        };
-    }
-
     async reload() {
+        let cfg = this.Config.GetConfig();
+
         if (!this.Blacklist)
-            this.Blacklist = new Datastore({ filename: PATH.resolve(this.Settings.File_Dir + this.Settings.Blacklist_File) });
+            this.Blacklist = new Datastore({ filename: PATH.resolve(cfg.File_Dir + 'Blacklist.db'), autoload: true  });
         
         if (!this.Whitelist)
-            this.Whitelist = new Datastore({ filename: PATH.resolve(this.Settings.File_Dir + this.Settings.Whitelist_File) });
+            this.Whitelist = new Datastore({ filename: PATH.resolve(cfg.File_Dir + 'Whitelist.db'), autoload: true  });
 
-        return new Promise(async (masterresolve, masterreject) => {
-            let errors = null;
-
-            //Blacklist
-            try {
-                await new Promise(async (resolve, reject) => {
-                    if (this.Blacklist) {
-                        this.Blacklist.loadDatabase(err => { if (err) return reject(new Error("Blacklist Loading Error!")); return resolve(); });
-                    }
-
-                    return resolve();
-                });
-            } catch (err) {
-                errors = err;
-            }
-
-            //Whitelist
-            try {
-                await new Promise(async (resolve, reject) => {
-                    if (this.Whitelist) {
-                        this.Whitelist.loadDatabase(err => { if (err) return reject(new Error("Whitelist Loading Error!")); return resolve(); });
-                    }
-                });
-            } catch (err) {
-                errors = err;
-            }
-            
-            if (errors !== null) return masterreject(errors);
-
-            return masterresolve();
-        });
+        return Promise.resolve();
     }
 
-    //Filter
-    async CheckMessage(msgObj) {
-        if (!this.isEnabled()) {
-            return Promise.resolve();
+    async GetSettings() {
+        let cfg = this.Config.GetConfig();
+
+        let data = {
+            enabled: this.isEnabled(),
+            ready: this.isReady(),
+            block_all: cfg.block_all,
+            all_block_message: cfg.all_block_message,
+            url_block_message: cfg.url_block_message,
+            subdomain_block_message: cfg.subdomain_block_message,
+            domain_block_message: cfg.domain_block_message
+        };
+
+        try {
+            data['Blacklist'] = await this.CheckOneDBSearch(this.Blacklist, {});
+            data['Whitelist'] = await this.CheckOneDBSearch(this.Whitelist, {});
+        } catch (err) {
+
         }
 
-        for (let URL of this.findLinks(msgObj.getMessage().toLowerCase())) {
-            if (this.Settings.selectionBlock) {
-                //selectionBlock -> Only Block on Blacklist
-                //Domain ist Blocked?
-                try {
-                    if (await this.CheckOneDBSearch(this.Blacklist, { domain: this.getDomain(URL) })) {
-                        try {
-                            await this.executePunishment(msgObj, this.Settings.domain_block_message, PUNISHMENT.DELETE);
-                            return Promise.resolve(this.Issue(msgObj, PUNISHMENT.DELETE, "Domain on the Blacklist!", this.getDomain(URL)));
-                        } catch (err) {
-                            this.Logger.error(err.message ? err.message : err);
-                        }
-                        return Promise.resolve(this.Issue(msgObj, "DELETE", "Domain on the Blacklist!", this.getDomain(URL)));
-                    }
-                } catch (err) {
-                    this.Logger.error(err.message);
-                    console.log(err);
-                }
+        return Promise.resolve(data);
+    }
+    async ChangeSetting(req, res) {
+        const action = req.body['action'];
 
-                //SubDomain Blocked
-                try {
-                    if (await this.CheckOneDBSearch(this.Blacklist, { subdomain: this.getSubDomain(URL) })) {
-                        try {
-                            await this.executePunishment(msgObj, this.Settings.subdomain_block_message, PUNISHMENT.DELETE);
-                            return Promise.resolve(this.Issue(msgObj, "DELETE", "SubDomain on the Blacklist!", this.getSubDomain(URL)));
-                        } catch (err) {
-                            this.Logger.error(err.message ? err.message : err);
-                        }
-                    }
-                } catch (err) {
-                    this.Logger.error(err.message);
-                    console.log(err);
-                }
-
-                //URL Blocked
-                try {
-                    if (await this.CheckOneDBSearch(this.Blacklist, { URL: URL })) {
-                        try {
-                            await this.executePunishment(msgObj, this.Settings.url_block_message, PUNISHMENT.DELETE);
-                            return Promise.resolve(this.Issue(msgObj, "DELETE", "URL on the Blacklist!", URL));
-                        } catch (err) {
-                            this.Logger.error(err.message ? err.message : err);
-                        }
-                    }
-                } catch (err) {
-                    this.Logger.error(err.message);
-                    console.log(err);
-                }
+        try {
+            if (action === 'block') {
+                await this.blockURL(req.body['url_data'], (res.locals.user || {}).preferred_username);
+            } else if (action === 'unblock') {
+                await this.unblockURL(req.body['url_data']);
+            } else if (action === 'clear_blocks') {
+                await this.clearBlacklist();
+            } else if (action === 'allow') {
+                await this.allowURL(req.body['url_data'], (res.locals.user || {}).preferred_username);
+            } else if (action === 'unallow') {
+                await this.unallowURL(req.body['url_data']);
+            } else if (action === 'clear_allows') {
+                await this.clearWhitelist();
+            } else if (action === 'block_all') {
+                this.Config.UpdateSetting('block_all', req.body['value']);
+            } else if (action === 'enable') {
+                if (req.body['value'] === true) this.enable();
+                else if (req.body['value'] === false) this.disable();
+            } else if (action === 'gobal_message') {
+                this.Config.UpdateSetting('all_block_message', req.body['value']);
+            } else if (action === 'url_block_message') {
+                this.Config.UpdateSetting('url_block_message', req.body['value']);
+            } else if (action === 'subdomain_block_message') {
+                this.Config.UpdateSetting('subdomain_block_message', req.body['value']);
+            } else if (action === 'domain_block_message') {
+                this.Config.UpdateSetting('domain_block_message', req.body['value']);
             } else {
-                //NON selectionBlock -> Block ALL, unless on Whitelist
-                //Domain ist Allowed?
-                try {
-                    if (await this.CheckOneDBSearch(this.Whitelist, { domain: this.getDomain(URL) })) {
-                        return Promise.resolve();
-                    }
-                } catch (err) {
-                    this.Logger.error(err.message);
-                    console.log(err);
-                }
-
-                //SubDomain Allowed
-                try {
-                    if (await this.CheckOneDBSearch(this.Whitelist, { subdomain: this.getSubDomain(URL) })) {
-                        return Promise.resolve();
-                    }
-                } catch (err) {
-                    this.Logger.error(err.message);
-                    console.log(err);
-                }
-
-                //URL Allowed
-                try {
-                    if (await this.CheckOneDBSearch(this.Whitelist, { URL: URL })) {
-                        return Promise.resolve();
-                    }
-                } catch (err) {
-                    this.Logger.error(err.message);
-                    console.log(err);
-                }
-
-                try {
-                    await this.executePunishment(msgObj, this.Settings.url_block_message, PUNISHMENT.DELETE);
-                    return Promise.resolve(this.Issue(msgObj, "DELETE", "Link is not allowed!", URL));
-                } catch (err) {
-                    this.Logger.error(err.message ? err.message : err);
-                }
+                return Promise.reject(new Error('Action not found.'));
             }
+        } catch (err) {
+            return Promise.reject(err);
         }
         return Promise.resolve();
     }
-    async CheckOneDBSearch(db, querry) {
-        return new Promise((resolve, reject) => {
-            db.find(querry, (err, docs) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    if (docs.length > 0) {
-                        resolve(true);
-                    } else {
-                        resolve(false);
-                    }
+
+    //Filter
+    async CheckMessage(msgObj, streamData) {
+        if (!this.isEnabled()) return Promise.resolve();
+        let cfg = this.Config.GetConfig();
+
+        let LINKS = this.findLinks(msgObj.getMessage().toLowerCase());
+        if (LINKS.length === 0) return Promise.resolve();
+
+        //Whitelist
+        let Whitelist = [];
+
+        try {
+            Whitelist = await this.CheckOneDBSearch(this.Whitelist, {});
+        } catch (err) {
+            this.Logger.error(err.message);
+        }
+
+        for (let link of LINKS) {
+            let found = Whitelist.find(elt => elt.domain === link.domain || elt.subdomain === link.subdomain || elt.url === link.url);
+            if (found) return Promise.resolve();
+        }
+
+        //Block All Links not Whitelisted
+        if (cfg.block_all == true) return Promise.resolve({ msgObj, message: cfg.all_block_message, punishment: PUNISHMENT.DELETE, reason: "Links are forbidden!", exact_reason: '' });
+
+        //Block only Blacklisted Links
+        let Blacklist = [];
+
+        try {
+            Blacklist = await this.CheckOneDBSearch(this.Blacklist, {});
+        } catch (err) {
+            this.Logger.error(err.message);
+        }
+
+        for (let link of LINKS) {
+            let reason = "";
+            let message = "";
+            let found = Blacklist.find(elt => {
+                if (elt.domain === link.domain) {
+                    reason = "Domain";
+                    message = cfg.domain_block_message;
+                    return true;
+                } else if (elt.domain === link.subdomain) {
+                    reason = "SubDomain";
+                    message = cfg.subdomain_block_message;
+                    return true;
+                } else if (elt.url === link.url) {
+                    reason = "URL";
+                    message = cfg.url_block_message;
+                    return true;
                 }
             });
-        });
+            if (found) {
+                return Promise.resolve({ msgObj, message: message, punishment: PUNISHMENT.DELETE, reason: reason + " is on the Blacklist!", exact_reason: link.url });
+            }
+        }
+
+
+        //All Links cool
+        return Promise.resolve();
     }
     
     findLinks(messageString) {
@@ -1313,7 +1081,12 @@ class LinkFilter extends Filter {
                 if (maybe.substring(0, 4) == "www.") {
                     cutted = maybe.substring(4);
                 }
-                links.push(cutted);
+
+                links.push({
+                    subdomain: this.getSubDomain(cutted),
+                    domain: this.getDomain(cutted),
+                    url: cutted
+                });
             }
         }
 
@@ -1339,40 +1112,85 @@ class LinkFilter extends Filter {
         }
     }
     getSubDomain(URL) {
-        return URL.split("/")[0];
+        return URL.split("/")[0].split("?")[0].split("#")[0];
     }
 
-    blockDomain(domain) {
-        domain = domain.toLowerCase();
-        this.Blacklist.update({ domain: domain }, { domain: domain }, { upsert: true });
-        this.Whitelist.remove({ domain: domain });
+    async blockURL(url_data = {}, by = "Unknown", at = Date.now()) {
+        let query = { $or: [url_data['domain'], url_data['subdomain'], url_data['url']] };
+
+        try {
+            let urls = await this.CheckOneDBSearch(this.Blacklist, query);
+            if (urls.length > 0) return Promise.reject(new Error('URL already on the Blacklist!'));
+        } catch (err) {
+            return Promise.reject(err);
+        }
+
+        url_data['added_by'] = by;
+        url_data['added_at'] = at;
+
+        return new Promise((resolve, reject) => {
+            this.Blacklist.insert(url_data, function (err, newDocs) {
+                if (err) return reject(new Error(err));
+                else return resolve();
+            });
+        });
     }
-    permitDomain(domain) {
-        domain = domain.toLowerCase();
-        this.Blacklist.remove({ domain: domain });
-        this.Whitelist.update({ domain: domain }, { domain: domain }, { upsert: true });
+    async unblockURL(url_data = {}) {
+        let query = { $or: [{ domain: url_data['domain'] }, { subdomain: url_data['subdomain'] }, { url: url_data['url'] }] };
+
+        return new Promise((resolve, reject) => {
+            this.Blacklist.remove(query, {}, function (err, numRemoved) {
+                if (err) return reject(new Error(err));
+                else return resolve();
+            });
+        });
+    }
+    async clearBlacklist() {
+        return new Promise((resolve, reject) => {
+            this.Blacklist.remove({}, { multi: true }, function (err, numRemoved) {
+                if (err) return reject(new Error(err));
+                else return resolve();
+            });
+        });
     }
 
-    blockSubDomain(subdomain) {
-        subdomain = subdomain.toLowerCase();
-        this.Blacklist.update({ subdomain: subdomain }, { subdomain: subdomain }, { upsert: true });
-        this.Whitelist.remove({ subdomain: subdomain });
-    }
-    permitSubDomain(subdomain) {
-        subdomain = subdomain.toLowerCase();
-        this.Blacklist.remove({ subdomain: subdomain });
-        this.Whitelist.update({ subdomain: subdomain }, { subdomain: subdomain }, { upsert: true });
-    }
+    async allowURL(url_data = {}, by = "Unknown", at = Date.now()) {
+        let query = { $or: [url_data['domain'], url_data['subdomain'], url_data['url']] };
 
-    blockURL(URL) {
-        URL = URL.toLowerCase();
-        this.Blacklist.update({ URL: URL }, { URL: URL }, { upsert: true });
-        this.Whitelist.remove({ URL: URL });
+        try {
+            let urls = await this.CheckOneDBSearch(this.Whitelist, query);
+            if (urls.length > 0) return Promise.reject(new Error('URL already on the Whitelist!'));
+        } catch (err) {
+            return Promise.reject(err);
+        }
+
+        url_data['added_by'] = by;
+        url_data['added_at'] = at;
+
+        return new Promise((resolve, reject) => {
+            this.Whitelist.insert(url_data, function (err, newDocs) {
+                if (err) return reject(new Error(err));
+                else return resolve();
+            });
+        });
     }
-    permitURL(URL) {
-        URL = URL.toLowerCase();
-        this.Blacklist.remove({ URL: URL });
-        this.Whitelist.update({ URL: URL }, { URL: URL }, { upsert: true });
+    async unallowURL(url_data = {}) {
+        let query = { $or: [{ domain: url_data['domain'] }, { subdomain: url_data['subdomain'] }, { url: url_data['url'] }] };
+
+        return new Promise((resolve, reject) => {
+            this.Whitelist.remove(query, {}, function (err, numRemoved) {
+                if (err) return reject(new Error(err));
+                else return resolve();
+            });
+        });
+    }
+    async clearWhitelist() {
+        return new Promise((resolve, reject) => {
+            this.Whitelist.remove({}, { multi: true }, function (err, numRemoved) {
+                if (err) return reject(new Error(err));
+                else return resolve();
+            });
+        });
     }
 }
 

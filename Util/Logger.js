@@ -2,7 +2,6 @@ let colors = require('colors');
 const Datastore = require('nedb');
 const path = require('path');
 const fs = require('fs');
-const CONSTANTS = require('./CONSTANTS.js');
 
 class Logger {
     constructor(settings = {}) {
@@ -70,15 +69,13 @@ class Logger {
     }
 
     //CONSOLE - OUTPUT
-
-    //Types
-    info(message, source = "LOGGER") {
+    info(message = "", source = "LOGGER") {
         this.println(message, "INFO", source);
     }
-    warn(message, source = "LOGGER") {
+    warn(message = "", source = "LOGGER") {
         this.println(message, "WARN", source);
     }
-    error(message, source = "LOGGER") {
+    error(message = "", source = "LOGGER") {
         this.println(message.split('\n')[0], "ERROR", source);
     }
     async input(message, source = "LOGGER", onInput = async (line) => Promise.resolve()) {

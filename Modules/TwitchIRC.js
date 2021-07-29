@@ -1,48 +1,268 @@
+const CONSTANTS = require('./../Util/CONSTANTS.js');
+const BTTV = require('./../3rdParty/BTTV.js');
+const FFZ = require('./../3rdParty/FFZ.js');
+
 const tmi = require('tmi.js');
-const CONSTANTS = require('./Util/CONSTANTS.js');
-const CONFIGHANDLER = require('./ConfigHandler.js');
+const fs = require('fs');
+const path = require('path');
+const Datastore = require('nedb');
 
-const BTTV = require('./3rdParty/BTTV.js');
-const FFZ = require('./3rdParty/FFZ.js');
+const MODULE_DETAILS = {
+    name: 'TwitchIRC',
+    description: 'Interface to the Twitch Chat.',
+    picture: '/images/icons/twitch_colored_alt.png'
+};
 
-class TwitchIRC {
+class TwitchIRC extends require('./../Util/ModuleBase.js'){
     constructor(configJSON, logger) {
-        this.Config = new CONFIGHANDLER.Config('TwitchIRC', [
-            { name: 'login', type: 'string', minlength: 1, group: 0 },
-            { name: 'oauth', type: 'string', minlength: 1, private: true, group: 0 },
-            { name: 'channel', type: 'string', minlength: 1, group: 1, requiered: true },
-            { name: 'support_BTTV', type: 'boolean', default: true, group: 2 },
-            { name: 'support_FFZ', type: 'boolean', default: true, group: 2 }
-        ], { groups: [{ name: 'User Login' }, { name: 'Channel' }, { name: 'Emotes and Misc' }], preloaded: configJSON });
-
-        //LOGGER
         if (logger && logger.identify && logger.identify() === "FrikyBotLogger") {
             logger.addSources({
                 TwitchIRC: {
-                    display: () => " TwitchIRC ".inverse.brightMagenta
+                    display: () => (" TwitchIRC ").inverse.brightMagenta
                 }
             });
-            this.setLogger(logger.TwitchIRC);
-        } else {
-            this.setLogger(logger);
         }
+
+        super(MODULE_DETAILS, configJSON, logger.TwitchIRC);
+        
+        this.Config.AddSettingTemplates([
+            { name: 'login', type: 'string', group: 0 },
+            { name: 'oauth', type: 'string', private: true, group: 0 },
+            { name: 'channel', type: 'string', minlength: 1, group: 1, requiered: true },
+            { name: 'support_BTTV', type: 'boolean', default: true, group: 2 },
+            { name: 'support_FFZ', type: 'boolean', default: true, group: 2 },
+            { name: 'console_print_join_message', type: 'boolean', default: true },
+            { name: 'console_print_message', type: 'boolean', default: true },
+            { name: 'console_print_connection', type: 'boolean', default: true },
+            { name: 'Log_Dir', type: 'string', default: 'Logs/' + MODULE_DETAILS.name + '/' }
+        ]);
+        this.Config.options = {
+            groups: [{ name: 'User Login' }, { name: 'Channel' }, { name: 'Emotes and Misc' }]
+        };
+        this.Config.Load();
+        this.Config.FillConfig();
+
+        //Ready
+        this.addReadyRequirement(() => {
+            if (!this.Config.GetConfig()['channel']) return false;
+            return true;
+        });
         
         //Connection client
         this.client = undefined;
         this.eventHandlers = [];
 
-        //Util
-        this.Enabled = true;
+        //Logs
+        this.CONNECTION_LOG;
+        this.Settings_LOG;
+
+        //STATS
+        this.STAT_MSGS_RECEIVED = 0;
+        this.STAT_MSGS_RECEIVED_PER_10 = 0;
+        
+        this.STAT_CONNECTION_TO = 0;
+        this.STAT_CONNECTION_TO_PER_10 = 0;
+
+        this.STAT_LAST_CONNECTION_TO = 0;
+        
+        this.STAT_MINUTE_TIMER = setInterval(() => {
+            this.STAT_MSGS_RECEIVED_PER_10 = 0;
+            this.STAT_CONNECTION_TO_PER_10 = 0;
+        }, 600000);
+
+        //Displayables
+        const date_options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        this.addDisplayables([
+            { name: 'Chat Connection', value: () => { this.readyState() || 'CLOSED' } },
+            { name: 'Total Chat Messages Received', value: () => { this.STAT_MSGS_RECEIVED } },
+            { name: 'Chat Messages Received Per 10 Min', value: () => { this.STAT_MSGS_RECEIVED_PER_10 } },
+            { name: 'Total Connection Timeouts', value: () => { this.STAT_CONNECTION_TO } },
+            { name: 'Connection Timeouts Per 10 Min', value: () => { this.STAT_CONNECTION_TO_PER_10 } },
+            { name: 'Last Timeout at', value: () => { this.STAT_LAST_CONNECTION_TO == 0 ? 'NEVER' : (new Date(this.STAT_LAST_CONNECTION_TO)).toLocaleDateString('de-DE', date_options) } }
+        ]);
     }
 
     async Init(WebInter) {
+        //Setup API
+        //Settings
+        WebInter.addAuthAPIEndpoint('/settings/twitchirc/user', { user_level: 'staff' }, 'POST', async (req, res) => {
+            if (!this.isEnabled()) return res.status(503).json({ err: 'Twitch IRC is disabled' });
+
+            //Change Setting and Reconnect
+            try {
+                await this.ChangeUser(req.body.login, req.body.oauth);
+            } catch (err) {
+                return res.json({ err: 'User change failed' });
+            }
+
+            //Logging
+            if (this.Settings_LOG) {
+                this.Settings_LOG.insert({
+                    endpoint: '/api/settings/twitchirc/user',
+                    method: 'POST',
+                    body: req.body,
+                    time: Date.now()
+                });
+            }
+
+            return res.json({ msg: 'User successfully changed' });
+        });
+        WebInter.addAuthAPIEndpoint('/settings/twitchirc/channel', { user_level: 'staff' }, 'POST', async (req, res) => {
+            if (!this.isEnabled()) return res.status(503).json({ err: 'Twitch IRC is disabled' });
+
+            //Change Setting and Reconnect
+            try {
+                await this.ChangeChannel(req.body.channel);
+            } catch (err) {
+                console.log(err);
+                return res.json({ err: 'Channel change failed' });
+            }
+
+            //Logging
+            if (this.Settings_LOG) {
+                this.Settings_LOG.insert({
+                    endpoint: '/api/settings/twitchirc/channel',
+                    method: 'POST',
+                    body: req.body,
+                    time: Date.now()
+                });
+            }
+
+            return res.json({ msg: 'Channel successfully changed' });
+        });
+        WebInter.addAuthAPIEndpoint('/settings/twitchirc/misc', { user_level: 'staff' }, 'POST', async (req, res) => {
+            if (!this.isEnabled()) return res.status(503).json({ err: 'Twitch IRC is disabled' });
+
+            let data = {};
+
+            for (let setting in req.body) {
+                if (this.Config.GetConfig()[setting] === undefined) return res.json({ err: 'Setting not found' });
+                let error = this.Config.UpdateSetting(setting, req.body[setting]);
+
+                data[setting] = error === true ? req.body[setting] : error;
+            }
+
+            //Logging
+            if (this.Settings_LOG) {
+                this.Settings_LOG.insert({
+                    endpoint: '/api/settings/twitchirc/misc',
+                    method: 'POST',
+                    body: req.body,
+                    time: Date.now()
+                });
+            }
+
+            return res.json({ data });
+        });
+
+        //Util
+        WebInter.addAuthAPIEndpoint('/twitchirc/test', { user_level: 'staff' }, 'GET', async (req, res) => {
+            if (!this.isEnabled()) return res.status(503).json({ err: 'Twitch IRC is disabled' });
+
+            try {
+                await this.say("MrDestructoid This is a Test Message MrDestructoid");
+                return res.json({ msg: "200" });
+            } catch (err) {
+                return res.json({ err: err.message });
+            }
+        });
+        WebInter.addAuthAPIEndpoint('/twitchirc/disconnect', { user_level: 'staff' }, 'GET', async (req, res) => {
+            if (!this.isEnabled()) return res.status(503).json({ err: 'Twitch IRC is disabled' });
+
+            try {
+                await this.Disconnect();
+                return res.json({ msg: "200" });
+            } catch (err) {
+                return res.json({ err: err.message });
+            }
+        });
+        WebInter.addAuthAPIEndpoint('/twitchirc/connect', { user_level: 'staff' }, 'GET', async (req, res) => {
+            if (!this.isEnabled()) return res.status(503).json({ err: 'Twitch IRC is disabled' });
+
+            try {
+                if (this.readyState() === 'OPEN') await this.Disconnect();
+                await this.Connect();
+                return res.json({ msg: "200" });
+            } catch (err) {
+                return res.json({ err: err.message });
+            }
+        });
+
         //Check Config
         if (this.Config.check().length > 0) {
-            this.Enabled = false;
+            this.setEnabled(false);
             this.Logger.error('Twitch IRC disabled: Config Errors!');
         }
 
-        if (this.Enabled !== true) return Promise.reject(new Error('TwitchIRC is disabled.'));
+        //File Structure Check
+        let cfg = this.Config.GetConfig();
+        const DIRS = [cfg.Log_Dir];
+        for (let dir of DIRS) {
+            if (!fs.existsSync(path.resolve(dir))) {
+                try {
+                    fs.mkdirSync(path.resolve(dir));
+                } catch (err) {
+                    return Promise.reject(err);
+                }
+            }
+        }
+
+        if (this.isEnabled() !== true) return Promise.reject(new Error('Twitch IRC is disabled!'));
+        if (this.isReady() !== true) return Promise.reject(new Error('Twitch IRC Config not ready!'));
+
+        //Event Handlers
+        this.on('connected', (addr, port) => {
+            if (this.CONNECTION_LOG) {
+                this.CONNECTION_LOG.insert({
+                    event: 'connected',
+                    user: this.getUsername(),
+                    channel: this.getChannel(),
+                    time: Date.now()
+                });
+            }
+
+            if (this.Config.GetConfig()['console_print_connection'] !== true) return;
+            this.Logger.info(`*Connected to ${addr}:${port}`);
+        });
+        this.on('disconnected', (reason) => {
+            if (reason !== 'Connection closed.') {
+                this.STAT_CONNECTION_TO++;
+                this.STAT_CONNECTION_TO_PER_10++;
+                this.STAT_LAST_CONNECTION_TO = Date.now();
+            }
+
+            if (this.CONNECTION_LOG) {
+                this.CONNECTION_LOG.insert({
+                    event: 'disconnected',
+                    user: this.getUsername(),
+                    channel: this.getChannel(),
+                    reason: reason || 'Unknown',
+                    time: Date.now()
+                });
+            }
+
+            if (this.Config.GetConfig()['console_print_connection'] !== true) return;
+            this.Logger.error("Bot got disconnected! Reason: " + (reason ? reason : " UNKNOWN"));
+        });
+        this.on('chat', (channel, userstate, message, self) => {
+            this.STAT_MSGS_RECEIVED++;
+            this.STAT_MSGS_RECEIVED_PER_10++;
+
+            if (this.Config.GetConfig()['console_print_message'] !== true) return;
+            let msg = new Message(channel, userstate, message);
+            this.Logger.info(msg.toString());
+        });
+        this.on('join', (channel, username, self) => {
+            if (this.Config.GetConfig()['console_print_join_message'] !== true) return;
+            this.Logger.info(username + " joined!");
+        });
+        
+        //Init Logging Database
+        this.CONNECTION_LOG = new Datastore({ filename: path.resolve(cfg.Log_Dir + 'Connection_Log.db'), autoload: true });
+        this.Settings_LOG = new Datastore({ filename: path.resolve(cfg.Log_Dir + 'Settings_Logs.db'), autoload: true });
+
+        this.addLog('Connection Logs', this.CONNECTION_LOG);
+        this.addLog('Settings Changes', this.Settings_LOG);
 
         //Setup TMI.js Client and Connect
         return this.Connect();
@@ -80,15 +300,18 @@ class TwitchIRC {
 
         return true;
     }
+
     async Connect() {
         if (!this.client) this.SetupClient();
-        
+
         //Client defined?
         if (this.client) {
             return this.client.connect();
-        } else {
-            return Promise.reject(new Error("Client not defined! Client init went wrong(check settings) or client disconnected(try again)"));
         }
+    }
+    async Disconnect() {
+        if (!this.client) return Promise.resolve();
+        return this.client.disconnect();
     }
     async Part() {
         if (!this.client) return Promise.resolve();
@@ -96,15 +319,10 @@ class TwitchIRC {
         return this.client.part(this.getChannel())
             .then(resp => { this.client = null; return Promise.resolve(resp); });
     }
+    async Join() {
+        if (!this.client || !this.Config.GetConfig()['channel']) return Promise.resolve("this");
 
-    UpdateHandlers() {
-        if (!this.client) return false;
-
-        for (let eH of this.eventHandlers) {
-            this.client.on(eH.name, eH.callback);
-        }
-
-        return true;
+        return this.client.join(this.Config.GetConfig()['channel']);
     }
 
     on(name, callback) {
@@ -117,7 +335,46 @@ class TwitchIRC {
 
         return false;
     }
-    
+    UpdateHandlers() {
+        if (!this.client) return false;
+
+        for (let eH of this.eventHandlers) {
+            this.client.on(eH.name, eH.callback);
+        }
+
+        return true;
+    }
+
+    //Interface
+    async ChangeUser(login, oauth) {
+        let error = this.Config.UpdateSetting('login', login);
+        if (error !== true) return Promise.reject(new Error(error));
+
+        error = this.Config.UpdateSetting('oauth', oauth);
+        if (error !== true) return Promise.reject(new Error(error));
+
+        try {
+            await this.Disconnect();
+            this.SetupClient();
+        } catch (err) {
+            return Promise.reject(err);
+        }
+
+        return this.Connect();
+    }
+    async ChangeChannel(channel) {
+        let error = this.Config.UpdateSetting('channel', channel);
+        if (error !== true) return Promise.reject(new Error(error));
+        
+        try {
+            if (this.client) await this.Part();
+        } catch (err) {
+            return Promise.reject(err);
+        }
+
+        return this.Connect();
+    }
+
     //COMMANDS
     async say(message = "", channel = this.getChannel()) {
         if (!this.client) return Promise.reject(new Error("Client not Setup correctly!"));
@@ -221,26 +478,6 @@ class TwitchIRC {
 
         return null;
     }
-
-    //UTIL
-    isEnabled() {
-        return this.Enabled === true;
-    }
-    GetConfig(json = true) {
-        if (json) return this.Config.GetConfig();
-        return this.Config;
-    }
-    setLogger(loggerObject) {
-        if (loggerObject && loggerObject.info && loggerObject.warn && loggerObject.error) {
-            this.Logger = loggerObject;
-        } else {
-            this.Logger = {
-                info: console.log,
-                warn: console.log,
-                error: console.log
-            };
-        }
-    }
 }
 
 class Message {
@@ -317,8 +554,9 @@ class Message {
     getUserID() {
         return this.userstate["user-id"];
     }
-    getChannel() {
-        return this.channel;
+    getChannel(remove_hashtag = false) {
+        if (remove_hashtag) return this.channel.substring(1);
+        else return this.channel;
     }
     getRoomID() {
         return this.userstate["room-id"];
@@ -350,8 +588,9 @@ class Message {
     getEmotesSync() {
         return this.userstate.emotes ? this.userstate.emotes : {};
     }
-    async getEmotes(includeBTTV = false, includeFFZ = false) {
-        let Emotes = this.userstate.emotes ? JSON.parse(JSON.stringify(this.userstate.emotes)) : {};
+    async getEmotes(includeBTTV = false, includeFFZ = false, includeTTV = true) {
+        let Emotes = {};
+        if (includeTTV && this.userstate.emotes) Emotes = JSON.parse(JSON.stringify(this.userstate.emotes));
 
         if (includeBTTV) {
             try {
@@ -360,7 +599,7 @@ class Message {
                     Emotes[emote] = BTTV[emote];
                 }
             } catch (err) {
-                console.log(err);
+
             }
         }
 
@@ -371,13 +610,13 @@ class Message {
                     Emotes[emote] = FFZ[emote];
                 }
             } catch (err) {
-                console.log(err);
+
             }
         }
 
         return Promise.resolve(Emotes);
     }
-    async getMessageWithoutEmotes(keepBTTV = true, keepFFZ = true) {
+    async getMessageWithoutEmotes(keepBTTV = true, keepFFZ = true, keepTTV = false) {
         //Only Emotes -> no Messages
         if (this.isEmoteOnly())
             return Promise.resolve("");
@@ -386,7 +625,7 @@ class Message {
         let sorted_emotes = [];
 
         try {
-            let Emotes = await this.getEmotes(!keepBTTV, !keepFFZ);
+            let Emotes = await this.getEmotes(!keepBTTV, !keepFFZ, !keepTTV);
             for (let emote_id in Emotes) {
                 let emotePlaces = Emotes[emote_id];
 
@@ -461,7 +700,7 @@ class Message {
                 start += word.length + 1
             }
         } catch (err) {
-            console.log(err);
+            this.Logger.error("FFZ Fetch Error!");
         }
 
         return Promise.resolve(emotes);
@@ -488,7 +727,7 @@ class Message {
                 start += word.length + 1
             }
         } catch (err) {
-            console.log(err);
+            this.Logger.error("BTTV Fetch Error!");
         }
 
         return Promise.resolve(emotes);
@@ -536,7 +775,7 @@ class Message {
                         if (parseInt(this.userstate.badges[badge]) <= version) {
                             return true;
                         } 
-                    //Badge and Version matter - but lower Version count too
+                    //Badge and Version matter - but higher Version count too
                     } else if (strictLevel == 2) {
                         if (parseInt(this.userstate.badges[badge]) >= version) {
                             return true;

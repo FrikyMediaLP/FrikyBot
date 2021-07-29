@@ -8,8 +8,13 @@ const CHANGLOG_SETTINGS = {
     REMOVED_CSS: "color: red;",
     CHANGED_CSS: "color: #e6bf25;",
     COMMENT_CSS: "color: dimgray; font-style: italic; padding-left: 15px; font-size: 17px;",
-    WARNING_CSS: "color: red; font-style: italic; ",
-    MODULES: {
+    WARNING_CSS: "color: red; font-style: italic; "
+};
+
+const CHANGELOG_CUSTOMS = {
+    MODULE: {
+        MODULE: ["MODULE", "images/icons/hdd-regular.svg"],
+        MODULEBASE: ["MODULE BASE", "images/icons/hdd-regular.svg"],
         LOGGER: ["LOGGER", "images/icons/pen-solid.svg"],
         SERVER: ["SERVER.js", "images/icons/server-solid.svg"],
         TWITCHAPI: ["TWITCH API", "images/icons/twitch_colored.png"],
@@ -17,7 +22,7 @@ const CHANGLOG_SETTINGS = {
         WEBAPP: ["WEBAPP", "images/icons/wifi-solid.svg"],
         DATACOLLECTION: ["DATACOLLECTION", "images/icons/chart-bar.svg"]
     },
-    PACKAGES: {
+    PACKAGE: {
         PACKAGE: ["UNKOWN PACKAGE", "images/Profiles/orange_transparent.png"],
         PACKAGEBASE: ["PACKAGE BASE", "images/Profiles/orange_transparent.png"],
         COMMANDHANDLER: ["CommandHandler", "images/icons/command.svg"],
@@ -25,27 +30,23 @@ const CHANGLOG_SETTINGS = {
         DOCS: ["Docs", "images/icons/pencil-ruler-solid.svg"],
         CHATMODERATION: ["ChatModeration", "images/icons/user-secret-solid.svg"]
     },
-    "3rdParty": {
+    "ThirdParty": {
         "3rdParty": ["UNKOWN 3rdParty", "images/icons/external-link-alt-solid.svg"],
         "BTTV": ["BetterTTV", "images/icons/BTTV.png"],
         "FFZ": ["FrankerFaceZ", "images/icons/FFZ.png"]
     }
-};
+}
 
 ////////////////////////////////////
 //          CHANGELOG
 ////////////////////////////////////
 
 //API
-async function fetchChangelog(name = "") {
-    return fetch(CHANGLOG_SETTINGS.API_ENDPOINT + name)
-        .then(data => data.json())
+async function fetchChangelog(query = "") {
+    return fetch(CHANGLOG_SETTINGS.API_ENDPOINT + (query ? '?' + query : ''), getAuthHeader())
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
         .then(json => {
-            if (json.error) {
-                return Promise.reject(new Error(json.error + " - " + json.message));
-            } else {
-                return Promise.resolve(json.data);
-            }
+            return Promise.resolve(json.data);
         })
         .catch(err => {
             return Promise.reject(err);
@@ -54,27 +55,21 @@ async function fetchChangelog(name = "") {
 
 //Create
 function createChangelog(jsonData, prev = "") {
+    if (!jsonData) return "";
     let s = '<div class="CHANGELOG" id="THISONE">';
     
-    s += "<h1>" + (jsonData.title ? jsonData.title : "FRIKYBOT-CHANGELOG - " + jsonData.date);
+    s += '<h1><a href="' + ROOT + 'News/Changelog/' + jsonData.page + '">' + (jsonData.title ? jsonData.title : 'FRIKYBOT-CHANGELOG - ' + getDateString(jsonData.date)) + '</a>';
+    s += '<div ' + (jsonData.date > Date.now() ? 'scheduled' : '') + ' title="' + getFullDateString(jsonData.date) + '">' + getDateString(jsonData.date) + '</div>';
 
     let dtCount = 0;
-    for (let chapt in jsonData.chapters) {
-        dtCount += searchDetailed(jsonData.chapters[chapt]);
-    }
-
-    if (dtCount > 0) {
-        s += '<button onclick="toggleDetailed(this.parentElement.parentElement)">DETAILED (' + dtCount + ')</button>';
-    }
+    for (let chapt in jsonData.chapters) dtCount += searchDetailed(jsonData.chapters[chapt]);
+    if (dtCount > 0) s += '<button onclick="toggleDetailed(this.parentElement.parentElement)">DETAILED (' + dtCount + ')</button>';
 
     s += "</h1>";
 
     for (let chapt in jsonData.chapters) {
         s += '<h2 id="' + MakeIDFriendly(chapt) + '">' + chapt + createIDRefLink(chapt) + '</h2>';
-
-        for (let thing of jsonData.chapters[chapt]) {
-            s += createTHING(thing, chapt);
-        }
+        for (let thing of jsonData.chapters[chapt]) s += createTHING(thing, chapt);
     }
 
     return s + "</div>";
@@ -147,32 +142,20 @@ function createChangelogList(listData, prev) {
     return s + "</ul>";
 }
 function createChangelogChanges(changesData, prev) {
-    let infos = null;
-    
-    if (changesData.module_type == "PACKAGE") {
-        infos = CHANGLOG_SETTINGS.PACKAGES[changesData.packagename];
-
-        if (!infos) {
-            infos = CHANGLOG_SETTINGS.PACKAGES.PACKAGE;
-            infos[0] = changesData.packagename;
-        }
-    } else if (changesData.module_type == "ThirdParty") {
-        infos = CHANGLOG_SETTINGS["3rdParty"][changesData.packagename];
-
-        if (!infos) {
-            infos = CHANGLOG_SETTINGS["3rdParty"]["3rdParty"];
-            infos[0] = changesData.module_name;
-        }
-    } else {
-        infos = CHANGLOG_SETTINGS.MODULES[changesData.module_type];
+    let name = changesData.name;
+    let display_type = changesData.display_type;
+    let infos = CHANGELOG_CUSTOMS[display_type][name];
+    if (!infos) {
+        infos = CHANGELOG_CUSTOMS[display_type][display_type];
+        infos[0] = name;
     }
-
+    
     if (!infos) {
         return "";
     }
 
     let s = '<div class="PreChanges" id="' + MakeIDFriendly(prev + "_" + infos[0]) + '"><div class="CHANGES">';
-    s += '<div class="Header ' + (changesData.module_type == "PACKAGE" || changesData.module_type == "ThirdParty" ? changesData.packagename + " " : "" ) + changesData.module_type + '">';
+    s += '<div class="Header ' + name + " " + display_type + '">';
     s += '<div class="IMG"><img src="' + ROOT +  infos[1] + '"/></div>';
     s += '<p>' + infos[0] + createIDRefLink(prev + "_" + infos[0]) +"</p>";
 
@@ -301,4 +284,29 @@ function searchDetailed(data) {
     }
 
     return detailed;
+}
+function getDateString(ISO_Integer) {
+    let d = new Date(ISO_Integer);
+
+    if (!(d.getTime() === d.getTime())) {
+        return "--.--.----";
+    }
+
+    return d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear();
+}
+function getFullDateString(ISO_Integer) {
+    let d = new Date(ISO_Integer);
+    let dateS = getDateString(ISO_Integer)
+
+    if (!(d.getTime() === d.getTime())) {
+        return dateS + "  --:--";
+    }
+
+    let H = d.getHours();
+    let M = d.getMinutes();
+
+    if (H < 10) H = "0" + H;
+    if (M < 10) M = "0" + M;
+
+    return dateS + " " + H + ':' + M;
 }

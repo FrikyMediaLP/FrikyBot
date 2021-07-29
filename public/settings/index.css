@@ -6,12 +6,25 @@
         cursor: pointer;
     }
 
+#OUTPUT{
+    margin-bottom: 10px;
+}
+
 #DASHBOARD {
     display: none;
 }
 
+
+    #DASHBOARD a {
+        color: #2ee6c0 !important;
+    }
+
+        #DASHBOARD a:hover {
+            color: #2ab89b;
+        }
+
     #DASHBOARD #HEADER {
-        background-color: #00497a;
+        background-color: #00497a !important;
         font-size: 30px;
         color: white;
     }
@@ -21,7 +34,7 @@
         width: 100%;
         margin-top: 10px;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
         grid-column-gap: 15px;
         grid-row-gap: 5px;
     }
@@ -30,16 +43,24 @@
             width: 100%;
             background-color: white;
             display: grid;
-            grid-template-columns: 100px auto;
+            grid-template-columns: 120px auto;
             grid-template-rows: 25px auto;
             grid-template-areas: "header header" "control misc";
         }
-            #DASHBOARD #Modules .Module:not([installed]) {
+            #DASHBOARD #Modules .Module:not([installed]) .hdr, #DASHBOARD #Modules .Module:not([installed]) .misc {
                 filter: grayscale(1);
             }
 
             #DASHBOARD #Modules .Module[disabled] .hdr {
                 background-color: #bd0000;
+            }
+
+            #DASHBOARD #Modules .Module.WIP .hdr::after {
+                content: ' (WIP)';
+            }
+
+            #DASHBOARD #Modules .Module[notready] .hdr {
+                background-color: lightcoral;
             }
 
             #DASHBOARD #Modules .Module .hdr {
@@ -59,9 +80,18 @@
                     margin: 5px;
                 }
 
+            #DASHBOARD #Modules .Module.WIP a {
+                pointer-events: none;
+                cursor: default;
+                filter: grayscale(1);
+            }
+
             #DASHBOARD #Modules .Module .misc {
                 grid-area: misc;
                 padding: 5px;
+                display: grid;
+                grid-template-columns: auto auto;
+                grid-template-rows: auto auto;
             }
 
                 #DASHBOARD #Modules .Module .misc green {
@@ -74,35 +104,12 @@
                     font-weight: bold;
                 }
 
+                #DASHBOARD #Modules .Module .misc yellow {
+                    color: #fcc630;
+                }
+
                 #DASHBOARD #Modules .Module .misc blue {
                     color: #028deb;
-                }
-
-                #DASHBOARD #Modules .Module .misc.onlineTable {
-                    display: grid;
-                    grid-template-columns: auto auto;
-                    grid-template-rows: auto auto;
-                }
-
-            /*WEBAPP*/
-            #DASHBOARD #Modules .Module#Module_WebApp {
-                grid-template-columns: 100%;
-                grid-template-areas: "header" "misc";
-            }
-
-            /*CONFIG*/
-            #DASHBOARD #Modules .Module#Module_Config {
-                grid-template-columns: 100%;
-                grid-template-areas: "header" "misc";
-            }
-
-                #DASHBOARD #Modules .Module#Module_Config .misc {
-                    padding: 5px;
-                    display: grid;
-                    grid-template-columns: 50%;
-                    grid-template-rows: auto auto;
-                    justify-content: center;
-                    text-align: center;
                 }
 
     /*PACKAGES*/
@@ -110,7 +117,7 @@
         width: 100%;
         margin-top: 10px;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 600px));
+        grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
         grid-template-rows: auto;
         grid-column-gap: 15px;
         grid-row-gap: 5px;
@@ -134,6 +141,10 @@
                 padding-top: 3px;
             }
 
+            #DASHBOARD #Packages .Package[disabled] .hdr {
+                background-color: #bd0000;
+            }
+
             #DASHBOARD #Packages .Package .ctrl {
                 grid-area: control;
                 border-right: 1px solid lightgray;
@@ -142,6 +153,7 @@
                 #DASHBOARD #Packages .Package .ctrl button {
                     width: calc(100% - 10px);
                     margin: 5px;
+                    max-height: 20px !important;
                 }
 
             #DASHBOARD #Packages .Package .misc {
@@ -149,17 +161,25 @@
             }
 
             /*ADD*/
-            #DASHBOARD #Packages .Package#ADD_PACKAGE {
-                width: 200px;
-                grid-template-columns: auto;
-                grid-template-areas: "header" "misc";
-            }
-                #DASHBOARD #Packages .Package#ADD_PACKAGE .misc {
-                    width: 100%;
-                    padding: 5px;
-                }
+        #DASHBOARD #Packages #ADD_PACKAGE {
+            width: 200px;
+            display: grid;
+            grid-template-columns: auto;
+            grid-template-rows: 25px 30px;
+        }
 
-                    #DASHBOARD #Packages .Package#ADD_PACKAGE .misc button {
-                        width: calc(100% - 10px);
-                        height: 100%;
-                    }
+        #DASHBOARD #Packages #ADD_PACKAGE .hdr {
+            text-align: center;
+            background-color: #00497a;
+            color: white;
+            padding-top: 3px;
+        }
+            #DASHBOARD #Packages #ADD_PACKAGE div {
+                background-color: white;
+                width: 100%;
+                height: 100%;
+                padding-top: 10px;
+            }
+            #DASHBOARD #Packages #ADD_PACKAGE a {
+                margin-left: 18px;
+            }

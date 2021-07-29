@@ -13,9 +13,12 @@
  */
 
 function ICON_SELECTION_create(options, defaultOption, id, onChange) {
+    if (!defaultOption) defaultOption = options[0];
     return '<div class="SELECTION" ' + (id != null ? 'id="' + id + '"': "") + '>' + ICON_SELECTION_fill(options, defaultOption, id, onChange) + '</div>';
 }
 function ICON_SELECTION_fill(options, defaultOption, id, onChange){
+    if (!defaultOption) defaultOption = options[0];
+
     let s = '<img class="SELECTION_OPTION SELECTION_SELECTOR"';
     s += (id != null ? 'id="SELECTION_SELECTOR_' + id + '"' : "") + ' data-selectorvalue="' + (defaultOption ? defaultOption.value : options[0].value) + '"';
     s += ' title= "' + (defaultOption ? defaultOption.title : options[0].title) + '"';
@@ -63,4 +66,28 @@ function ICON_SELECTION_Select(option) {
     selector.dataset.selected = "false";
 
     option.parentElement.parentElement.dataset.expanded = "false";
+}
+function ICON_SELECTOR_getValue(elt) {
+    if (elt instanceof Element && elt.classList.contains('SELECTION')) {
+        return elt.childNodes[0].dataset.selectorvalue;
+    }
+
+    return null;
+}
+function ICON_SELECTOR_setValue(elt, option) {
+    let selector = elt.childNodes[0];
+
+    for (let other of elt.childNodes[2].childNodes) {
+        if (other.dataset.optionvalue == option.value) {
+            other.dataset.selected = "true";
+        } else if (other.dataset.selected == "true") {
+            other.dataset.selected = "false";
+        }
+    }
+
+    selector.dataset.selectorvalue = option.value;
+    selector.title = option.title;
+    selector.src = option.src;
+    
+    selector.dataset.selected = "false";
 }

@@ -1,72 +1,152 @@
 ﻿const TTV_API_SCOPES = {
     "analytics:read:extensions": {
-        desc: "View analytics data for your extensions.",
-        enabled: true,
-        state: false
+        "desc": "View analytics data for the Twitch Extensions owned by the authenticated account.",
+        "enabled": true,
+        "state": false
+    },
+    "analytics:read:games": {
+        "desc": "View analytics data for the games owned by the authenticated account.",
+        "enabled": true,
+        "state": false
     },
     "bits:read": {
-        desc: "View Bits information for your channel.",
-        enabled: true,
-        state: false
+        "desc": "View Bits information for a channel.",
+        "enabled": true,
+        "state": true
     },
     "channel:edit:commercial": {
-        desc: "Run commercials on a channel.",
-        enabled: true,
-        state: false
+        "desc": "Run commercials on a channel.",
+        "enabled": true,
+        "state": false
     },
     "channel:manage:broadcast": {
-        desc: "Manage your channel’s broadcast configuration, including updating channel configuration and managing stream markers and stream tags.",
-        enabled: true,
-        state: false
+        "desc": "Manage a channel’s broadcast configuration, including updating channel configuration and managing stream markers and stream tags.",
+        "enabled": true,
+        "state": true
     },
     "channel:manage:extension": {
-        desc: "Manage your channel’s extension configuration, including activating extensions.",
-        enabled: true,
-        state: false
+        "desc": "Manage a channel’s Extension configuration, including activating Extensions.",
+        "enabled": true,
+        "state": false
+    },
+    "channel:manage:redemptions": {
+        "desc": "Manage Channel Points custom rewards and their redemptions on a channel.",
+        "enabled": true,
+        "state": true
+    },
+    "channel:manage:videos": {
+        "desc": "Manage a channel’s videos, including deleting videos.",
+        "enabled": true,
+        "state": false
+    },
+    "channel:read:editors": {
+        "desc": "View a list of users with the editor role for a channel.",
+        "enabled": true,
+        "state": false
     },
     "channel:read:hype_train": {
-        desc: "Gets the most recent hype train on a channel.",
-        enabled: true,
-        state: false
+        "desc": "View Hype Train information for a channel.",
+        "enabled": true,
+        "state": true
+    },
+    "channel:read:redemptions": {
+        "desc": "View Channel Points custom rewards and their redemptions on a channel.",
+        "enabled": true,
+        "state": true
     },
     "channel:read:stream_key": {
-        desc: "Read an authorized user’s stream key.",
-        enabled: true,
-        state: false
+        "desc": "Read an authorized user’s stream key.",
+        "enabled": true,
+        "state": false
     },
     "channel:read:subscriptions": {
-        desc: "Get a list of all subscribers to your channel and check if a user is subscribed to your channel",
-        enabled: true,
-        state: false
+        "desc": "View a list of all subscribers to a channel and check if a user is subscribed to a channel.",
+        "enabled": true,
+        "state": true
     },
     "clips:edit": {
-        desc: "Manage a clip object.",
-        enabled: true,
-        state: false
+        "desc": "Manage Clips for a channel.",
+        "enabled": true,
+        "state": true
     },
     "user:edit": {
-        desc: "Manage a user object.",
-        enabled: true,
-        state: false
+        "desc": "Manage a user object.",
+        "enabled": true,
+        "state": false
     },
     "user:edit:follows": {
-        desc: "Edit your follows.",
-        enabled: true,
-        state: false
+        "desc": "Edit your follows.",
+        "enabled": true,
+        "state": false
+    },
+    "user:read:blocked_users": {
+        "desc": "View the block list of a user.",
+        "enabled": true,
+        "state": false
+    },
+    "user:manage:blocked_users": {
+        "desc": "Manage the block list of a user.",
+        "enabled": true,
+        "state": false
     },
     "user:read:broadcast": {
-        desc: "View your broadcasting configuration, including extension configurations.",
-        enabled: true,
-        state: false
+        "desc": "View a user’s broadcasting configuration, including Extension configurations.",
+        "enabled": true,
+        "state": false
     },
     "user:read:email": {
-        desc: "Read an authorized user’s email address.",
-        enabled: true,
-        state: false
+        "desc": "Read an authorized user’s email address.",
+        "enabled": true,
+        "state": false
+    },
+    "channel:manage:polls": {
+        "desc": "Manage a channel’s polls.",
+        "enabled": true,
+        "state": false
+    },
+    "channel:manage:predictions": {
+        "desc": "Manage of channel’s Channel Points Predictions.",
+        "enabled": true,
+        "state": false
+    },
+    "channel:manage:schedule": {
+        "desc": "Manage a channel’s stream schedule.",
+        "enabled": true,
+        "state": false
+    },
+    "channel:read:polls": {
+        "desc": "View a channel’s polls.",
+        "enabled": true,
+        "state": false
+    },
+    "channel:read:predictions": {
+        "desc": "View a channel’s Channel Points Predictions.",
+        "enabled": true,
+        "state": false
+    },
+    "moderation:read": {
+        "desc": "View a channel’s moderation data including Moderators, Bans, Timeouts, and Automod settings.",
+        "enabled": true,
+        "state": false
+    },
+    "moderator:manage:automod": {
+        "desc": "Manage messages held for review by AutoMod in channels where you are a moderator.",
+        "enabled": true,
+        "state": false
+    },
+    "user:read:follows": {
+        "desc": "View the list of channels a user follows.",
+        "enabled": true,
+        "state": false
+    },
+    "user:read:subscriptions": {
+        "desc": "View if an authorized user is subscribed to specific channels.",
+        "enabled": true,
+        "state": false
     }
 };
 
-const SettingTypes = [
+const SETTINGTYPES = [
     {
         name: 'number', options: [
             { name: 'type', check: (x, optionSet) => typeof (x) === 'number' && !isNaN(x) ? true : 'type missmatch' },
@@ -116,37 +196,18 @@ const SettingTypes = [
     }
 ];
 
-let CUR_CONFIG = {};
-
 let WIZARD_CURSOR = [0, 0];
 let WIZARD_NAV_DATA = [];
+let WIZARD_AUTHS = [];
 
-const WIZARD_PatchPanel = {
-    WebApp: {
-        Port: 'FrikyBot_WebApp_Port',
-        authentication_enable: 'FrikyBot_WebApp_authentication_enable',
-        authentication_secret: 'FrikyBot_WebApp_authentication_secret'
-    },
-    TwitchIRC: {
-        login: '',
-        oauth: '',
-        channel: 'TwitchIRC_Channel_Channel',
-        support_BTTV: 'TwitchIRC_Misc_and_Emotes_BTTV',
-        support_FFZ: 'TwitchIRC_Misc_and_Emotes_FFZ'
-    },
-    TwitchAPI: {
-        ClientID: 'TwitchAPI_Your_Application_ID',
-        Secret: 'TwitchAPI_Your_Application_Secret',
-        Scopes: 'TwitchAPI_Your_Application_URL'
-    },
-    DataCollection: {
+let CUR_CONFIG = {};
 
-    },
-    Packages: {
+let TTV_API_AUTH_USERS = [];
+let TTV_API_AUTH_USERLEVELS = [];
 
-    }
-};
+window.onhashchange = WIZARD_go2Hash;
 
+//Setup General
 async function FetchSettings() {
     return fetch("/api/pages/settings/setup", getAuthHeader())
         .then(STANDARD_FETCH_RESPONSE_CHECKER)
@@ -159,12 +220,28 @@ async function FetchSettings() {
         })
 }
 async function Setup_init() {
+    LOGIN_GetOriginPageURL = AddWizHash;
+    SWITCHBUTTON_AUTOFILL();
+
     //Data
     try {
         let data = await FetchSettings();
-        console.log(data);
+
+        //Create
+        WIZARD_create(data.tmpl, data.cfg, data.auths);
+        if (data.ttv_irc) TwitchIRC_USER_SET_INFO(data.ttv_irc.user);
+        if (data.ttv_api) {
+            TwitchAPI_USER_SET_INFO(data.ttv_api.user);
+            TwitchAPI_UserLogin_createScopes(data.ttv_api.user.scopes);
+
+            TTV_API_AUTH_USERS = data.ttv_api.authenticator_users;
+            TTV_API_AUTH_USERLEVELS = data.ttv_api.authenticator_userlevels;
+            TwitchAPI_Auth_DB_create();
+            TwitchAPI_Auth_Interface();
+
+            TwitchAPI_API_create(data.ttv_api.endpoints);
+        }
         
-        WIZARD_create(data.tmpl, data.cfg);
         CUR_CONFIG = data.cfg;
 
         //Seperate Groups
@@ -184,31 +261,42 @@ async function Setup_init() {
         return Promise.resolve();
     }
     
-    WIZARD_go2Hash();
-
     //DONE
+    WIZARD_go2Hash();
     document.getElementById('WAITING_FOR_DATA').remove();
     document.getElementById('SETUP').style.display = 'block';
 
-    SWITCHBUTTON_AUTOFILL();
+    //AFTER
+    CONTENT_OnLoad().catch(err => {
+        console.log(err);
+        OUTPUT_showError(err.message);
+    });
 }
-
-//Setup General
-function switchMode(elt) {
-    
-}
-
-
-
-
-
-
-
 
 //Wiz2
-function WIZARD_create(template, config = {}) {
+function WIZARD_create(template, config = {}, auths = [{ name: 'No Authnticator available' }]) {
     WIZARD_createNaviation(template);
-    WIZARD_updateContent(config);
+
+    //Update Element Value
+    WIZARD_updateContent(config, template);
+
+    //Authenticators
+    WIZARD_AUTHS = auths;
+    if (document.getElementById('SETTING_WebApp_selectedAuthenticator')) {
+        let s = '';
+        let active;
+        for (let elt of auths) {
+            s += '<option ' + (elt.enabled === false || elt.rdy === false ? 'disabled' : '') + ' title="' + (elt.enabled === false ? 'Autheticator Disabled!' : elt.rdy === false ? 'Autheticator not Ready!' : '') + '">' + elt.name + '</option>';
+            if (elt.act === true) active = elt.name;
+        }
+        document.getElementById('SETTING_WebApp_selectedAuthenticator').innerHTML = s;
+        if (active) document.getElementById('SETTING_WebApp_selectedAuthenticator').value = active;
+        if (active) document.getElementById('SETTING_WebApp_selectedAuthenticator').oldValue = active;
+    }
+    
+    //TTV API Link
+    if (document.getElementById('TwitchAPI_Redirect_URL'))
+        document.getElementById('TwitchAPI_Redirect_URL').value = 'http://localhost:' + config['WebApp']['Port'] + '/Twitch-Redirect';
 }
 function WIZARD_createNaviation(modules) {
     let mainsHTML = '';
@@ -227,7 +315,6 @@ function WIZARD_createNaviation(modules) {
 
         //Add Extra Groups
         groups.unshift({ name: 'Introduction' });
-        if (modules[i].name === 'TwitchAPI') groups.splice(2, 0, { name: 'Reboot' });
 
         //Calculate Column Sizes
         for (let j = 0; j < groups.length; j++) cols += (j !== 0 ? ' ' : '') + ((1 / groups.length) * 100) + '%';
@@ -250,70 +337,51 @@ function WIZARD_createNaviation(modules) {
     document.getElementById('WIZ_NAV_GROUPS').innerHTML = groupsHTML;
 }
 
-function WIZARD_updateContent(cfg) {
-    
-}
-function WIZARD_createSetting(setting, id_root = "", value) {
-    id_root = replaceAll(id_root, ' ', '_');
-
-    let s = '<h4>' + setting.name + '</h4>';
-
-    let stgTemplate = SETTINGTYPES.find(elt => elt.name === setting.type);
-
-    let defau = setting.default || stgTemplate.default;
-
-    if (setting.type === 'number') {
-        s += '<input type="number" id="' + id_root + setting.name + '" placeholder="' + (value || defau) + '" value="' + (value || defau) + '"';
-        if (setting.min) s += 'min="' + setting.min + '" ';
-        if (setting.max) s += 'max="' + setting.max + '" ';
-        if (setting.range) s += 'min="' + setting.range.substring(0, setting.range.indexOf(':')) + '" max="' + setting.range.substring(setting.range.indexOf(':') + 1) + '" ';
-        s += '></input>';
-    } else if (setting.type === 'boolean') {
-        s += '<switchbutton id="' + id_root + setting.name + '" value="' + (value || defau) + '"></switchbutton>';
-    } else if (setting.type === 'array') {
-        //Selection
-        if (setting.selection) {
-            s += '<div id="' + id_root + setting.name + '" class="ARRAY_SELECTION">';
-            if (!value) value = [];
-
-            for (let i = 0; i < setting.selection.length; i++) {
-                s += '<span>' + (setting.selectionDescription ? setting.selectionDescription[i] : setting.selection[i]) + '</span>';
-                s += '<switchbutton id="' + id_root + setting.name + "_" + setting.selection[i] + '" value="' + (value.find(elt => elt === setting.selection[i]) !== undefined ) + '"></switchbutton>';
-            }
-            s += '</div>';
+function WIZARD_updateContent(cfg, template = [], parentName, path = []) {
+    if (typeof cfg === 'object' && cfg.length === undefined) {
+        for (key in cfg) {
+            let eltPath = path;
+            if (parentName) eltPath = path.concat([parentName]);
+            WIZARD_updateContent(cfg[key], (template.find(elt => elt.name == key) || {}).settings || template, key, eltPath);
         }
-        //Add / Remove
-        else {
-            s += '<h4>WiP</h4>';
-        }
-    } else {
-        s += '<input type="text" id="' + id_root + setting.name + '" placeholder="' + (value || defau) + '" value="' + (value || defau) + '"';
-        s += '></input>';
+        return;
     }
 
-    return s;
+    WIZARD_updateSetting(parentName, cfg, path, template.find(elt => elt.name == parentName));
+}
+function WIZARD_updateSetting(name, value, path, template = {}) {
+    let elementID = "SETTING_" + path.concat([name]).join('_');
+    let elt = document.getElementById(elementID);
+
+    if (elt) {
+        if (template.type === 'boolean' && elt.tagName === 'SWITCHBUTTON') {
+            SWITCHBUTTON_TOGGLE(elt, value);
+        } else if (template.type === 'boolean' && elt.tagName === 'INPUT') {
+            elt.checked = value === true;
+        } else {
+            elt.value = value;
+        }
+    }
 }
 
 //WIZARD DSIPLAY
 function WIZARD_show(module, group, hold = false) {
-    let moduleName = WIZARD_NAV_DATA[WIZARD_CURSOR[0]].name;
+    if (module < 0 || group < 0) return;
 
-    //Hide Current
-    document.getElementsByClassName('WIZ_NAV_MODULE')[WIZARD_CURSOR[0]].removeAttribute('selected');
+    if (!WIZARD_NAV_DATA[module]) module = 0;
+    if (!WIZARD_NAV_DATA[module].groups[group]) group = 0;
+
+    let moduleName = WIZARD_NAV_DATA[WIZARD_CURSOR[0]].name;
+    
+    //Check Current
+    (document.getElementsByClassName('WIZ_NAV_MODULE')[WIZARD_CURSOR[0]] || {}).removeAttribute('selected');
     document.getElementsByClassName('WIZ_NAV_GROUP')[WIZARD_CURSOR[0]].setAttribute('hidden', '');
     document.getElementsByClassName('WIZ_NAV_GROUP')[WIZARD_CURSOR[0]].childNodes[WIZARD_CURSOR[1]].removeAttribute('selected');
     document.getElementsByClassName('WIZ_GROUP_' + moduleName)[WIZARD_CURSOR[1]].setAttribute('hidden', '');
     
-    //Template Check - and get new target location
-    if (module > WIZARD_CURSOR[0] || (module == WIZARD_CURSOR[0] && group > WIZARD_CURSOR[1])) {
-        let result = WIZARD_check(module, group, hold);
-
-        module = result[0];
-        group = result[1];
-    }
-    
     WIZARD_CURSOR[0] = module;
     WIZARD_CURSOR[1] = group;
+    AddWizHash();
     moduleName = WIZARD_NAV_DATA[WIZARD_CURSOR[0]].name;
 
     //Show New
@@ -321,12 +389,10 @@ function WIZARD_show(module, group, hold = false) {
     document.getElementsByClassName('WIZ_NAV_GROUP')[WIZARD_CURSOR[0]].removeAttribute('hidden');
     document.getElementsByClassName('WIZ_NAV_GROUP')[WIZARD_CURSOR[0]].childNodes[WIZARD_CURSOR[1]].setAttribute('selected', '');
     document.getElementsByClassName('WIZ_GROUP_' + moduleName)[WIZARD_CURSOR[1]].removeAttribute('hidden');
-    
+
     //Update UI
     WIZARD_updateUI();
 
-    //Util
-    WIZARD_onShow();
 }
 function WIZARD_updateUI() {
     let mainIdx = WIZARD_CURSOR[0];
@@ -338,7 +404,6 @@ function WIZARD_updateUI() {
 
     if (mainIdx > 0 || groupIdx > 0) buttons.push('BACK');
     if (!(mainIdx == WIZARD_NAV_DATA.length - 1 && groupIdx === WIZARD_NAV_DATA[mainIdx].groups.length - 1)) buttons.push('NEXT');
-    else buttons.push('SAVE');
 
     //Hide all buttons
     for (let elt of document.getElementsByClassName('WIZ_UI_BTN')) elt.setAttribute('hidden', '');
@@ -380,84 +445,13 @@ function WIZARD_next() {
 function WIZARD_go2Hash() {
     let hMdl = GetURLHashContent('_m');
     let hGrp = GetURLHashContent('_g');
-
-    if (hMdl) hMdl = hMdl.value[0];
-    if (hGrp) hGrp = hGrp.value[0];
+    
+    if (hMdl) hMdl = (hMdl.value || [])[0];
+    if (hGrp) hGrp = (hGrp.value || [])[0];
 
     WIZARD_show(parseInt(hMdl) || 0, parseInt(hGrp) || 0);
 }
 
-//Template Check
-function WIZARD_check(targetModule, targetGroup, hold) {
-    let curModule = WIZARD_CURSOR[0];
-    let curGroup = WIZARD_CURSOR[1];
-    
-    do {
-        let moduleName = WIZARD_NAV_DATA[curModule].name;
-        let settings = WIZARD_NAV_DATA[curModule].groups[curGroup].settings;
-        let test_result = WIZARD_check_Group(settings, curModule);
-
-        let status = true;
-
-        for (let rslt of test_result) {
-            if (rslt.result === true) {
-                //Color Complete
-                document.getElementById(WIZARD_PatchPanel[moduleName][rslt.name]).removeAttribute('requiered');
-            } else {
-                //Color Requiered
-                status = false;
-                document.getElementById(WIZARD_PatchPanel[moduleName][rslt.name]).setAttribute('requiered', '');
-            }
-        }
-
-        if (status) document.getElementsByClassName('WIZ_NAV_GROUP')[curModule].childNodes[curGroup].setAttribute('complete', '');
-        else document.getElementsByClassName('WIZ_NAV_GROUP')[curModule].childNodes[curGroup].removeAttribute('complete');
-
-    } while (false && curModule < targetModule && curGroup < targetGroup);
-
-    return [targetModule, targetGroup];
-}
-function WIZARD_check_Group(settings, module) {
-    let errors = [];
-    let moduleName = WIZARD_NAV_DATA[module].name;
-
-    for (let stg of settings) {
-        //Get current Value
-        let elt = document.getElementById(WIZARD_PatchPanel[moduleName][stg.name]) || {};
-        let value = elt.value;
-        errors.push({ name: stg.name, result: WIZARD_check_Setting(stg.type, value, stg) });
-    }
-
-    return errors;
-}
-function WIZARD_check_Setting(name, value, options) {
-    //Skip unknown Types
-    if (!name) return true;
-
-    let TYPE = SETTINGTYPES.find(elt => elt.name === name);
-
-    let converted_type = TYPE.convert(value);
-    
-    //Check Variable Types
-    for (let type in options) {
-        //Skip general info
-        if (type === 'name' || type === 'opt' || type === 'default') continue;
-
-        //Find Type - skip unknowns
-        let TYPEtype = TYPE.options.find(elt => elt.name === type);
-        if (!TYPEtype) continue;
-
-        //Check and return result on error
-        let result = TYPEtype.check(converted_type, options);
-        if (result !== true) return result;
-    }
-
-    return true;
-}
-
-function WIZARD_onShow() {
-
-}
 function WIZARD_onRestart() {
     let moduleName = WIZARD_NAV_DATA[WIZARD_CURSOR[0]].name;
 
@@ -465,25 +459,28 @@ function WIZARD_onRestart() {
         let opt = getAuthHeader();
         opt.method = 'POST';
         opt.headers['Content-Type'] = 'application/json';
-        opt.body = JSON.stringify({ port: parseInt(document.getElementById(WIZARD_PatchPanel.WebApp.Port).value) });
+        opt.body = JSON.stringify({ port: CUR_CONFIG.WebApp.Port });
 
         fetch('/api/settings/webapp/port', opt)
             .then(STANDARD_FETCH_RESPONSE_CHECKER)
             .then(json => {
                 if (json.msg === '200') {
+                    //Output
                     let outS = 'Bot Restarting at Port: ' + json.port;
                     outS += '</br><b>Since Cookies arent shared between Ports, you have to <a href="http://localhost:' + json.port + '/login" target="_blank">log in</a> again! </b>';
                     outS += '</br>Go <a href="http://localhost:' + json.port + '/settings/setup#_m=0&_g=1">here</a> after login to resume Setup at this Step!';
                     OUTPUT_showInfo(outS);
+
+                    //Change TTV API Link
+                    if (document.getElementById('TwitchAPI_Redirect_URL')) {
+                        document.getElementById('TwitchAPI_Redirect_URL').value = 'http://localhost:' + json.port + '/Twitch-Redirect';
+                    }
                 } else OUTPUT_showError('500 - Internal Error.');
             })
             .catch(err => {
                 OUTPUT_showError(err.message);
             });
     }
-}
-function WIZARD_onSave() {
-
 }
 
 //WIZARD UTIL
@@ -512,36 +509,127 @@ function WIZARD_NAV_GROUP(e) {
     WIZARD_show(WIZARD_CURSOR[0], targetIdx, true);
 }
 
+//CONTENT
+async function CONTENT_OnLoad() {
+    let moduleName = WIZARD_NAV_DATA[WIZARD_CURSOR[0]].name;
+    let groupName = WIZARD_NAV_DATA[WIZARD_CURSOR[0]].groups[WIZARD_CURSOR[1]].name;
+    let search = GetURLSearchArray();
+    let error = search.find(elt => elt.name === 'error');
+    if (error) OUTPUT_showError(decodeURI(error.value[0]));
+
+    if (moduleName === 'TwitchIRC' && groupName === 'User Login') {
+        let hash = GetURLHashArray();
+        let access_token = hash.find(elt => elt.name === 'access_token');
+        let id_token = hash.find(elt => elt.name === 'id_token');
+
+        if (id_token && access_token) {
+            try {
+                let data = await TTV_LOGIN_FETCH_USERINFO(id_token.value[0]);
+                let username = data.user['preferred_username'];
+                
+                if (username) {
+                    document.getElementById('SETTING_TwitchIRC_login').value = username;
+                    document.getElementById('SETTING_TwitchIRC_oauth').value = 'oauth:' + access_token.value[0];
+                    await TwitchIRC_User_Save();
+                    window.location.hash = "";
+                    LOGIN_GetOriginPageURL = AddWizHash();
+                }
+            } catch (err) {
+                console.log(err);
+                OUTPUT_showError(err.message);
+            }
+        }
+    }
+
+    return Promise.resolve();
+}
+
 //WebApp
 function port_change(value) {
     if (value == CUR_CONFIG.WebApp.Port) {
         document.getElementById('WIZ_UI_RESTART').setAttribute('hidden', '');
         document.getElementById('WIZ_UI_NEXT').removeAttribute('hidden');
-        document.getElementById('FrikyBot_WebApp_Port_Hint').setAttribute('hidden', '');
+        document.getElementById('SETTING_WebApp_Port_Hint').setAttribute('hidden', '');
         return;
     }
 
-    document.getElementById('FrikyBot_WebApp_Port_Hint').removeAttribute('hidden');
+    document.getElementById('SETTING_WebApp_Port_Hint').removeAttribute('hidden');
     document.getElementById('WIZ_UI_NEXT').setAttribute('hidden', '');
     document.getElementById('WIZ_UI_RESTART').removeAttribute('hidden');
 }
-function FrikyBot_auth_show(btn) {
-    let elt = document.getElementById('FrikyBot_WebApp_authentication_secret');
+
+async function FrikyBot_Auth_switch(elt) {
+    const auth_name = elt.value;
+    elt.value = elt.oldValue;
+
+    //Check if switching is desired
+    try {
+        let answer = await MISC_USERCONFIRM('JUST A REMINDER', 'Changing the Authenticator requires your to relogin using the new Authentication Service. This means your current Token will be invalid! Relogin can be done at the Login-Page.', ['CANCEL', 'CHANGE']);
+        if (answer !== 'CHANGE') return Promise.resolve();
+    } catch (err) {
+        return Promise.resolve();
+    }
+
+    //Access API
+    let opt = getAuthHeader();
+    opt.method = 'PUT';
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify({ authenticator: auth_name });
+
+    fetch('/api/settings/webapp/authenticator', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            if (json.code !== 200) return Promise.reject(new Error(json.msg || 'Authenticator Switch failed: Unknown Error.'));
+            elt.value = auth_name;
+            elt.oldValue = elt.value;
+            OUTPUT_showInfo(json.msg || 'Authenticator Switch successfull!');
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
+async function FrikyBot_Auth_enable(elt) {
+    //Check other Authenticator Statuses
+    try {
+        let answer = await AuthenticatorWarning("FrikyBot Auth.");
+        if (!answer) return Promise.resolve();
+    } catch (err) {
+        return Promise.resolve();
+    }
+    
+    //Access API
+    let opt = getAuthHeader();
+    opt.method = 'POST';
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify({ state: elt.value === false });
+
+    fetch('/api/settings/webapp/fbauth/state', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            SWITCHBUTTON_TOGGLE(elt, json.state);
+            CUR_CONFIG['WebApp']['Authenticator']['enable'] = json.state === true;
+            WIZARD_AUTHS.find(elt => elt.name === 'FrikyBot Auth.').enabled = json.state === true;
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
+function FrikyBot_Auth_show(btn) {
+    let elt = document.getElementById('SETTING_WebApp_Authenticator_secret');
     if (elt) {
         elt.type = elt.type === 'password' ? 'text' : 'password';
-        btn.innerHTML = elt.type === 'password' ? 'SHOW SECRET' : 'HIDE SECRET';
+        btn.innerHTML = (elt.type === 'password' ? 'SHOW' : 'HIDE') + ' SECRET';
     }
 }
-function FrikyBot_auth_enable(elt) {
-    console.log(elt.value);
-}
-function FrikyBot_auth_regen() {
+function FrikyBot_Auth_regen() {
     fetch('/api/settings/webapp/fbauth/regen', getAuthHeader())
         .then(STANDARD_FETCH_RESPONSE_CHECKER)
         .then(json => {
             console.log(json);
             if (json.new_secret !== undefined && json.new_token !== undefined) {
-                document.getElementById('FrikyBot_WebApp_authentication_secret').value = json.new_secret;
+                document.getElementById('SETTING_WebApp_Authenticator_secret').value = json.new_secret;
 
                 LOGIN_logout();
                 return LOGIN_login(json.new_token);
@@ -553,587 +641,882 @@ function FrikyBot_auth_regen() {
         });
 }
 
+//TTV IRC
+const TWITCHIRC_USER_SCOPES = ['channel:moderate', 'chat:read', 'chat:edit', 'whispers:read', 'whispers:edit'];
+let TwitchIRC_FETCHING = false;
+function TwitchIRC_User_Mode(elt) {
+    if (elt.innerHTML === 'Use Custom Token') {
+        elt.innerHTML = 'Use Twitch Login';
+        document.getElementById('TwitchIRC_Custom_User').style.display = 'block';
+        document.getElementById('TwitchIRC_User').style.display = 'none';
+    } else {
+        elt.innerHTML = 'Use Custom Token';
+        document.getElementById('TwitchIRC_Custom_User').style.display = 'none';
+        document.getElementById('TwitchIRC_User').style.display = 'grid';
+    }
+}
+
+function TwitchIRC_User_change() {
+    let login = document.getElementById('SETTING_TwitchIRC_login').value;
+    let token = document.getElementById('SETTING_TwitchIRC_oauth').value;
+
+    let change = (login !== CUR_CONFIG['TwitchIRC']['login'] || token !== CUR_CONFIG['TwitchIRC']['oauth']);
+    document.getElementById('TwitchIRC_OAUTH_SAVE').style.display = (change ? 'inline-block' : 'none');
+}
+function TwitchIRC_OAuth_show(btn) {
+    let elt = document.getElementById('SETTING_TwitchIRC_oauth');
+    if (elt) {
+        elt.type = elt.type === 'password' ? 'text' : 'password';
+        btn.innerHTML = (elt.type === 'password' ? 'SHOW' : 'HIDE') + ' OAUTH TOKEN';
+    }
+}
+function TwitchIRC_USER_TEST() {
+    fetch('/api/twitchirc/test', getAuthHeader())
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            OUTPUT_showInfo('A test message was send into the Chat!');
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
+function TwitchIRC_USER_SET_INFO(user) {
+    if (!document.getElementById('TwitchIRC_User') || !user) return;
+    user = JSON.parse(JSON.stringify(user));
+    user['exp'] = 'NEVER';
+
+    TTV_LOGIN_SETDATA(document.getElementById('TwitchIRC_User'), user, true, 'TwitchIRC_USER_Logout');
+}
+async function TwitchIRC_User_Save() {
+    let login = document.getElementById('SETTING_TwitchIRC_login').value;
+    let oauth = document.getElementById('SETTING_TwitchIRC_oauth').value;
+    
+    let data = { login, oauth };
+
+    let opt = getAuthHeader();
+    opt.method = 'POST';
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify(data);
+    
+    return fetch('/api/settings/twitchirc/user', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            OUTPUT_showInfo(json.msg);
+            CUR_CONFIG['TwitchIRC']['login'] = login;
+            CUR_CONFIG['TwitchIRC']['oauth'] = oauth;
+            TwitchIRC_User_change();
+        });
+}
+function TwitchIRC_USER_Logout() {
+    document.getElementById('SETTING_TwitchIRC_login').value = "";
+    document.getElementById('SETTING_TwitchIRC_oauth').value = "";
+    TwitchIRC_User_Save();
+
+    document.getElementById('TwitchIRC_User').remove();
+    OUTPUT_showWarn('Please Reload this page!');
+}
+
+function TwitchIRC_Channel_change() {
+    if (document.getElementById('SETTING_TwitchIRC_channel').value === CUR_CONFIG['TwitchIRC']['channel']) {
+        document.getElementById('TwitchIRC_CHANNEL_SAVE').style.display = 'none';
+    } else {
+        document.getElementById('TwitchIRC_CHANNEL_SAVE').style.display = 'inline-block';
+    }
+}
+function TwitchIRC_Channel_Selected(e) {
+    if (e.target.id === 'TwitchIRC_Channel_Selector') return;
+
+    let elt = e.target;
+
+    while (elt.id !== 'TwitchIRC_Channel_Selector' && elt.parentElement.id !== 'TwitchIRC_Channel_Selector' ) {
+        elt = elt.parentElement;
+    }
+
+    if (!elt.dataset.channel) return;
+
+    document.getElementById('TwitchIRC_Channel_Selector').style.display = 'none';
+    document.getElementById('SETTING_TwitchIRC_channel').value = elt.dataset.channel;
+    TwitchIRC_Channel_change();
+}
+function TwitchIRC_Channel_input(value) {
+    TwitchIRC_Channel_change();
+    
+    //Buffer Layer
+    if (TwitchIRC_FETCHING === true) return;
+
+    setTimeout(() => {
+        if (value === document.getElementById('SETTING_TwitchIRC_channel').value)
+            if (value.trim() == "")
+                document.getElementById('TwitchIRC_Channel_Selector').style.display = 'none';
+        else
+            TwitchIRC_Channel_Fetch(value);
+    }, 100);
+}
+function TwitchIRC_Channel_Fetch(value) {
+    TwitchIRC_FETCHING = true;
+    document.getElementById('TwitchIRC_Channel_Selector').style.display = 'grid';
+    fetch('/api/twitchapi/findchannel?channel=' + value, getAuthHeader())
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            let s = '';
+            for (let channel of json.data) {
+                s += '<div ' + (channel.is_live ? 'class="live"' : '') + ' data-channel="' + channel.login + '"><div><img src="' + channel.img + '"/> <span class="name">' + (channel.display_name || channel.login) + '</span>' + (channel.is_live ? '<span class="live">LIVE</span>' : '') + '</div></div>';
+            }
+            document.getElementById('TwitchIRC_Channel_Selector').innerHTML = s;
+
+            TwitchIRC_FETCHING = false;
+        })
+        .catch(err => {
+            if (err.message === 'Twitch API is disabled' || err.message === '404 - API Endpoint not found') {
+                document.getElementById('TwitchIRC_Channel_Selector').innerHTML = '<div><div><img /><span>Autofill from Twitch API Data not availabe.</span></div></div>';
+                return;
+            }
+
+            TwitchIRC_FETCHING = false;
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
+function TwitchIRC_Channel_Save() {
+    let channel = document.getElementById('SETTING_TwitchIRC_channel').value;
+
+    let data = { channel };
+
+    let opt = getAuthHeader();
+    opt.method = 'POST';
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify(data);
+
+    fetch('/api/settings/twitchirc/channel', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            OUTPUT_showInfo(json.msg);
+            CUR_CONFIG['TwitchIRC']['channel'] = channel;
+            TwitchIRC_Channel_change();
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
+
+function TwitchIRC_MISC_Switch(elt) {
+    let name = elt.id.substring(18);
+    let data = { [name]: elt.value };
+
+    let opt = getAuthHeader();
+    opt.method = 'POST';
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify(data);
+
+    fetch('/api/settings/twitchirc/misc', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            SWITCHBUTTON_TOGGLE(elt, json.data[name]);
+            OUTPUT_showInfo("Setting Changed!");
+        })
+        .catch(err => {
+            SWITCHBUTTON_TOGGLE(elt);
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
+
 //TTV API
-function TwitchAPI_UserLogin_createScopes() {
+let TwitchAPI_FETCHING = false;
+function TwitchAPI_Secret_change(btn) {
+    if (btn.innerHTML === 'SHOW SECRET') {
+        btn.innerHTML = 'HIDE SECRET';
+        document.getElementById('SETTING_TwitchAPI_Secret').type = 'text';
+    } else {
+        btn.innerHTML = 'SHOW SECRET';
+        document.getElementById('SETTING_TwitchAPI_Secret').type = 'password';
+    }
+}
+function TwitchAPI_Application_change() {
+    let clientid = document.getElementById('SETTING_TwitchAPI_ClientID').value;
+    let clientsecret = document.getElementById('SETTING_TwitchAPI_Secret').value;
+
+    if (clientid !== CUR_CONFIG['TwitchAPI']['ClientID'] || clientsecret !== CUR_CONFIG['TwitchAPI']['Secret']) {
+        document.getElementById('TwitchAPI_Application_Save').style.display = 'inline-block';
+    } else {
+        document.getElementById('TwitchAPI_Application_Save').style.display = 'none';
+    }
+}
+function TwitchAPI_Application_Save() {
+    let ClientID = document.getElementById('SETTING_TwitchAPI_ClientID');
+    let Secret = document.getElementById('SETTING_TwitchAPI_Secret');
+
+    let data = { ClientID: ClientID.value, Secret: Secret.value };
+
+    let opt = getAuthHeader();
+    opt.method = 'POST';
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify(data);
+
+    fetch('/api/settings/twitchapi/application', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            OUTPUT_showInfo(json.msg + (json.usertoken === false ? '. A new Usertoken has to be requested!!' : 'A old Usertoken is still valid!'));
+
+            CUR_CONFIG['TwitchAPI']['ClientID'] = json.ClientID;
+            CUR_CONFIG['TwitchAPI']['Secret'] = json.Secret;
+
+            TwitchAPI_Application_change();
+            ClientID.classList.remove('missing');
+            Secret.classList.remove('missing');
+        })
+        .catch(err => {
+            ClientID.classList.add('missing');
+            Secret.classList.add('missing');
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
+
+function TwitchAPI_Login_Mode(status) {
+    let btn = document.getElementById('TwitchAPI_Login_Mode');
+    let scopes = document.getElementById('TWITCHAPI_USERLOGIN_SCOPES');
+    let scope_header = document.getElementById('TwitchAPI_Login_Scope_Header');
+    let login_custom = document.getElementById('TwitchAPI_CustomUserLogin');
+    let login_user = document.getElementById('TwitchAPI_UserLogin');
+
+    if (status === true || btn.innerHTML === 'CUSTOMIZE ACCESS') {
+        btn.innerHTML = 'SHOW ACCESS STATUS';
+        scopes.style.display = 'grid';
+        login_custom.style.display = 'grid';
+        login_user.style.display = 'none';
+        scope_header.style.display = 'block';
+    } else {
+        btn.innerHTML = 'CUSTOMIZE ACCESS';
+        scopes.style.display = 'none';
+        login_custom.style.display = 'none';
+        login_user.style.display = 'grid';
+        scope_header.style.display = 'none';
+    }
+}
+function TwitchAPI_USER_SET_INFO(user) {
+    if (!document.getElementById('TwitchAPI_UserLogin') || !user || !user.sub) return TwitchAPI_Login_Mode();
+    user = JSON.parse(JSON.stringify(user));
+    user['refresh'] = true;
+    TTV_LOGIN_SETDATA(document.getElementById('TwitchAPI_UserLogin'), user, true, 'TwitchAPI_USER_Logout');
+
+    document.getElementById('TwitchAPI_Login_Mode').style.display = 'block';
+}
+function TwitchAPI_USER_Logout() {
+    TTV_LOGIN_COLLAPSE(document.getElementById('TwitchAPI_UserLogin'));
+    
+    for (let child of document.getElementById('TwitchAPI_UserLogin').children) {
+        if (child instanceof Element && child.classList.contains('TTV_LOGIN_BUTTON')) {
+            child.innerHTML = '<center onclick="TTV_LOGIN_CLICKED(this, \'bot\', TwitchAPI_UserLogin_getScopes())"><span>LOG IN USING TWITCH</span><img src="../images/icons/twitch.svg" data-type="svg" /></center>';
+        } else if (child instanceof Element && child.classList.contains('TTV_LOGIN_DATA')) {
+            child.innerHTML = "";
+        }
+    }
+
+    let opt = getAuthHeader();
+    opt.method = 'DELETE';
+
+    fetch('/api/TwitchAPI/token?type=user', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            if (json.data && json.data.user && json.data.user.state === 'deleted') OUTPUT_showInfo('User Token delted!');
+            else OUTPUT_showError('User Token couldnt be deleted!');
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
+function TwitchAPI_UserLogin_createScopes(scopes = []) {
     let s = '';
 
     for (let scope in TTV_API_SCOPES) {
         if (TTV_API_SCOPES[scope].enabled !== true) continue;
 
         s += '<div>' + TTV_API_SCOPES[scope].desc + '</div>';
-        s += '<SWITCHBUTTON class="TTV_API_SCOPE" value="' + (TTV_API_SCOPES[scope].state === true) + '" data-id="' + scope + '"></SWITCHBUTTON>';
+        s += '<div>' + SWITCHBUTTON_CREATE(scopes.find(elt => elt === scope) !== undefined || TTV_API_SCOPES[scope].state === true, false, null, null, 'data-id="' + scope + '" class="TTV_API_SCOPE"') + '</div>';
     }
     
     s += '<span style="color: red;">For new Scopes to have Effect, you have to log in again!</span><div></div>';
     document.getElementById('TWITCHAPI_USERLOGIN_SCOPES').innerHTML = s;
+
+    for (let elt of document.getElementsByClassName('TTV_API_SCOPE')) {
+        if (elt instanceof Element && elt.tagName === 'SWITCHBUTTON') SWITCHBUTTON_AUTOFILL(elt);
+    }
 }
 function TwitchAPI_UserLogin_getScopes() {
-    return HTMLArray2RealArray(document.getElementsByClassName('TTV_API_SCOPE')).reduce((acc, elt) => {
-        if(elt.value === true) acc.push(elt.dataset.id)
-    }, []);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//TTV API
-function SETUP_TTV_API(data) {
-    if (!data) return;
-    
-    //App Token
-    if (data.app && document.getElementById('TWITCHAPI_APP_DATA')) {
-        TTV_API_APP_TOKEN = data.app;
-        //CENTERS
-        for (let cen of document.getElementById('TWITCHAPI_APP_DATA').childNodes) {
-            if (cen instanceof Element && cen.tagName === "DIV") {
-                //DIVS
-                for (let div of cen.childNodes) {
-                    if (div instanceof Element && div.id === "TWITCHAPI_APP_IAT") {
-                        div.innerHTML = (data.app.iat != undefined ? new Date(TTV_API_APP_TOKEN.iat * 1000).toLocaleString('de-DE') : "UNKNOWN");
-                    } else if (div instanceof Element && div.id === "TWITCHAPI_APP_EXP") {
-                        let interval = setInterval(() => {
-                            let until = new Date(TTV_API_APP_TOKEN.exp * 1000) - new Date();
-                            until = Math.floor(until / 1000);
-
-                            let d = Math.floor(until / (60 * 60 * 24));
-                            until -= d * 60 * 60 * 24;
-
-                            let h = Math.floor(until / (60 * 60));
-                            until -= h * 60 * 60;
-
-                            let m = Math.floor(until / 60);
-                            until -= m * 60;
-
-                            let s = until;
-
-                            if (until < 0 || d < 0 || h < 0 || m < 0 || s < 0) {
-                                div.innerHTML = (TTV_API_APP_TOKEN.iat != undefined ? "00D 00H 00M 00S" : "UNKNOWN");
-                                clearInterval(interval);
-                            } else {
-                                if (h < 10) h = '0' + h;
-                                if (m < 10) m = '0' + m;
-                                if (s < 10) s = '0' + s;
-                                div.innerHTML = (TTV_API_APP_TOKEN.iat != undefined ? d + "D " + h + "H " + m + "M " + s + "S" : "UNKNOWN");
-                            }
-                        }, 1000);
-                    }
-                }
-            }
-        }
-    }
-
-    //User Token
-    if (data.user) {
-        //Scopes
-        let s = '';
-
-        for (let scope in TTV_API_SCOPES) {
-            if (TTV_API_SCOPES[scope].enabled !== true) continue;
-
-            s += '<div>' + TTV_API_SCOPES[scope].desc + '</div>';
-
-            s += '<div>';
-            s += SWITCH_BUTTON_CREATE(data.user.scopes.find(elt => elt === scope) !== undefined, false, null, scope);
-            s += '</div>';
-        }
-
-        s += '<span style="color: red;">For new Scopes to have Effect, you have to log in again!</span><div></div>';
-        document.getElementById('TWITCHAPI_SCOPES').innerHTML = s;
-
-        //Login Button
-        if (data.user.sub) {
-            TTV_API_USER_TOKEN = data.user;
-            TTV_LOGIN_SETDATA(document.getElementById('TWITCHAPI_LOGIN').childNodes[1], TTV_API_USER_TOKEN);
-        }
-    }
-
-    document.getElementById('SETUP_TWITCH_API').style.display = 'block';
-}
-function GetTwitchAPI_Scopes() {
     let scopes = [];
 
-    for (let i = 1; i < document.getElementById('TWITCHAPI_SCOPES').childNodes.length; i += 2) {
-        let div = document.getElementById('TWITCHAPI_SCOPES').childNodes[i];
-
-        for (let element of div.childNodes) {
-            if (element instanceof Element && element.classList.contains('SWITCH_BUTTON')) {
-                if (element.id && SWITCH_BUTTON_GETVALUE_ELT(element))
-                    scopes.push(element.id);
-            }
-        }
+    for (let elt of document.getElementsByClassName('TTV_API_SCOPE')) {
+        if (elt.value === true) scopes.push(elt.dataset.id);
     }
 
     return scopes;
 }
-async function TTV_API_CHECKTOKEN(type) {
-    let opt = getFetchHeader();
 
+async function TwitchAPI_Auth_enable(elt) {
+    //Check other Authenticator Statuses
     try {
-        let response = await fetch("/api/TwitchAPI/token?type=" + type, opt);
-        let json = await checkResponse(response);
-        
-        if (json.err) {
-            OUTPUT_showError(json.err);
-        } else {
-            let outS = '';
-
-            for (let typeee of json.data) {
-                if (typeee.type === 'app') {
-                    TTV_API_APP_TOKEN = typeee.data;
-                    outS += ' App Token: ' + typeee.state;
-                } else if (typeee.type === 'user') {
-                    TTV_API_USER_TOKEN = typeee.data;
-                    outS += ' User Token: ' + typeee.state;
-
-                    TTV_LOGIN_SETDATA(document.getElementById('TWITCHAPI_LOGIN').childNodes[1], TTV_API_USER_TOKEN);
-                }
-            }
-            
-            OUTPUT_showInfo(outS);
-        }
-
+        let answer = await AuthenticatorWarning("TTV Auth.");
+        if (!answer) return Promise.resolve();
     } catch (err) {
-        OUTPUT_showError(err.message);
-        console.log(err);
+        return Promise.resolve();
     }
-}
-async function TTV_API_DELETETOKEN(type) {
-    let opt = getFetchHeader();
-    opt.method = 'DELETE';
     
-    try {
-        let response = await fetch("/api/TwitchAPI/token?type=" + type, opt);
-        let json = await checkResponse(response);
-        
-        if (json.err) {
-            OUTPUT_showError(json.err);
-        } else {
-            for (let typeee of json.data) {
-                if (typeee.state === 'deleted')
-                    OUTPUT_showInfo('Token deleted!');
-                else
-                    OUTPUT_showError('Token failed to be deleted!');
-
-                if (typeee.type === 'user') {
-                    TTV_LOGIN_RESET(document.getElementById('TWITCHAPI_LOGIN').childNodes[1]);
-                } else if (typeee.type === 'app') {
-                    if (document.getElementById('TWITCHAPI_APP_DATA')) {
-                        //CENTERS
-                        for (let cen of document.getElementById('TWITCHAPI_APP_DATA').childNodes) {
-                            if (cen instanceof Element && cen.tagName === "DIV") {
-                                //DIVS
-                                for (let div of cen.childNodes) {
-                                    if (div instanceof Element && div.id === "TWITCHAPI_APP_IAT") {
-                                        div.innerHTML = (data.app.iat != undefined ? new Date(TTV_API_APP_TOKEN.iat * 1000).toLocaleString('de-DE') : "UNKNOWN");
-                                    } else if (div instanceof Element && div.id === "TWITCHAPI_APP_EXP") {
-                                        let interval = setInterval(() => {
-                                            let until = new Date(TTV_API_APP_TOKEN.exp * 1000) - new Date();
-                                            until = Math.floor(until / 1000);
-
-                                            let d = Math.floor(until / (60 * 60 * 24));
-                                            until -= d * 60 * 60 * 24;
-
-                                            let h = Math.floor(until / (60 * 60));
-                                            until -= h * 60 * 60;
-
-                                            let m = Math.floor(until / 60);
-                                            until -= m * 60;
-
-                                            let s = until;
-
-                                            if (until < 0 || d < 0 || h < 0 || m < 0 || s < 0) {
-                                                div.innerHTML = (TTV_API_APP_TOKEN.iat != undefined ? "00D 00H 00M 00S" : "UNKNOWN");
-                                                clearInterval(interval);
-                                            } else {
-                                                if (h < 10) h = '0' + h;
-                                                if (m < 10) m = '0' + m;
-                                                if (s < 10) s = '0' + s;
-                                                div.innerHTML = (TTV_API_APP_TOKEN.iat != undefined ? d + "D " + h + "H " + m + "M " + s + "S" : "UNKNOWN");
-                                            }
-                                        }, 1000);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    } catch (err) {
-        OUTPUT_showError(err.message);
-        console.log(err);
-    }
-}
-
-//TTV IRC
-function SETUP_TTV_IRC(data) {
-    if (!data) return;
-
-    for (let input of document.getElementById('TWITCHIRC_CONNECTION').childNodes) {
-        if (input instanceof Element && input.tagName === "INPUT") {
-            if (data.channel)
-                input.setAttribute('placeholder', data.channel.substring(1));
-        } else if (input instanceof Element && input.classList.contains('LIVE')) {
-            if (data.channel_state !== true)
-                input.style.display = 'none';
-        }
-    }
-
-    document.getElementById('SETUP_TWITCH_IRC').style.display = 'block';
-}
-
-//AUTHENTICATOR
-function SETUP_AUTHENTICATOR(data) {
-    if (!data || !document.getElementById('AUTHENTICATOR_USERS')) return;
-
-    //Interface Buttons Handler
-    MISC_BUTTON_SETTINGS.OnClick = (elt, id) => {
-        let key = id.split('_');
-
-        if (key[2] === 'TRASH') {
-            SETUP_AUTHENTICATOR_REMOVE(key[1]);
-        } else if (key[2] === 'EDIT') {
-            let user = AUTHENTICATOR_DATA.find(elt => elt.user_id == key[1]);
-
-            if (!user) return;
-
-            document.getElementById('AUTHENTICATOR_' + key[1] + '_LEVEL').innerHTML = SETUP_AUTHENTICATOR_USER_LEVEL(user.user_level);
-            document.getElementById('AUTHENTICATOR_' + key[1] + '_EDIT').parentElement.innerHTML = MISC_BUTTON_SAVE_CREATE('AUTHENTICATOR_' + key[1] + '_SAVE');
-        } else if (key[2] === 'SAVE') {
-            SETUP_AUTHENTICATOR_EDIT_SAVE(key[1]);
-        }
-    };
-    
-    //Display User
-    AUTHENTICATOR_DATA = data.users;
-    SETUP_AUTHENTICATOR_DISPLAY();
-
-    document.getElementById('SETUP_AUTHENTICATOR').style.display = 'block';
-}
-function SETUP_AUTHENTICATOR_DISPLAY(data) {
-    let s = '';
-
-    for (let user of AUTHENTICATOR_DATA) {
-        s += SETUP_AUTHENTICATOR_USER(user);
-    }
-
-    //Delete Old Elements
-    let old = document.getElementById('AUTHENTICATOR_USERS');
-    old = HTMLElementArrayToArray(old.childNodes);
-
-    for (let div of old) {
-        if (div instanceof Element && !div.classList.contains('AUTHENTICATOR_USERS_HEADER')) {
-            div.remove();
-        }
-    }
-
-    //Display new Rows
-    if (s === '') {
-        s = '<div class="AUTHENTICATOR_USERS_NOT_FOUND"></div><div class="AUTHENTICATOR_USERS_NOT_FOUND"></div><div class="AUTHENTICATOR_USERS_NOT_FOUND">NO USERS FOUND</div><div class="AUTHENTICATOR_USERS_NOT_FOUND"></div><div class="AUTHENTICATOR_USERS_NOT_FOUND"></div><div class="AUTHENTICATOR_USERS_NOT_FOUND"></div><div class="AUTHENTICATOR_USERS_NOT_FOUND"></div><div class="AUTHENTICATOR_USERS_NOT_FOUND"></div>';
-    }
-
-    document.getElementById('AUTHENTICATOR_USERS').innerHTML += s;
-}
-
-function SETUP_AUTHENTICATOR_ADD() {
-    const UN_ELT = document.getElementById('AUTHENTICATOR_Interface_Username');
-    const UL_ELT = document.getElementById('AUTHENTICATOR_Interface_Userlevel');
-
-    let any = false;
-
-    //UID Check
-    if (UN_ELT.value === '') {
-        UN_ELT.classList.add('fillpls');
-        any = true;
-    } else
-        UN_ELT.classList.remove('fillpls');
-
-    //UL Check
-    if (UL_ELT.value === 'none') {
-        UL_ELT.classList.add('fillpls');
-        any = true;
-    } else
-        UL_ELT.classList.remove('fillpls');
-
-    if (any) return;
-
-    //Waiting
-    CHECKMARK_TOGGLE(document.getElementById('SETUP_AUTHENTICATOR_ADD_WAIT'), 'WAITING');
-
-    //Send Request
-    let opt = getFetchHeader();
-    opt.headers['Content-Type'] = 'application/json';
+    //Access API
+    let opt = getAuthHeader();
     opt.method = 'POST';
-    opt.body = JSON.stringify({
-        user_name: UN_ELT.value,
-        user_level: UL_ELT.value
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify({ state: elt.value === false });
+
+    fetch('/api/settings/TwitchAPI/ttvauth/state', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            SWITCHBUTTON_TOGGLE(elt, json.state);
+            CUR_CONFIG['TwitchAPI']['Authenticator']['enabled'] = json.state === true;
+            WIZARD_AUTHS.find(elt => elt.name === 'TTV Auth.').enabled = json.state === true;
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
+function TwitchAPI_Auth_Interface() {
+    document.getElementById('TwitchAPI_Authenticator_Interface_Select').innerHTML = TwitchAPI_Auth_DB_creatUserlevelSelect();
+}
+function TwitchAPI_Auth_Interface_Mode(btn) {
+    if (btn.innerHTML === 'SHOW USERS') {
+        btn.innerHTML = 'ADD USER';
+        document.getElementById('TwitchAPI_Authenticator_Interface').style.display = 'none';
+        document.getElementById('TwitchAPI_Authenticator_Database').style.display = 'block';
+    } else {
+        btn.innerHTML = 'SHOW USERS';
+        document.getElementById('TwitchAPI_Authenticator_Interface').style.display = 'block';
+        document.getElementById('TwitchAPI_Authenticator_Database').style.display = 'none';
+    }
+}
+
+function TwitchAPI_Auth_DB_create() {
+    let s = '';
+    TTV_API_AUTH_USERS.sort((a, b) => {
+        let ul_id_a = -1;
+        let ul_id_b = -1;
+
+        TTV_API_AUTH_USERLEVELS.find((ul, idx) => {
+            if (ul === a.user_level) ul_id_a = idx; 
+            if (ul === b.user_level) ul_id_b = idx;
+            return false;
+        });
+        return ul_id_b - ul_id_a;
     });
 
-    fetch("/api/Authenticator/user", opt)
-        .then(checkResponse)
-        .then(json => {
-            //ERR CHECK
-            if (json.err) {
-                return Promise.reject(new Error(json.err));
-            } else if (!json.new_user) {
-                return Promise.reject(new Error("User couldn´t be added!"));
-            }
-
-            //Update Page
-            AUTHENTICATOR_DATA.push(json.new_user);
-            SETUP_AUTHENTICATOR_DISPLAY();
-
-            UN_ELT.value = '';
-            UL_ELT.value = 'none';
-
-            OUTPUT_showInfo('User added!');
-            CHECKMARK_TOGGLE(document.getElementById('SETUP_AUTHENTICATOR_ADD_WAIT'), 'SUCCESS');
-        })
-        .catch(err => {
-            OUTPUT_showError(err.message);
-            CHECKMARK_TOGGLE(document.getElementById('SETUP_AUTHENTICATOR_ADD_WAIT'), 'FAILED');
-        });
+    for (let user of TTV_API_AUTH_USERS) s += TwitchAPI_Auth_DB_creatUser(user);
+    document.getElementById('TwitchAPI_Authenticator_Users').innerHTML = s === '' ? '<center class="NOUSER">NO USERS FOUND</center>' : s;
 }
-function SETUP_AUTHENTICATOR_REMOVE(id) {
-    //Waiting
-    document.getElementById('AUTHENTICATOR_' + id + '_CHECKMARK').style.display = 'block';
-    CHECKMARK_TOGGLE(document.getElementById('AUTHENTICATOR_' + id + '_CHECKMARK'), 'WAITING');
-
-    //Send Request
-    let opt = getFetchHeader();
-    opt.headers['Content-Type'] = 'application/json';
-    opt.method = 'DELETE';
-    opt.body = JSON.stringify({ user_id: id });
-    
-    fetch("/api/Authenticator/user", opt)
-        .then(checkResponse)
-        .then(json => {
-            //ERR CHECK
-            if (json.err) {
-                return Promise.reject(new Error(json.err));
-            } else if (!json.deleted || json.deleted <= 0) {
-                return Promise.reject(new Error("User couldn´t be added!"));
-            }
-
-            //Update Page
-            AUTHENTICATOR_DATA = AUTHENTICATOR_DATA.filter(user => user.user_id !== id);
-            SETUP_AUTHENTICATOR_DISPLAY();
-
-            OUTPUT_showInfo('User removed!');
-
-            CHECKMARK_TOGGLE(document.getElementById('AUTHENTICATOR_' + id + '_CHECKMARK'), 'SUCCESS');
-        })
-        .catch(err => {
-            OUTPUT_showError(err.message);
-            CHECKMARK_TOGGLE(document.getElementById('AUTHENTICATOR_' + id + '_CHECKMARK'), 'FAILED');
-        });
-}
-function SETUP_AUTHENTICATOR_EDIT_SAVE(id) {
-    let user_level = document.getElementById('AUTHENTICATOR_' + id + '_LEVEL').childNodes[0].value;
-
-    //Waiting
-    document.getElementById('AUTHENTICATOR_' + id + '_CHECKMARK').style.display = 'block';
-    CHECKMARK_TOGGLE(document.getElementById('AUTHENTICATOR_' + id + '_CHECKMARK'), 'WAITING');
-
-    //Send Request
-    let opt = getFetchHeader();
-    opt.headers['Content-Type'] = 'application/json';
-    opt.method = 'PUT';
-    opt.body = JSON.stringify({
-        user_id: id,
-        user_level: user_level
-    });
-
-    fetch("/api/Authenticator/user", opt)
-        .then(checkResponse)
-        .then(json => {
-            //ERR CHECK
-            if (json.err) {
-                return Promise.reject(new Error(json.err));
-            } else if (!json.upt_user || json.upt_user <= 0) {
-                return Promise.reject(new Error("User couldn´t be updated!"));
-            }
-
-            //Update Page
-            let idx;
-            AUTHENTICATOR_DATA.find((user, index) => {
-                idx = index;
-                return user.user_id == id;
-            });
-            AUTHENTICATOR_DATA[idx].user_level = user_level;
-            SETUP_AUTHENTICATOR_DISPLAY();
-
-            OUTPUT_showInfo('User updated!');
-
-            CHECKMARK_TOGGLE(document.getElementById('AUTHENTICATOR_' + id + '_CHECKMARK'), 'SUCCESS');
-        })
-        .catch(err => {
-            OUTPUT_showError(err.message);
-            CHECKMARK_TOGGLE(document.getElementById('AUTHENTICATOR_' + id + '_CHECKMARK'), 'FAILED');
-        });
-}
-
-function SETUP_AUTHENTICATOR_USER(user) {
+function TwitchAPI_Auth_DB_creatUser(user = {}) {
     let s = '';
 
-    s += '<div>' + user.user_id + '</div>';
-    s += '<div>' + user.user_name + '</div>';
-    s += '<div id="AUTHENTICATOR_' + user.user_id + '_LEVEL">' + user.user_level + '</div>';
-    s += '<div>' + user.added_by + '</div>';
-    s += '<div>' + GetTime(user.added_at * 1000) + '</div>';
-    s += '<div>' + CHECKMARK_CREATE(null, 'AUTHENTICATOR_' + user.user_id + '_CHECKMARK') + '</div>';
-    s += MISC_BUTTON_TRASH_CREATE('AUTHENTICATOR_' + user.user_id + '_TRASH');
-    s += '<div>' + MISC_BUTTON_EDIT_CREATE('AUTHENTICATOR_' + user.user_id + '_EDIT') + '</div>';
+    //NAME / ID
+    s += '<center title="TTV ID: ' + user.user_id + '">' + user.user_name + '</center>';
+
+    //LEVEL
+    s += '<center class="TwitchAPI_Authenticator_Users_LEVEL" data-level="' + user.user_level + '" data-userid="' + user.user_id + '"></center>';
+
+    //DATE
+    let date = new Date(user.added_at * 1000).toLocaleString('de-DE');
+    s += '<center title="added by ' + user.added_by + '">' + date.substring(0, date.lastIndexOf(':')) + '</center>';
+
+    //SETTINGS
+    s += '<center class="TwitchAPI_Authenticator_Users_SETTINGS" data-userid="' + user.user_id + '">';
+    s += '<div class="TwitchAPI_Authenticator_Users_BTN" data-type="edit" title="Edit/Cancel Edit" onclick="TwitchAPI_Auth_DB_edit(' + user.user_id + ')"><img /></div>';
+    s += '<div class="TwitchAPI_Authenticator_Users_BTN" data-type="save" title="Save Edit" data-userid="' + user.user_id + '" onclick="TwitchAPI_Auth_DB_save(' + user.user_id + ')"><img /></div>';
+    s += '<div class="TwitchAPI_Authenticator_Users_BTN" data-type="delete" title="Delete" onclick="TwitchAPI_Auth_DB_delete(' + user.user_id + ')"><img /></div>';
+    s += '</center>';
 
     return s;
 }
-function SETUP_AUTHENTICATOR_USER_LEVEL(level) {
+function TwitchAPI_Auth_DB_creatUserlevelSelect() {
     let s = '';
 
-    s += '<select name="userlevel">';
-    s += '<option value="admin" ' + (level === 'admin' ? 'selected' : '') + '>Admin</option>';
-    s += '<option value="staff"' + (level === 'staff' ? 'selected' : '') + '>Staff</option>';
-    s += '<option value="moderator"' + (level === 'moderator' ? 'selected' : '') + '>Moderator</option>';
-    s += '<option value="subscriber"' + (level === 'subscriber' ? 'selected' : '') + '>Subscriber</option>';
-    s += '<option value="viewer"' + (level === 'viewer' ? 'selected' : '') + '>Viewer</option>';
-    s += '</select>';
+    for (let level of TTV_API_AUTH_USERLEVELS) {
+        s = '<option value="' + level + '" ' + (s === '' ? 'selected' : '') + '>' + level + '</option>' + s;
+    }
 
     return s;
 }
-function SETUP_AUTHENTICATOR_USER_SORT(type = '', elt) {
-    let dir = -1;
 
-    //CSS
-    if (!(elt instanceof Element)) return;
-    if (AUTHENTICATOR_CUR_SORT_ELT !== type) {
-        for (let hdr of document.getElementsByClassName('AUTHENTICATOR_USERS_HEADER')) {
-            if (hdr instanceof Element && hdr.classList.contains(AUTHENTICATOR_CUR_SORT_ELT)) {
-                hdr.classList.remove('UP');
-                hdr.classList.remove('DOWN');
-            }
-        }
-    }
-    AUTHENTICATOR_CUR_SORT_ELT = type;
+function TwitchAPI_Auth_DB_Add() {
+    let user_name = document.getElementById('TwitchAPI_Authenticator_Interface_Name');
+    let user_level = document.getElementById('TwitchAPI_Authenticator_Interface_Select');
 
-    if (elt.classList.contains('UP')) {
-        elt.classList.remove('UP');
-        elt.classList.add('DOWN');
-        dir = -1;
-    } else {
-        elt.classList.remove('DOWN');
-        elt.classList.add('UP');
-        dir = 1;
-    }
-    
-    //Sorting
-    if (type === 'id') {
-        AUTHENTICATOR_DATA.sort((a, b) => dir * (a.user_id - b.user_id));
-    } else if (type === 'name') {
-        AUTHENTICATOR_DATA.sort((a, b) => dir * (a.user_name < b.user_name ? -1 : 1));
-    } else if (type === 'level') {
-        AUTHENTICATOR_DATA.sort((a, b) => dir * (a.user_level < b.user_level ? -1 : 1));
-    } else if (type === 'by') {
-        AUTHENTICATOR_DATA.sort((a, b) => dir * (a.added_by < b.added_by ? -1 : 1));
-    } else if (type === 'at') {
-        AUTHENTICATOR_DATA.sort((a, b) => dir * (a.added_at - b.added_at));
-    } else {
+    if (!user_name.value) {
+        user_name.classList.add('missing');
         return;
+    };
+    user_name.classList.remove('missing');
+
+    //Access API
+    let opt = getAuthHeader();
+    opt.method = 'POST';
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify({ user_name: user_name.value, user_level: user_level.value });
+
+    fetch('/api/settings/TwitchAPI/ttvauth/user', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            if (!json.new_user) return;
+            TTV_API_AUTH_USERS.push(json.new_user);
+            TwitchAPI_Auth_DB_create();
+
+            document.getElementById('TwitchAPI_Authenticator_Database').style.display = 'block';
+            document.getElementById('TwitchAPI_Authenticator_Interface_Toggle').innerHTML = 'ADD USER';
+            document.getElementById('TwitchAPI_Authenticator_Interface').style.display = 'none';
+
+            OUTPUT_showInfo("User added!");
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
+function TwitchAPI_Auth_DB_edit(user_id) {
+    //FInd Save Button
+    let btns = HTMLArray2RealArray(document.getElementsByClassName('TwitchAPI_Authenticator_Users_BTN'));
+    let saveBTN;
+    for (let btn of btns) {
+        if (btn instanceof Element && btn.dataset.type === 'save' && btn.dataset.userid === user_id + '') {
+            saveBTN = btn;
+            break;
+        }
     }
 
-    //Make New Rows
-    let s = '';
-
-    for (let user of AUTHENTICATOR_DATA) {
-        s += SETUP_AUTHENTICATOR_USER(user);
-    }
-
-    if (s !== '') {
-        //Delete Old Elements
-        let old = document.getElementById('AUTHENTICATOR_USERS');
-        old = HTMLElementArrayToArray(old.childNodes);
-
-        for (let div of old) {
-            if (div instanceof Element && !div.classList.contains('AUTHENTICATOR_USERS_HEADER')) {
-                div.remove();
+    if (saveBTN.style.display === 'none' || saveBTN.style.display === '') {
+        //Find Userlevel Element
+        let ulElements = HTMLArray2RealArray(document.getElementsByClassName('TwitchAPI_Authenticator_Users_LEVEL'));
+        let ulElement;
+        for (let elElt of ulElements) {
+            if (elElt instanceof Element && elElt.dataset.userid === user_id + '') {
+                ulElement = elElt;
+                break;
             }
         }
 
-        //Display new Rows
-        document.getElementById('AUTHENTICATOR_USERS').innerHTML += s;
+        //Find User
+        let user_index;
+        let user = TTV_API_AUTH_USERS.find((elt, idx) => {
+            if (elt.user_id === user_id + "") {
+                user_index = idx;
+                return true;
+            }
+            return false;
+        });
+        
+        if (!saveBTN || !ulElement || user_index === undefined|| !user) return;
+        saveBTN.style.display = 'inline-block';
+        saveBTN.style.display = 'inline-block';
+
+        ulElement.remove();
+
+        let select = document.createElement('select');
+        select.dataset.userid = user_id + "";
+        select.classList.add('TwitchAPI_Authenticator_Users_LEVEL_SELECT');
+        select.innerHTML = TwitchAPI_Auth_DB_creatUserlevelSelect();
+        select.value = user.user_level;
+        document.getElementById('TwitchAPI_Authenticator_Users').insertBefore(select, document.getElementById('TwitchAPI_Authenticator_Users').childNodes[(user_index * 4) + 1]);
+    } else {
+        TwitchAPI_Auth_DB_create();
     }
 }
-
-//DataCollection
-//sooon
-
-//WebApp
-function SETUP_WEBAPP(data) {
-    if (!data || !document.getElementById('SETUP_WEBAPP')) return;
-
-    let s = '<ol>';
-
-    for (let layer of data.Routing) {
-        s += SETUP_WEBAPP_createLayer2(layer);
+function TwitchAPI_Auth_DB_save(user_id) {
+    let ulElements = HTMLArray2RealArray(document.getElementsByClassName('TwitchAPI_Authenticator_Users_LEVEL_SELECT'));
+    let user_level;
+    for (let elElt of ulElements) {
+        if (elElt instanceof Element && elElt.dataset.userid === user_id + '') {
+            user_level = elElt;
+            break;
+        }
     }
 
-    document.getElementById('SETUP_WEBAPP_ROUTING').innerHTML = s + '</ol>';
-    document.getElementById('SETUP_WEBAPP').style.display = 'block';
-}
-function SETUP_WEBAPP_createLayer2(layer, api = false) {
-    if (!layer.stack || layer.stack.length === 0) return '';
+    //Access API
+    let opt = getAuthHeader();
+    opt.method = 'PUT';
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify({ user_id, user_level: user_level.value });
 
+    fetch('/api/settings/TwitchAPI/ttvauth/user', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            if (!json.upt_user) return Promise.reject(new Error('User couldnt be editted!'));
+
+            let user = TTV_API_AUTH_USERS.find(elt => elt.user_id == user_id);
+
+            if (user) user.user_level = user_level.value;
+
+            TwitchAPI_Auth_DB_create();
+            OUTPUT_showInfo("User updated!");
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
+async function TwitchAPI_Auth_DB_delete(user_id) {
+    //Check if Last remaining Admin
+    let user = TTV_API_AUTH_USERS.find(elt => elt.user_id === user_id + "");
+    let last_admin = TTV_API_AUTH_USERS.filter(elt => elt.user_level === 'admin');
+
+    try {
+        if (user.user_level === 'admin' && last_admin.length === 1) {
+            let answer = await MISC_USERCONFIRM('ARE YOU SURE YOU WANT THIS?', 'Removing the LAST Admin User while TTV Authenticator is active is not recommended! You will lose ALL access to settings and the Bot CANT recover from this without YOU editting Files on the Server! </br> We advice you to select another Authenticator or add another Admin User FIRST!');
+            if (answer !== 'YES') return Promise.resolve();
+        }
+    } catch (err) {
+        return Promise.resolve();
+    }
+    
+    //Access API
+    let opt = getAuthHeader();
+    opt.method = 'DELETE';
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify({ user_id });
+
+    fetch('/api/settings/TwitchAPI/ttvauth/user', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            if (json.deleted !== true) return Promise.reject(new Error('User couldnt be deleted!'));
+
+            let idx;
+
+            TTV_API_AUTH_USERS.find((elt, index) => {
+                if (elt.user_id == user_id) {
+                    idx = index;
+                    return true;
+                }
+                return false;
+            });
+            
+            if (idx >= 0) TTV_API_AUTH_USERS.splice(idx, 1);
+            
+            TwitchAPI_Auth_DB_create();
+            OUTPUT_showInfo("User deleted!");
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
+
+function TwitchAPI_Auth_DB_Channel_change(value) {
+    //Buffer Layer
+    if (TwitchAPI_FETCHING === true) return;
+
+    setTimeout(() => {
+        if (value === document.getElementById('TwitchAPI_Authenticator_Interface_Name').value)
+            if (value.trim() == "") {
+                document.getElementById('TwitchAPI_Auth_DB_Channel_Selector').style.display = 'none';
+                document.getElementById('TwitchAPI_Auth_DB_Channel_Selector').innerHTML = '';
+            }
+            else
+                TwitchAPI_Auth_Channel_Fetch(value);
+    }, 100);
+}
+function TwitchAPI_Auth_DB_Channel_Selected(e) {
+    if (e.target.id === 'TwitchAPI_Auth_DB_Channel_Selector') return;
+
+    let elt = e.target;
+
+    while (elt.id !== 'TwitchAPI_Auth_DB_Channel_Selector' && elt.parentElement.id !== 'TwitchAPI_Auth_DB_Channel_Selector') {
+        elt = elt.parentElement;
+    }
+
+    if (!elt.dataset.channel) return;
+
+    document.getElementById('TwitchAPI_Auth_DB_Channel_Selector').style.display = 'none';
+    document.getElementById('TwitchAPI_Authenticator_Interface_Name').value = elt.dataset.channel;
+}
+
+function TwitchAPI_Auth_Channel_Fetch(value) {
+    TwitchIRC_FETCHING = true;
+    document.getElementById('TwitchAPI_Auth_DB_Channel_Selector').style.display = 'grid';
+    fetch('/api/twitchapi/findchannel?channel=' + value, getAuthHeader())
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            let s = '';
+            for (let channel of json.data) {
+                s += '<div ' + (channel.is_live ? 'class="live"' : '') + ' data-channel="' + channel.login + '"><div><img src="' + channel.img + '"/> <span class="name">' + (channel.display_name || channel.login) + '</span>' + (channel.is_live ? '<span class="live">LIVE</span>' : '') + '</div></div>';
+            }
+            document.getElementById('TwitchAPI_Auth_DB_Channel_Selector').innerHTML = s;
+
+            TwitchAPI_FETCHING = false;
+        })
+        .catch(err => {
+            if (err.message === 'Twitch API is disabled' || err.message === '404 - API Endpoint not found') {
+                document.getElementById('TwitchAPI_Auth_DB_Channel_Selector').innerHTML = '<div><div><img /><span>Autofill from Twitch API Data not availabe.</span></div></div>';
+                return;
+            }
+
+            TwitchAPI_FETCHING = false;
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
+
+function TwitchAPI_API_create(endpoints = {}) {
+    let Off_cats = [];
+    let UnOff_cats = [];
+
+    //Create Categories
+    for (let api in endpoints.Official) {
+        let cat = Off_cats.find(elt => elt.name === endpoints.Official[api].resource);
+        if (cat) {
+            cat.endpoints.push({ name: api, enabled: endpoints.Official[api].enabled, req_scope: endpoints.Official[api].req_scope });
+        } else {
+            Off_cats.push({ name: endpoints.Official[api].resource, endpoints: [{ name: api, enabled: endpoints.Official[api].enabled, req_scope: endpoints.Official[api].req_scope }] });
+        }
+    }
+    for (let api in endpoints.UnOfficial) {
+        let cat = UnOff_cats.find(elt => elt.name === endpoints.UnOfficial[api].resource);
+        if (cat) {
+            cat.endpoints.push({ name: api, enabled: endpoints.UnOfficial[api].enabled });
+        } else {
+            UnOff_cats.push({ name: endpoints.UnOfficial[api].resource, endpoints: [{ name: api, enabled: endpoints.UnOfficial[api].enabled }] });
+        }
+    }
+
+    //Sort Categories
+    Off_cats.sort((a, b) => sortAlphabetical(a.name, b.name));
+    UnOff_cats.sort((a, b) => {
+        if (b.resource === 'Unofficial') return 1;
+        else return sortAlphabetical(a.name, b.name);
+    });
+
+    //Set Official
     let s = '';
-    s += '<li>';
+    for (let cat of Off_cats) {
+        s += TwitchAPI_API_createCategorie(cat, false);
+    }
+    document.getElementById('TWITCHAPI_API_ENABLES').innerHTML = s;
 
-    let temp = "";
+    //Set Unofficial
+    s = '';
+    for (let cat of UnOff_cats) {
+        s += TwitchAPI_API_createCategorie(cat, true);
+    }
+    document.getElementById('TWITCHAPI_API_ENABLES_UNOFF').innerHTML = s;
 
-    for (let sub_layer of layer.stack) {
-        temp += SETUP_WEBAPP_createLayer2(sub_layer, layer.name === 'API Router');
+    for (let elt of document.getElementsByClassName('TTV_API_ENDPOINT_ENABLE')) {
+        if (elt instanceof Element && elt.tagName === 'SWITCHBUTTON') SWITCHBUTTON_AUTOFILL(elt);
+    }
+    for (let elt of document.getElementsByClassName('TTV_API_ENDPOINT_ENABLE_UNOFF')) {
+        if (elt instanceof Element && elt.tagName === 'SWITCHBUTTON') SWITCHBUTTON_AUTOFILL(elt);
+    }
+}
+function TwitchAPI_API_createCategorie(cat, unoff = false) {
+    let s = '';
+    s += '<p>' + cat.name + '</p>';
+    s += '<div class="ENDPOINT_CAT">';
+
+    for (let api of cat.endpoints) {
+        s += '<span>' + api.name + '</span>' + SWITCHBUTTON_CREATE(api.enabled === true, false, 'TwitchAPI_Endpoint_Control(this, ' + unoff + '); ', null, 'data-endpoint="' + api.name + '"  class="TTV_API_ENDPOINT_ENABLE' + (unoff ? '_UNOFF' : '') + '"');
     }
 
-    s += layer.name + '</li>';
-
-    if (temp) {
-        s += '<ol>';
-        s += temp;
-        s += '</ol>';
-    }
-
+    s += '</div>';
     return s;
 }
-function SETUP_WEBAPP_Routing_toggle(elt, show) {
-    if (elt && document.getElementById('SETUP_WEBAPP_ROUTING')) {
-        if (show === false)
-            document.getElementById('SETUP_WEBAPP_ROUTING').classList.remove('hidden');
-        else if (show === true)
-            document.getElementById('SETUP_WEBAPP_ROUTING').classList.add('hidden');
-        else
-            document.getElementById('SETUP_WEBAPP_ROUTING').classList.toggle('hidden');
+async function TwitchAPI_Endpoint_Control(elt, unoff = false) {
+    //Check
+    if (elt.value === false && (elt.dataset.endpoint === 'Get Streams' || elt.dataset.endpoint === 'Get Users')) {
+        let answer = 'NO';
+        let warning = 'Disabling the "Get Streams" or "Get Users" Endpoints is not reccomended as they are requiered for Token Checks and many other User Authentications! You can still disable them, if you want tho!';
+        
+        try {
+            answer = await MISC_USERCONFIRM('ARE YOU SURE YOU WANT THIS?', warning);
+        } catch (err) {
 
-        elt.innerHTML = document.getElementById('SETUP_WEBAPP_ROUTING').classList.contains('hidden') ? 'show' : 'hide';
+        }
+
+        if (answer !== 'YES') {
+            SWITCHBUTTON_TOGGLE(elt);
+            return Promise.resolve();
+        }
+    } else if (elt.value === true && unoff === true) {
+        let answer = 'NO';
+        let warning = 'Using Unofficial / Undocumented APIs might be inconsitent or subject to change. Updates and Support might be slow or cut down the line. But they are pretty neat and you can you them if you want!';
+
+        try {
+            answer = await MISC_USERCONFIRM('ARE YOU SURE YOU WANT THIS?', warning);
+        } catch (err) {
+
+        }
+
+        if (answer !== 'YES') {
+            SWITCHBUTTON_TOGGLE(elt);
+            return Promise.resolve();
+        }
     }
+
+    //Toggle
+    let opt = getAuthHeader();
+
+    opt['method'] = 'PUT';
+    opt['headers']['Content-Type'] = 'application/json';
+
+    fetch("/api/settings/TwitchAPI/Endpoints/" + elt.dataset.endpoint + '?mode=toggle&unoff=' + unoff, opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            SWITCHBUTTON_TOGGLE(elt, json.state);
+            OUTPUT_showInfo('Endpoint toggled!');
+        })
+        .catch(err => {
+            SWITCHBUTTON_TOGGLE(elt, elt.value === false);
+            console.log(err);
+            OUTPUT_showError(err.message);
+        });
+
+    return Promise.resolve();
+}
+async function TwitchAPI_Endpoint_Control_All(mode, unoff = false) {
+    //Check
+    if (elt.value === false && unoff === false) {
+        let answer = 'NO';
+        let warning = 'Disabling the "Get Streams" or "Get Users" Endpoints is not reccomended as they are requiered for Token Checks and many other User Authentications! You can still disable them, if you want tho!';
+
+        try {
+            answer = await MISC_USERCONFIRM('ARE YOU SURE YOU WANT THIS?', warning);
+        } catch (err) {
+
+        }
+
+        if (answer !== 'YES') {
+            for (let elt of document.getElementsByClassName('TTV_API_ENDPOINT_ENABLE')) {
+                SWITCHBUTTON_TOGGLE(elt, json.state);
+            }
+            return Promise.resolve();
+        }
+    } else if (elt.value === true && unoff === true) {
+        let answer = 'NO';
+        let warning = 'Using Unofficial / Undocumented APIs might be inconsitent or subject to change. Updates and Support might be slow or cut down the line. But they are pretty neat and you can you them if you want!';
+
+        try {
+            answer = await MISC_USERCONFIRM('ARE YOU SURE YOU WANT THIS?', warning);
+        } catch (err) {
+
+        }
+
+        if (answer !== 'YES') {
+            for (let elt of document.getElementsByClassName('TTV_API_ENDPOINT_ENABLE_UNOFF')) {
+                SWITCHBUTTON_TOGGLE(elt, json.state);
+            }
+            return Promise.resolve();
+        }
+    }
+
+    //Change Settings
+    let opt = getAuthHeader();
+
+    opt['method'] = 'PUT';
+    opt['headers']['Content-Type'] = 'application/json';
+
+    fetch('/api/settings/TwitchAPI/Endpoints/all?mode=' + mode + '&unoff=' + unoff, opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            for (let elt of document.getElementsByClassName('TTV_API_ENDPOINT_ENABLE' + (unoff ? '_UNOFF' : ''))) {
+                SWITCHBUTTON_TOGGLE(elt, json.state);
+            }
+            OUTPUT_showInfo('Endpoints toggled!');
+        })
+        .catch(err => {
+            console.log(err);
+            OUTPUT_showError(err.message);
+        });
+
+    return Promise.resolve();
+}
+function TwitchAPI_Endpoint_Log(elt) {
+    let opt = getAuthHeader();
+
+    opt['method'] = 'PUT';
+    opt['headers']['Content-Type'] = 'application/json';
+    opt['body'] = JSON.stringify({ mode: 'toggle', setting: 'log_api_calls' });
+
+    fetch("/api/settings/TwitchAPI/misc", opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            elt.checked = json.state === true;
+            OUTPUT_showInfo('Logging ' + (json.state === true ? 'enabled' : 'disabled') +'!');
+        })
+        .catch(err => {
+            elt.checked = elt.checked === false;
+            console.log(err);
+            OUTPUT_showError(err.message);
+        });
+}
+
+//Util
+function AddWizHash() {
+    SetURLHashParam('_m', WIZARD_CURSOR[0]);
+    SetURLHashParam('_g', WIZARD_CURSOR[1]);
+    return window.location.href;
+}
+function GetModuleIndex(module) {
+    let index = -1;
+    WIZARD_NAV_DATA.find((elt, idx) => {
+        if (elt.name === module) {
+            index = idx;
+            return true;
+        }
+        return false;
+    });
+
+    return index;
+}
+function GetGroupIndex(module, group) {
+    let moduleObj = WIZARD_NAV_DATA[GetModuleIndex(module)];
+    if (!moduleObj) return -1;
+
+    let index = -1;
+    moduleObj.groups.find((elt, idx) => {
+        if (elt.name === group) {
+            index = idx;
+            return true;
+        }
+        return false;
+    });
+
+    return index;
+}
+async function AuthenticatorWarning(change_auth = '') {
+    let curAuth = WIZARD_AUTHS.find(elt => elt.name === change_auth);
+    if (!curAuth) return Promise.reject(new Error('Authenticator not found!'));
+
+    let otherEnabled = false;
+    for (let auth of WIZARD_AUTHS) if (auth.enabled === true && auth.name !== change_auth) otherEnabled = true;
+    
+    //Check Settings and setup User confirm, if necassary
+    if (CUR_CONFIG['WebApp']['selected_Authenticator'] === curAuth.name || (curAuth.enabled === true && !otherEnabled)) {
+        let answer = 'NO';
+        let warning = 'Disabling the only Authenticator available isnt recommended! You will lose ALL access to settings and the Bot CANT recover from this without YOU editting Files on the Server! </br> We advice you to turn on another Authenticator FIRST!';
+
+        if (CUR_CONFIG['WebApp']['selected_Authenticator'] === curAuth.name) warning = 'Disabling the current Authenticator isnt recommended! You will lose ALL access to settings and the Bot CANT recover from this without YOU editting Files on the Server! </br> We advice you to switch to another Authenticator FIRST!';
+
+        try {
+            answer = await MISC_USERCONFIRM('ARE YOU SURE YOU WANT THIS?', warning);
+        } catch (err) {
+
+        }
+        return Promise.resolve(answer === 'YES');
+    } 
+
+    return Promise.resolve(true);
+}
+
+function sortAlphabetical(a, b, dir = 1) {
+    for (let i = 0; i < a.length && i < b.length; i++) {
+        if (a.charCodeAt(i) - b.charCodeAt(i) === 0) continue;
+        return dir * (a.charCodeAt(i) - b.charCodeAt(i));
+    }
+
+    return dir * (a.length - b.length);
 }

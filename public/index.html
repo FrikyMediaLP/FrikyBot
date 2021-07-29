@@ -60,8 +60,9 @@
 
             </div>
             <div id="mainNavi">
-                
+
             </div>
+            <button id="LightModeButton" onclick="toggleLightMode()">DarkMode</button>
             <div id="license"> - <a href="https://fontawesome.com/license" target="_blank">Icon license</a> - </div>
         </div>
 
@@ -69,10 +70,7 @@
         <div class="cellM" id="content" onscroll="NAVIGATIONV2_SCROLL_HL_CHECK()">
 
             <h1>FrikyBot Webinterface!</h1>
-
-            <div id="OUTPUT">
-
-            </div>
+            <output></output>
             <h2>Bot Status</h2>
 
             <!-- Bot_Status_Details -->
@@ -80,7 +78,7 @@
 
             </div>
 
-            <h2><a href="/News">News</a></h2>
+            <h2><a href="/News">News</a> <span id="NEWS_SWITCH"><span>SCHEDULED</span><switchbutton id="NEWS_SWITCHER" value="true" onclick="news_switch(this);"></switchbutton></span></h2>
             <div id="NEWS_FEED_Feed">
 
             </div>

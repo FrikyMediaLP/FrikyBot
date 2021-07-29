@@ -9,12 +9,11 @@
         max-height: 20px;
         width: auto;
         height: auto;
+        background-color: rgba(0, 0, 0, 0.2) !important;
     }
 
-        .SELECTION .SELECTION_SELECTOR[data-selected='true'] {
-            padding: 3px !important;
+        .SELECTION .SELECTION_SELECTOR:hover {
             background-color: rgba(0, 0, 0, 0.4) !important;
-            border: 2px solid red !important;
         }
 
     .SELECTION .SELECTION_SELECTON {
@@ -32,7 +31,7 @@
         grid-template-columns: repeat(auto-fit, 20px);
         grid-column-gap: 6px;
         grid-row-gap: 6px;
-        z-index: 1;
+        z-index: 10 !important;
         background-color: white;
     }
 

@@ -61,18 +61,12 @@
 
         <!-- ACTUAL CONTENT -->
         <div class="cellM" id="content" onscroll="NAVIGATIONV2_SCROLL_HL_CHECK()">
-            <div id="OUTPUT">
-
-            </div>
+            <output></output>
 
             <div id="WAITING_FOR_DATA">
                 <div class="LOADING_RING">
                     <div class="LOADING_RING_SPINNER"></div>
                 </div>
-            </div>
-
-            <div id="SETUP_UI">
-                <button onclick="switchMode(this);">USE SETUP</button>
             </div>
 
             <div id="SETUP">
@@ -111,27 +105,139 @@
                             </div>
                             <div>
                                 <h4>Port</h4>
-                                <input id="FrikyBot_WebApp_Port" type="number" value="8080" max="9999" placeholder="Default: 8080" oninput="port_change(this.value)" />
-                                <p id="FrikyBot_WebApp_Port_Hint" hidden>Changing this setting requires a restart!</p>
+                                <input id="SETTING_WebApp_Port" type="number" value="8080" max="9999" placeholder="Default: 8080" oninput="port_change(this.value)" />
+                                <p id="SETTING_WebApp_Port_Hint" hidden>Changing this setting requires a restart!</p>
                             </div>
                         </div>
                         <div class="Con_Cat Con_Cat_Description WIZ_GROUP_WebApp" hidden>
                             <div>
                                 <h3>FrikyBot Authentication</h3>
                                 <p>Authentication/Authorization is needed to access sensitive Data or change settings. I advice you to use the Twitch API Authenticator instead of my own tho!! (more about that later)</p>
-                                
+
                                 <h3>Codes and Secret</h3>
                                 <p>Authentication Codes are generated using Javascript Web Tokens (JWT). They are based on a Token-Secret, you can change/regenerate a new Secret, <b>BUT</b> you have to log in again, since the Token also changes.</p>
                                 <p>Since all generated Codes have no expiration dates, changing the Secret is the only way to revoke a token.</p>
                             </div>
                             <div>
-                                <h4>Enable/Disable FrikyBot Athentication</h4>
-                                <switchbutton id="FrikyBot_WebApp_authentication_enable" value="true" onclick="FrikyBot_auth_enable(this)"></switchbutton>
+                                <h3>Current Authenticator</h3>
+                                <div style="position: relative; margin-top: 5px;">
+                                    Switch WebApp Authenticator
+                                    <select id="SETTING_WebApp_selectedAuthenticator" onchange="FrikyBot_Auth_switch(this)" style="position: absolute; right: 0;">
+                                        <option>No Authnticator available</option>
+                                    </select>
+                                </div>
 
-                                <h4>FrikyBot Authentication Secret</h4>
-                                <input value="" id="FrikyBot_WebApp_authentication_secret" type="password"/>
-                                <button onclick="FrikyBot_auth_show(this)">SHOW SECRET</button>
-                                <button onclick="FrikyBot_auth_regen()">REGENERATE SECRET</button>
+                                <h3>FrikyBot Auth.</h3>
+                                <div style="position: relative; margin-top: 5px;">
+                                    Enable/Disable FrikyBot Authenticatior
+                                    <switchbutton id="SETTING_WebApp_Authenticator_enabled" value="true" OverWriteonclick="FrikyBot_Auth_enable(this);" style="position: absolute; right: 0;"></switchbutton>
+                                </div>
+
+                                <h4 style="margin-top: 20px;">FrikyBot Authentication Secret</h4>
+                                <input value="" id="SETTING_WebApp_Authenticator_secret" type="password" />
+                                <button onclick="FrikyBot_Auth_show(this)">SHOW SECRET</button>
+                                <button onclick="FrikyBot_Auth_regen()">REGENERATE SECRET</button>
+                            </div>
+                        </div>
+
+                        <div class="Con_Cat WIZ_GROUP_TwitchIRC" hidden>
+                            <div>
+                                <h3>Introduction</h3>
+                                <p>The Twitch IRC connects to the Chat and displays Messages, Events, ... All Messages (Events,...) can be reveived without a supplied User, BUT to send Messages (e.g. for Commands) you need a BotUser Account (can also be the Broadcaster or an other). This Account can be connecting by loggin in using the FrikyBot Twitch API Module or by an OAuth Token generated by an external Service.</p>
+                                <p>The FrikyBot also directly comes with the FrankerFaceZ and BTTV APIs. Theses are nativly supported by all Core Modules and provide even more Capabilities in Chat Moderation and Data Collection.</p>
+
+                                <h3>Login using Twitch</h3>
+                                <p>Login using Twitch requieres Setup of the Twitch API! If you havent already, pls <a onclick="WIZARD_show(WIZARD_CURSOR[0]+1, WIZARD_CURSOR[1])" style="cursor: pointer;">setup your Twitch Dev Application</a> first!</p>
+                            </div>
+                        </div>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchIRC" hidden>
+                            <div>
+                                <h3>User Login</h3>
+                                <p>To be able to send Messages/Moderate Chat/... the FrikyBot requieres a Twitch User Account. This can be your own or a second one created as the Bot User.</p>
+                                <p>If you have Twitch API already set up, you can directly Log in using Twitch with the Account of your Choice. Otherwise you can use a third Party Service to obtain a Twitch OAuth Token and use that one.</p>
+
+                                <h3>Token Origin / Status</h3>
+                                <p>The Token needed to authenticate you to the Twitch Chat isn´t requiered to originate from your Twitch API Application (thats why you can use third Party Sevices), BUT if you change any Setting to the Twitch API Application or your third Party Service might force you to regenerate this OAuth Token!</p>
+
+                                <h3>Login using Twitch</h3>
+                                <p>Make sure your Twitch Dec Application is setup and valid. A Token with rights to "read/write Chat Messages", "moderate Chat" and "read/write Whispers" will be requested, <b>NOTHING MORE!</b></p>
+                                <p>This Login will redirect you to Twitch and then back here (you MIGHT need to navigate to this step again tho)</p>
+                            </div>
+                            <div style="position: relative;">
+                                <h3>User Login Information</h3>
+                                <br />
+                                <label>Twitch Username:  <input value="" id="SETTING_TwitchIRC_login" type="text" oninput="TwitchIRC_User_change();" style="width: 50%;" /> </label>
+                                <br />
+                                <label>Twitch OAuth Token: <input value="" id="SETTING_TwitchIRC_oauth" type="password" oninput="TwitchIRC_User_change();" style="width: 50%;" /></label>
+                                <button onclick="TwitchIRC_OAuth_show(this)">SHOW OAUTH TOKEN</button>
+                                <button id="TwitchIRC_USER_TEST" onclick="TwitchIRC_USER_TEST()">TEST</button>
+                                <button id="TwitchIRC_OAUTH_SAVE" onclick="TwitchIRC_User_Save()" style="display: none;">SAVE EXTERNAL OAUTH TOKEN</button>
+
+                                <div class="TTV_LOGIN TTV_LOGIN_FALSE" id="TwitchIRC_User" style="position: absolute; bottom: 5px; left: 50%; transform: translate(-50%);">
+                                    <div class="TTV_LOGIN_DATA">
+
+                                    </div>
+                                    <div class="TTV_LOGIN_BUTTON">
+                                        <center onclick="TTV_LOGIN_CLICKED(this, 'user', TWITCHIRC_USER_SCOPES)">
+                                            <span>LOG IN USING TWITCH</span>
+                                            <img src="../images/icons/twitch.svg" data-type="svg" />
+                                        </center>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchIRC" hidden>
+                            <div>
+                                <h3>Twitch Channel</h3>
+                                <p>The FrikyBot currently only supports one Channel at a time.</p>
+                                <p>Please enter the channel the Bot should join and listen for Messages/Events. A list of Twitch Channel will appear, click on one to auto-fill. <b>Note: </b>Not all Channels appear in this list!</p>
+                            </div>
+                            <div>
+                                <h3>Twitch Channel</h3>
+                                <br />
+                                <label>
+                                    Twitch Channel Name:
+                                    <input id="SETTING_TwitchIRC_channel" type="text" autocomplete="off" oninput="TwitchIRC_Channel_input(this.value);" style="width: 50%; text-transform: lowercase;" />
+                                </label>
+                                <div id="TwitchIRC_Channel_Selector" class="CHANNEL_SELECTOR" onclick="TwitchIRC_Channel_Selected(event);">
+
+                                </div>
+                                <button id="TwitchIRC_CHANNEL_SAVE" onclick="TwitchIRC_Channel_Save()" style="display: none;">SAVE CHANNEL</button>
+                            </div>
+                        </div>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchIRC" hidden>
+                            <div>
+                                <h3>BTTV Emotes</h3>
+                                <p>The FrikyBot nativly supports BetterTwitchTV. This CAN slow down some responses, because we have to check the BTTV external Database, but mostly its fine. Anyway, you can disable it here overall.</p>
+                                <h3>FFZ Emotes</h3>
+                                <p>The FrikyBot nativly supports FrankerFaceZ. This CAN slow down some responses, because we have to check the FFZ external Database, but mostly its fine. Anyway, you can disable it here overall.</p>
+                                <h3>Console Output</h3>
+                                <p>The FrikyBot is mainly controlled using the Web Interface, but the Server Console might still be usefulll / necessary in some circumstances. Debugging the IRC Conncection and Events can be helpfull.</p>
+                            </div>
+                            <div>
+                                <h3>Third Party Emotes</h3>
+                                <div style="display: grid; grid-template-columns: auto 52px;">
+                                    <p>BTTV Support: </p>
+                                    <switchbutton id="SETTING_TwitchIRC_support_BTTV" value="true" onclick="TwitchIRC_MISC_Switch(this)"></switchbutton>
+                                </div>
+                                <div style="display: grid; grid-template-columns: auto 52px;">
+                                    <p>FFZ Support: </p>
+                                    <switchbutton id="SETTING_TwitchIRC_support_FFZ" value="true" onclick="TwitchIRC_MISC_Switch(this)"></switchbutton>
+                                </div>
+
+                                <h3>Console Output</h3>
+                                <div style="display: grid; grid-template-columns: auto 52px;">
+                                    <p>Print Join Messages: </p>
+                                    <switchbutton id="SETTING_TwitchIRC_console_print_join_message" value="true" onclick="TwitchIRC_MISC_Switch(this)"></switchbutton>
+                                </div>
+                                <div style="display: grid; grid-template-columns: auto 52px;">
+                                    <p>Print Messages: </p>
+                                    <switchbutton id="SETTING_TwitchIRC_console_print_message" value="true" onclick="TwitchIRC_MISC_Switch(this)"></switchbutton>
+                                </div>
+                                <div style="display: grid; grid-template-columns: auto 52px;">
+                                    <p>Print Connection Status: </p>
+                                    <switchbutton id="SETTING_TwitchIRC_console_print_connection" value="true" onclick="TwitchIRC_MISC_Switch(this)"></switchbutton>
+                                </div>
                             </div>
                         </div>
 
@@ -161,23 +267,14 @@
                             </div>
                             <div>
                                 <h4>Client ID</h4>
-                                <input id="TwitchAPI_Your_Application_ID" type="text" placeholder="your applications Client ID" />
+                                <input id="SETTING_TwitchAPI_ClientID" type="text" autocomplete="off" placeholder="your applications Client ID" oninput="TwitchAPI_Application_change()" />
                                 <h4>Client Secret</h4>
-                                <input id="TwitchAPI_Your_Application_Secret" type="text" placeholder="your applications Client Secret" />
-                                <h4>Redirect URL <button class="COPY_CAT_BUTTON" onclick="">copy</button></h4>
-                                <input id="TwitchAPI_Your_Application_URL" type="text" placeholder="Default: http://localhost:8080/Twitch-Redirect" value="http://localhost:8080/Twitch-Redirect" disabled />
-                            </div>
-                        </div>
-                        <div class="Con_Cat WIZ_GROUP_TwitchAPI" hidden>
-                            <div>
-                                <h3>Twitch API Init</h3>
-                                <p>The Twitch API Module has to be loaded with your given information!</p>
-                                <p>This might take a big, while it checks the settings for validation...</p>
-                                <div id="TTV_API_LOAD" class="LOADING_RING_WRAPPER">
-                                    <div class="LOADING_RING">
-                                        <div class="LOADING_RING_SPINNER"></div>
-                                    </div>
-                                </div>
+                                <input id="SETTING_TwitchAPI_Secret" type="password" autocomplete="off" placeholder="your applications Client Secret" oninput="TwitchAPI_Application_change()" />
+                                <button onclick="TwitchAPI_Secret_change(this)">SHOW SECRET</button>
+                                <button id="TwitchAPI_Application_Save" onclick="TwitchAPI_Application_Save()" style="display: none;">SAVE APPLICATION SETTINGS</button>
+
+                                <h4 style="margin-top: 10px;">Redirect URL <button class="COPY_CAT_BUTTON" onclick="copyToClipboard(document.getElementById('TwitchAPI_Redirect_URL').value)">copy</button></h4>
+                                <input id="TwitchAPI_Redirect_URL" type="text" autocomplete="off" placeholder="Default: http://localhost:8080/Twitch-Redirect" value="http://localhost:8080/Twitch-Redirect" disabled />
                             </div>
                         </div>
                         <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchAPI" hidden>
@@ -187,34 +284,27 @@
                                 <p>This Login will redirect you to Twitch and then back here (you might need to navigate to this step again tho)</p>
                             </div>
                             <div>
-                                <div id="TWITCHAPI_USERLOGIN_SCOPES">
+                                <button id="TwitchAPI_Login_Mode" onclick="TwitchAPI_Login_Mode();" style="display: none;">CUSTOMIZE ACCESS</button>
+                                <h3 id="TwitchAPI_Login_Scope_Header">Customize Access Scope</h3>
+                                <div id="TWITCHAPI_USERLOGIN_SCOPES" style="display: none">
 
                                 </div>
-                                <div class="TTV_LOGIN TTV_LOGIN_FALSE">
+                                <div class="TTV_LOGIN TTV_LOGIN_FALSE" id="TwitchAPI_CustomUserLogin" style="display: none">
                                     <div class="TTV_LOGIN_DATA">
-                                        <center class="TTV_LOGIN_DATA_USERNAME">Logged in as: <b>UNKNWON</b></center>
-                                        <div class="TTV_LOGIN_DATA_SPLITTER">
-                                            <div class="TTV_LOGIN_DATA_LEFT">
-                                                <center class="TTV_LOGIN_DATA_ID">
-                                                    <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                                    <p class="TTV_LOGIN_DATA_BOTTOM">User ID</p>
-                                                </center>
-                                                <center class="TTV_LOGIN_DATA_IAT">
-                                                    <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                                    <p class="TTV_LOGIN_DATA_BOTTOM">ISSUED AT</p>
-                                                </center>
-                                                <center class="TTV_LOGIN_DATA_EXP">
-                                                    <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                                    <p class="TTV_LOGIN_DATA_BOTTOM">EXPIRES IN</p>
-                                                </center>
-                                            </div>
-                                            <div class="TTV_LOGIN_DATA_RIGHT">
-                                                <img src="../images/no_image_found_alpha.png" />
-                                            </div>
-                                        </div>
+
                                     </div>
                                     <div class="TTV_LOGIN_BUTTON">
-                                        <center onclick="TTV_LOGIN_CLICKED(this, 'Server', TwitchAPI_UserLogin_getScopes())">
+                                        <center onclick="TTV_LOGIN_CLICKED(this, 'bot', TwitchAPI_UserLogin_getScopes())">
+                                            <span>LOG IN USING TWITCH</span><img src="../images/icons/twitch.svg" data-type="svg" />
+                                        </center>
+                                    </div>
+                                </div>
+                                <div class="TTV_LOGIN TTV_LOGIN_FALSE" id="TwitchAPI_UserLogin">
+                                    <div class="TTV_LOGIN_DATA">
+
+                                    </div>
+                                    <div class="TTV_LOGIN_BUTTON">
+                                        <center onclick="TTV_LOGIN_CLICKED(this, 'bot', TwitchAPI_UserLogin_getScopes())">
                                             <span>LOG IN USING TWITCH</span><img src="../images/icons/twitch.svg" data-type="svg" />
                                         </center>
                                     </div>
@@ -223,123 +313,68 @@
                         </div>
                         <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchAPI" hidden>
                             <div>
-                                <h3>Authentication</h3>
+                                <h3 style="margin-bottom: 5px;">Authentication</h3>
                                 <b>THIS IS A VERY IMPORTANT STEP.</b>
-                                <p>To have access to settings, you NEED to add an Admin User. This can be done by Adding your Twitch User ID or by loggin in.</p>
-                                <p>Additional Users can be added later.</p>
-                            </div>
-                            <div>
-                                <div>
-                                    <label>Auto detected from logged in User.</label>
-                                    <input id="TwitchAPI_Authentication_AuthID" type="number" placeholder="Twitch User ID">
-                                </div>
-                                <div class="TTV_LOGIN TTV_LOGIN_FALSE">
-                                    <div class="TTV_LOGIN_DATA">
-                                        <center class="TTV_LOGIN_DATA_USERNAME">Logged in as: <b>UNKNWON</b></center>
+                                <p>I advice you to use the Twitch API Authenticator instead of the FrikyBot Authenticator! The are based on the same architecture, but Twitch has just much more experience and knowledge :D</p>
+                                <p>To use the TTV Authenticator, you NEED to add an Admin User first. Use the Login on the left or directly add a Admin User ID, if you know it, but <b>remember, you have to have access to the Twitch Account to access any further settings!</b></p>
 
-                                        <div class="TTV_LOGIN_DATA_SPLITTER">
-                                            <div class="TTV_LOGIN_DATA_LEFT">
-                                                <center class="TTV_LOGIN_DATA_ID">
-                                                    <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                                    <p class="TTV_LOGIN_DATA_BOTTOM">User ID</p>
-                                                </center>
-                                                <center class="TTV_LOGIN_DATA_IAT">
-                                                    <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                                    <p class="TTV_LOGIN_DATA_BOTTOM">ISSUED AT</p>
-                                                </center>
-                                                <center class="TTV_LOGIN_DATA_EXP">
-                                                    <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                                    <p class="TTV_LOGIN_DATA_BOTTOM">EXPIRES IN</p>
-                                                </center>
-                                            </div>
-                                            <div class="TTV_LOGIN_DATA_RIGHT">
-                                                <img src="../images/no_image_found_alpha.png" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="TTV_LOGIN_BUTTON">
-                                        <center onclick="TTV_LOGIN_CLICKED(this, 'Client')">
-                                            <span>LOG IN USING TWITCH</span>
-                                            <img src="../images/icons/twitch.svg" data-type="svg" />
-                                        </center>
+                                <h3>TTV Authenticator</h3>
+                                <p>For the Twitch Authenticator to be selectable as a Authenticator in the <a style="cursor: pointer;" onclick="WIZARD_show(GetModuleIndex('WebApp'), GetGroupIndex('WebApp', 'Authenticator'));">WebApp Settings</a> you MUST have atleast ONE Admin User!</p>
+                                <p>Just a technical info: Disabling the TTV Authenticator shuts down all these "Login using Twitch"-Buttons. Keep that in mind!</p>
+                            </div>
+                            <div style="position: relative;">
+                                <h3>Twitch Authenticator Settings</h3>
+                                <div style="position: relative; margin-top: 5px !important;">
+                                    Enable/Disable TTV Authenticatior
+                                    <switchbutton id="SETTING_TwitchAPI_Authenticator_enabled" value="true" OverWriteonclick="TwitchAPI_Auth_enable(this);" style="position: absolute; right: 0;"></switchbutton>
+                                </div>
+                                <div style="position: relative; margin-top: 5px !important;">
+                                    Set TTV Auth as current Athenticator
+                                    <a style="position: absolute; right: 0; cursor: pointer;" onclick="WIZARD_show(GetModuleIndex('WebApp'), GetGroupIndex('WebApp', 'Authenticator'));">switch to WebApp Settings</a>
+                                </div>
+
+                                <div id="TwitchAPI_Authenticator_Database">
+                                    <h3>Twitch Authenticator User Database</h3>
+                                    <div id="TwitchAPI_Authenticator_Users">
+
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <div class="Con_Cat WIZ_GROUP_TwitchIRC" hidden>
-                            <div>
-                                <h3>Introduction</h3>
-                                <p>The Twitch IRC connects to the Chat and displays Messages, Events, ... All Messages (Events,...) can be reveived without a supplied User, BUT to send Messages (e.g. for Commands) you need a BotUser Account (can also be the Broadcaster or an other).</p>
-                                <p>The FrikyBot also directly comes with the FrankerFaceZ and BTTV APIs. Theses are nativly supported by all Core Modules and provide even more Capabilities in Chat Moderation and Data Collection.</p>
-                            </div>
-                        </div>
-                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchIRC" hidden>
-                            <div>
-                                <h3>User Login</h3>
-                                <p>This User Login enables the Bot to send messages/Mod Actions/... in the Twitch Chat.</p>
-                                <p>This Login will redirect you to Twitch and then back here (you might need to navigate to this step again tho)</p>
-                            </div>
-                            <div>
-                                <div class="TTV_LOGIN TTV_LOGIN_FALSE">
-                                    <div class="TTV_LOGIN_DATA">
-                                        <center class="TTV_LOGIN_DATA_USERNAME">Logged in as: <b>UNKNWON</b></center>
+                                <button id="TwitchAPI_Authenticator_Interface_Toggle" onclick="TwitchAPI_Auth_Interface_Mode(this)">ADD USER</button>
 
-                                        <div class="TTV_LOGIN_DATA_SPLITTER">
-                                            <div class="TTV_LOGIN_DATA_LEFT">
-                                                <center class="TTV_LOGIN_DATA_ID">
-                                                    <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                                    <p class="TTV_LOGIN_DATA_BOTTOM">User ID</p>
-                                                </center>
-                                                <center class="TTV_LOGIN_DATA_IAT">
-                                                    <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                                    <p class="TTV_LOGIN_DATA_BOTTOM">ISSUED AT</p>
-                                                </center>
-                                                <center class="TTV_LOGIN_DATA_EXP">
-                                                    <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                                    <p class="TTV_LOGIN_DATA_BOTTOM">EXPIRES IN</p>
-                                                </center>
-                                            </div>
-                                            <div class="TTV_LOGIN_DATA_RIGHT">
-                                                <img src="../images/no_image_found_alpha.png" />
-                                            </div>
-                                        </div>
+                                <div id="TwitchAPI_Authenticator_Interface">
+                                    <h3>Add Twitch Authenticator User</h3>
+                                    <div id="TwitchAPI_Authenticator_Interface_Set">
+                                        <input id="TwitchAPI_Authenticator_Interface_Name" type="text" autocomplete="off" placeholder="Twitch Username" oninput="TwitchAPI_Auth_DB_Channel_change(this.value);" />
+                                        <select id="TwitchAPI_Authenticator_Interface_Select"></select>
+                                        <div class="TwitchAPI_Authenticator_Users_BTN" data-type="save" onclick="TwitchAPI_Auth_DB_Add();"><img /></div>
                                     </div>
-                                    <div class="TTV_LOGIN_BUTTON">
-                                        <center onclick="TTV_LOGIN_CLICKED(this, 'Client')">
-                                            <span>LOG IN USING TWITCH</span>
-                                            <img src="../images/icons/twitch.svg" data-type="svg" />
-                                        </center>
+
+                                    <div id="TwitchAPI_Auth_DB_Channel_Selector" class="CHANNEL_SELECTOR" onclick="TwitchAPI_Auth_DB_Channel_Selected(event);">
+
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchIRC" hidden>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchAPI" hidden>
                             <div>
-                                <h3>Twitch Channel</h3>
-                                <p>The FrikyBot currently only supports one Channel at a time.</p>
-                                <p>Please enter the channel the Bot should join and lsiten for Messages.</p>
+                                <h3 style="margin-bottom: 5px;">API Endpoints</h3>
+                                <p>The Twitch API provides various API Endpoints to control, get and manipulate Data. Some Endpoints require specific Access Privilieges. All details can be read in the <a href="https://dev.twitch.tv/docs/api/reference" target="_blank">Twitch API Documentation</a>.</p>
                             </div>
-                            <div>
-                                <label>Twitch Channel Name: <input id="TwitchIRC_Channel_Channel" type="text" /></label>
-                            </div>
-                        </div>
-                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchIRC" hidden>
-                            <div>
-                                <h3>BTTV Emotes</h3>
-                                <p>The FrikyBot nativly supports BetterTwitchTV. This CAN slow down some responses, because we have to check the BTTV external Database, but mostly its fine. Anyway, you can disable it here overall.</p>
-                                <h3>FFZ Emotes</h3>
-                                <p>The FrikyBot nativly supports FrankerFaceZ. This CAN slow down some responses, because we have to check the FFZ external Database, but mostly its fine. Anyway, you can disable it here overall.</p>
+                            <div style="position: relative;">
+                                <h3 style="margin-bottom: 5px;">Twitch API Endpoints</h3>
+                                <span><input type="checkbox" id="SETTING_TwitchAPI_log_api_calls" onchange="TwitchAPI_Endpoint_Log(this);" /> Log API Calls</span>
+                                <button style="float: right;" onclick="TwitchAPI_Endpoint_Control_All('enable')">Enable All</button>
+                                <button style="float: right;" onclick="TwitchAPI_Endpoint_Control_All('disable')">Disable All</button>
+                                <div id="TWITCHAPI_API_ENABLES">
 
-                            </div>
-                            <div>
-                                <div style="display: grid; grid-template-columns: auto 52px;">
-                                    <p>BTTV Support: </p>
-                                    <switchbutton id="TwitchIRC_Misc_and_Emotes_BTTV" value="true"></switchbutton>
                                 </div>
-                                <div style="display: grid; grid-template-columns: auto 52px;">
-                                    <p>FFZ Support: </p>
-                                    <switchbutton id="TwitchIRC_Misc_and_Emotes_FFZ" value="true"></switchbutton>
+
+                                <h3 style="margin-bottom: 5px;">Undocumented/Unofficial Twitch API Endpoints</h3>
+                                <button style="float: right;" onclick="TwitchAPI_Endpoint_Control_All('enable', true)">Enable All</button>
+                                <button style="float: right;" onclick="TwitchAPI_Endpoint_Control_All('disable', true)">Disable All</button>
+                                <div id="TWITCHAPI_API_ENABLES_UNOFF">
+
                                 </div>
                             </div>
                         </div>
@@ -362,7 +397,6 @@
                                 <p>Packages are optional, but Packages provide the actual Features of the Bot. If you want to create your own Package, check the <a href="../Docs">Docs</a> for more information.</p>
                             </div>
                         </div>
-
                         <div class="Con_Cat Con_Cat_Description WIZ_GROUP_Packages" hidden>
                             <div>
                                 <h3>Adding Packages</h3>
@@ -378,152 +412,9 @@
                         <div id="WIZ_UI_GRID">
                             <button onclick="WIZARD_prev()" id="WIZ_UI_BACK" class="WIZ_UI_BTN" hidden>BACK</button>
                             <button onclick="WIZARD_next()" id="WIZ_UI_NEXT" class="WIZ_UI_BTN">NEXT</button>
-                            <button onclick="WIZARD_onSave()" id="WIZ_UI_SAVE" class="WIZ_UI_BTN" hidden>SAVE</button>
                             <button onclick="WIZARD_onRestart()" id="WIZ_UI_RESTART" class="WIZ_UI_BTN" hidden>RESTART</button>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <div id="SECTION_SETUP">
-                <div id="SETUP_CONFIG">
-                    <h2>Config</h2>
-                    <h3>Physical Config</h3>
-                    <textarea id="SETUP_CONFIG_PHY"></textarea>
-                    <h3>Virtual Config</h3>
-                    <textarea id="SETUP_CONFIG_VR"></textarea>
-                </div>
-                <div id="SETUP_TWITCH_API">
-                    <h2>TwitchAPI</h2>
-                    <h3>App Access Token</h3>
-                    <div id="TWITCHAPI_APP">
-                        <div id="TWITCHAPI_APP_BUTTONS">
-                            <button onclick="TTV_API_CHECKTOKEN('app');">CHECK TOKEN STATUS</button>
-                            <button onclick="TTV_API_DELETETOKEN('app');">DELETE TOKEN</button>
-                        </div>
-                        <div id="TWITCHAPI_APP_DATA">
-                            <div>
-                                <center id="TWITCHAPI_APP_IAT"> UNKNOWN </center>
-                                <center> ISSUED AT </center>
-                            </div>
-                            <div>
-                                <center id="TWITCHAPI_APP_EXP"> UNKNOWN </center>
-                                <center> EXPIRES IN </center>
-                            </div>
-                        </div>
-                    </div>
-                    <h3>User Access Token</h3>
-                    <div id="TTV_API_USER">
-                        <div id="TTV_API_BUTTONS_USER">
-                            <button onclick="TTV_API_CHECKTOKEN('user');">CHECK TOKEN STATUS</button>
-                            <button onclick="TTV_API_DELETETOKEN('user');">DELETE TOKEN</button>
-                        </div>
-                        <div id="TWITCHAPI_LOGIN">
-                            <div class="TTV_LOGIN TTV_LOGIN_FALSE">
-                                <div class="TTV_LOGIN_DATA">
-                                    <center class="TTV_LOGIN_DATA_USERNAME">Logged in as: <b>UNKNWON</b></center>
-                                    <div class="TTV_LOGIN_DATA_SPLITTER">
-                                        <div class="TTV_LOGIN_DATA_LEFT">
-                                            <center class="TTV_LOGIN_DATA_ID">
-                                                <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                                <p class="TTV_LOGIN_DATA_BOTTOM">User ID</p>
-                                            </center>
-                                            <center class="TTV_LOGIN_DATA_IAT">
-                                                <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                                <p class="TTV_LOGIN_DATA_BOTTOM">ISSUED AT</p>
-                                            </center>
-                                            <center class="TTV_LOGIN_DATA_EXP">
-                                                <p class="TTV_LOGIN_DATA_TOP">UNKNOWN</p>
-                                                <p class="TTV_LOGIN_DATA_BOTTOM">EXPIRES IN</p>
-                                            </center>
-                                        </div>
-                                        <div class="TTV_LOGIN_DATA_RIGHT">
-                                            <img src="../images/no_image_found_alpha.png" />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="TTV_LOGIN_BUTTON">
-                                    <center onclick="TTV_LOGIN_CLICKED(this, 'Server', GetTwitchAPI_Scopes())"><span>LOG IN USING TWITCH</span><img src="../images/icons/twitch.svg" data-type="svg" /></center>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="TWITCHAPI_SCOPES_WRAPPER">
-                            <center>Scopes</center>
-                            <div id="TWITCHAPI_SCOPES">
-
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="SETUP_TWITCH_IRC">
-                    <h2>TwitchIRC</h2>
-                    <div id="TWITCHIRC_CONNECTION">
-                        <span>Change Channel: </span>
-                        <input type="text" placeholder="" />
-                        <div class="LIVE">LIVE</div>
-                        <button>SAVE</button>
-                    </div>
-                </div>
-
-                <div id="SETUP_WEBAPP">
-                    <h2>FrikyBot WebApp / WebInterface</h2>
-                    <h3>Routing</h3>
-                    <p>This List displays all Routed URLS. <button onclick="SETUP_WEBAPP_Routing_toggle(this)">show</button></p>
-                    <div id="SETUP_WEBAPP_ROUTING" class="hidden">
-                        
-                    </div>
-                </div>
-
-                <div id="SETUP_AUTHENTICATOR">
-                    <h2>Authentication</h2>
-                    <div id="AUTHENTICATOR_USERS">
-                        <div class="AUTHENTICATOR_USERS_HEADER id" onclick="SETUP_AUTHENTICATOR_USER_SORT('id', this)">ID<span></span></div>
-                        <div class="AUTHENTICATOR_USERS_HEADER name" onclick="SETUP_AUTHENTICATOR_USER_SORT('name', this)">Username<span></span></div>
-                        <div class="AUTHENTICATOR_USERS_HEADER level" onclick="SETUP_AUTHENTICATOR_USER_SORT('level', this)">Userlevel<span></span></div>
-                        <div class="AUTHENTICATOR_USERS_HEADER by" onclick="SETUP_AUTHENTICATOR_USER_SORT('by', this)">Added by<span></span></div>
-                        <div class="AUTHENTICATOR_USERS_HEADER at" onclick="SETUP_AUTHENTICATOR_USER_SORT('at', this)">Added at<span></span></div>
-                        <div class="AUTHENTICATOR_USERS_HEADER"></div>
-                        <div class="AUTHENTICATOR_USERS_HEADER"></div>
-                        <div class="AUTHENTICATOR_USERS_HEADER"></div>
-
-                        <div class="AUTHENTICATOR_USERS_NOT_FOUND"></div>
-                        <div class="AUTHENTICATOR_USERS_NOT_FOUND"></div>
-                        <div class="AUTHENTICATOR_USERS_NOT_FOUND">NO USERS FOUND</div>
-                        <div class="AUTHENTICATOR_USERS_NOT_FOUND"></div>
-                        <div class="AUTHENTICATOR_USERS_NOT_FOUND"></div>
-                        <div class="AUTHENTICATOR_USERS_NOT_FOUND"></div>
-                        <div class="AUTHENTICATOR_USERS_NOT_FOUND"></div>
-                        <div class="AUTHENTICATOR_USERS_NOT_FOUND"></div>
-                    </div>
-                    <div id="AUTHENTICATOR_Interface">
-                        <div>Add User: </div>
-                        <input id="AUTHENTICATOR_Interface_Username" type="text" placeholder="Username" required />
-
-                        <div>
-                            <select id="AUTHENTICATOR_Interface_Userlevel" name="userlevel" required>
-                                <option value="admin">Admin</option>
-                                <option value="staff">Staff</option>
-                                <option value="moderator">Moderator</option>
-                                <option value="subscriber">Subscriber</option>
-                                <option value="viewer">Viewer</option>
-                                <option value="none" selected disabled>Select Userlevel</option>
-                            </select>
-                        </div>
-
-                        <button onclick="SETUP_AUTHENTICATOR_ADD();">ADD USER</button>
-
-                        <div class="CHECKMARK" id="SETUP_AUTHENTICATOR_ADD_WAIT">
-                            <div class="CHECKMARK_SPINNER"></div>
-                            <div class="CHECKMARK_X"><div class="left"></div><div class="right"></div></div>
-                            <div class="CHECKMARK_CHECK"><div class="long"></div><div class="short"></div></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="SETUP_DATACOLLECTION">
-                    <h2>Datacollection</h2>
-                    <p>soon<b>TM</b></p>
                 </div>
             </div>
         </div>

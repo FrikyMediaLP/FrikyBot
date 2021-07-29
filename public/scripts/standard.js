@@ -1,6 +1,8 @@
 let ROOT = "";
 let COOKIE_ACCEPT = false;
 let ONCOOKIEACCEPT = null;
+let PAGE_IS_PROTECTED = false;
+let DISABLE_COOKIE_BLOCKED_NOTIFICATION = false;
 
 //Website Stuff
 async function Standard_Page_Init(settings = {}){
@@ -14,7 +16,7 @@ async function Standard_Page_Init(settings = {}){
                 if (hasCookie("darkmode") && getCookie("darkmode") == "true") {
                     toggleLightMode(true);
                 }
-            } else {
+            } else if (window.location.href.indexOf('/Cookies') < 0){
                 displayCookieNotification(document.getElementById('contentHeader'));
             }
         }
@@ -50,8 +52,7 @@ async function Standard_Page_Init(settings = {}){
                     document.getElementById("MAINNAV_Settings_Login").innerHTML = "Logout";
                 }
             } catch (err) {
-                if (err.message !== "jwt expired")
-                    console.log(err);
+
             }
         }
 
@@ -70,14 +71,6 @@ function calculateROOT() {
 
 //NAVIGATION
 async function NAVIVATION_init() {
-    if (COOKIE_ACCEPT) {
-        let dta = NAVIVATION_getCookiesData();
-        if (dta) {
-            NAVIGATIONV2_SCROLL_HL_CHECK(true);
-            return Promise.resolve();
-        }
-    }
-
     //FETCH NAVI
     let opt = {};
     if (LOGIN_getCookies())
@@ -91,57 +84,45 @@ async function NAVIVATION_init() {
             } else {
                 document.getElementById("mainNavi").innerHTML = NAVIGATIONV2_create(json.data, "MAINNAV");
                 NAVIGATIONV2_SCROLL_HL_CHECK(true);
-                
-                //SAVE IN COOKIES
-                NAVIVATION_saveCookiesData(json.data);
                 return Promise.resolve();
             }
         });
 }
 
-function NAVIVATION_getCookiesData() {
-    try {
-        return JSON.parse(getCookie("NAVIVATION"), true);
-    } catch (err) {
-        return null
-    }
-}
-function NAVIVATION_saveCookiesData(data) {
-    setCookie("NAVIVATION", JSON.stringify(data), true);
-}
-
 //COOKIES
 function displayCookieNotification(x) {
-    x.innerHTML = '<div id="COOKIE_NOTIFICATION"><span>This Page uses Cookies! More Info <a href="' + ROOT + 'Cookies">here</a>!</span><button onclick="CookieBtn(true)">ACCEPT</button></div>';
+    const text = 'This Page uses Cookies! To <b>enable</b> them and check what they are used for, please visit the ';
+
+    let s = '<div id="COOKIE_NOTIFICATION">';
+    s += '<span title="' + text + ' Cookies Page!">' + text + ' <a href="/Cookies">Cookies Page</a>!</span>';
+    s += '</div>';
+
+    x.innerHTML = s;
+    document.getElementById('contentHeader').classList.add('COOKIENOTE');
 }
-function CookieBtn(state) {
-    COOKIE_ACCEPT = state;
-    document.getElementById("COOKIE_NOTIFICATION").remove();
 
-    if (state) {
-        setCookie("CookieAccept", "true");
-
-        if (ONCOOKIEACCEPT) {
-            ONCOOKIEACCEPT();
-        }
-
+function getAllCookies(session) {
+    if (session) {
+        return sessionStorage;
     } else {
-        clearAllCookies();
+        return localStorage;
     }
 }
-
 function hasCookie(name, session) {
     return getCookie(name, session) != null;
 }
+function hasCookieAllowed(name) {
+    return (getCookie('ACCEPTED_COOKIES') || '').split(';').find(elt => elt === name) !== undefined;
+}
 function setCookie(name, value, session) {
-    if (COOKIE_ACCEPT) {
-        if (session) {
-            sessionStorage.setItem(name, value);
-        } else {
-            localStorage.setItem(name, value);
+    if (name === 'CookieAccept' || (COOKIE_ACCEPT && (name === 'ACCEPTED_COOKIES' || (getCookie('ACCEPTED_COOKIES') || '').split(';').find(elt => elt === name)))) {
+        if (session) sessionStorage.setItem(name, value);
+        else localStorage.setItem(name, value);
+    } else if (!DISABLE_COOKIE_BLOCKED_NOTIFICATION) {
+        if (document.getElementsByTagName('output')) {
+            OUTPUT_showError('Cookie "' + name + '" was not saved, because you didnt allowed that Cookie! <a href="' + ROOT + '/Cookies#highlighted=' + name + '" target="_blank">Change Cookie Settings!</a>');
         }
     }
-
 }
 function setCookieNoOverwrite(name, value, session) {
     if (COOKIE_ACCEPT && !hasCookie(name, session))
@@ -196,9 +177,13 @@ async function STANDARD_FETCH_RESPONSE_CHECKER(response) {
         let error = null;
 
         try {
-            error = await response.text();
+            error = (await response.json()).err;
         } catch (err) {
+            try {
+                error = await response.text();
+            } catch (err) {
 
+            }
         }
 
         return Promise.reject(new Error("Error: " + response.status + " - " + error));
@@ -236,17 +221,19 @@ function HasURLParam(ParamName) {
 }
 
 function GetURLHash() {
-    return window.location.hash;
+    return decodeURIComponent(window.location.hash);
 }
 function GetURLHashArray() {
-    if (GetURLHash() === "") return []; 
+    if (GetURLHash() === "") return [];
 
     let arr = GetURLHash().split('&');
 
     arr[0] = arr[0].substring(1);
-
+    
     for (let i = 0; i < arr.length; i++) {
-        arr[i] = { name: arr[i].split('=')[0], value: arr[i].split('=')[1].split(',') };
+        if (arr[i] === "") continue;
+        if (arr[i].split('=').length === 1) arr[i] = { name: arr[i] }
+        else arr[i] = { name: arr[i].split('=')[0], value: arr[i].split('=')[1].split(',') };
     }
 
     return arr;
@@ -256,6 +243,70 @@ function HasURLHash(name = '') {
 }
 function GetURLHashContent(name = '') {
     return GetURLHashArray().find(elt => elt.name === name) || null;
+}
+
+function SetURLHashParam(name, value) {
+    if (!name) return;
+
+    let arr = GetURLHashArray();
+
+    let elt = arr.find(arrElt => arrElt.name === name);
+
+    if (elt) elt.value = value;
+    else arr.push({ name, value });
+
+    let s = '';
+    for (let arrElt of arr) {
+        s += '&' + arrElt.name;
+        if (arrElt.value) s += '=' + arrElt.value;
+    }
+    window.location.hash = s.substring(1);
+}
+function RemoveURLHashParam(name) {
+    if (!name) return;
+
+    let arr = GetURLHashArray();
+    let index;
+
+    arr.find((arrElt, idx) => {
+        if (arrElt.name === name) {
+            index = idx;
+            return true;
+        }
+        return false;
+    });
+
+    if (index) arr.splice(index, 1);
+
+    let s = '';
+    for (let arrElt of arr) {
+        s += '&' + arrElt.name;
+        if (arrElt.value) s += '=' + arrElt.value;
+    }
+    window.location.hash = s.substring(1);
+}
+
+function GetURLSearch() {
+    return decodeURIComponent(window.location.search);
+}
+function GetURLSearchArray() {
+    if (GetURLSearch() === "") return [];
+
+    let arr = GetURLSearch().split('&');
+
+    arr[0] = arr[0].substring(1);
+
+    for (let i = 0; i < arr.length; i++) {
+        arr[i] = { name: arr[i].split('=')[0], value: arr[i].split('=')[1].split(',') };
+    }
+
+    return arr;
+}
+function HasURLSearch(name = '') {
+    return GetURLSearchArray().find(elt => elt.name === name) !== undefined;
+}
+function GetURLSearchContent(name = '') {
+    return (GetURLSearchArray().find(elt => elt.name === name) || {}).value || null;
 }
 
 //HTML
@@ -300,6 +351,20 @@ function HTMLArray2RealArray(arr = []) {
     }
 
     return output;
+}
+//GRID-STUFF
+function disableContent() {
+    if (document.getElementById('contentDISABLER')) return;
+
+    let div = document.createElement('DIV');
+    div.id = 'contentDISABLER';
+    document.getElementById('content').appendChild(div);
+    document.getElementById('content').classList.add('DISABLED');
+}
+function enableContent() {
+    if (!document.getElementById('contentDISABLER')) return;
+    document.getElementById('contentDISABLER').remove();
+    document.getElementById('content').classList.remove('DISABLED');
 }
 
 //Data
@@ -380,6 +445,34 @@ function getFileTypeByURL(URL) {
     let s = URL.split('.');
     return s[s.length - 1];
 }
+function GetValueAtPath(obj, pathArr) {
+    if (pathArr.length === 0) return obj;
+    if (obj[pathArr[0]] !== undefined) return GetValueAtPath(obj[pathArr[0]], pathArr.slice(1));
+}
+function cloneJSON(json) {
+    let new_json = {};
+
+    for (let key in json) {
+        if (json[key] instanceof Array) new_json[key] = cloneJSONArray(json[key]);
+        else if (json[key] instanceof Function) new_json[key] = json[key];
+        else if (json[key] instanceof Object) new_json[key] = cloneJSON(json[key]);
+        else new_json[key] = json[key];
+    }
+
+    return new_json;
+}
+function cloneJSONArray(arr) {
+    let new_arr = [];
+
+    for (let elt of arr) {
+        if (elt instanceof Array) new_arr.push(cloneJSONArray(elt));
+        else if (elt instanceof Function) new_arr.push(elt);
+        else if (elt instanceof Object) new_arr.push(cloneJSON(elt));
+        else new_arr.push(elt);
+    }
+
+    return new_arr;
+}
 
 //CSS
 function isColor(strColor) {
@@ -414,4 +507,32 @@ function toggleClass(elt, className, parentSelect = 0) {
 function PROFILE_IMAGES(id, transparent = false) {
     let colors = ["blue", "green", "orange", "purple", "red", "yellow"];
     return ROOT + "images/Profiles/" + (colors[id > colors.length - 1 ? id % (colors.length - 1) : id] || colors[0]) + (transparent ? '_transparent' : '') + ".png";
+}
+function COLOR_PALETTE(id) {
+    let colors = ["blue", "green", "orange", "purple", "red", "yellow"];
+    return colors[id > colors.length - 1 ? id % (colors.length - 1) : id] || colors[0];
+}
+function GetCountdownTime(exp) {
+    let until = new Date(exp) - new Date();
+    until = Math.floor(until / 1000);
+
+    let h = Math.floor(until / (60 * 60));
+    until -= h * 60 * 60;
+
+    let m = Math.floor(until / 60);
+    until -= m * 60;
+
+    let s = until;
+
+    if (until < 0 || h < 0 || m < 0 || s < 0) return null;
+
+    if (h < 10) h = '0' + h;
+    if (m < 10) m = '0' + m;
+    if (s < 10) s = '0' + s;
+    return h + "H " + m + "M " + s + "S";
+}
+
+//Math
+function Math_map(value, low1, high1, low2, high2) {
+    return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
 }

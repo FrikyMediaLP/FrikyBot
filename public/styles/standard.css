@@ -11,38 +11,37 @@ body, html {
     padding: 0;
 }
 
+input, select, textarea{
+    outline: none;
+}
+
 /* 
     ////////////////////////////////////
            COOKIE NOTIFICATION
     ////////////////////////////////////
 */
 
-#COOKIE_NOTIFICATION {
-    height: 100%;
-    background-color: yellow;
-    padding: 5px;
-    font-family: 'Roboto', sans-serif;
-    font-weight: 400;
-    font-size: 15px;
+#grid #contentHeader.COOKIENOTE {
+    background-color: yellow !important;
 }
 
-    #COOKIE_NOTIFICATION #hover {
-        cursor: pointer;
-        color: red;
-    }
-
-    #COOKIE_NOTIFICATION button {
-        margin: 5px;
-        color: white;
-        background-color: yellow;
-        padding: 5px 10px;
+#COOKIE_NOTIFICATION {
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
+    padding: 5px;
+    display: inline-flex;
+    align-items: center;
+}
+    #COOKIE_NOTIFICATION span {
         font-family: 'Roboto', sans-serif;
-        font-size: 15px;
-        border: none;
-        cursor: pointer;
-        background-color: green;
+        font-weight: 400;
+        font-size: 18px;
+        white-space: pre-line;
     }
 
-    #COOKIE_NOTIFICATION button:hover {
-        background-color: forestgreen;
+    #COOKIE_NOTIFICATION a {
+        color: #19a3ff;
     }
+        #COOKIE_NOTIFICATION a:hover {
+            color: #028deb;
+        }

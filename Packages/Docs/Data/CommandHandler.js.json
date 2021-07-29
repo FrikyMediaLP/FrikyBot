@@ -2,21 +2,22 @@
   "CommandHandler": {
     "description": "CommandHandler Module for your Classic Chat Commands.",
     "modules": {
-      "CONSTANTS": "FrikyBot Module",
       "express": "npm",
       "node-fetch": "npm",
+      "fs": "NodeJS Module",
       "path": "NodeJS Module",
-      "TwitchIRC": "FrikyBot Module"
+      "TwitchIRC": "FrikyBot Module",
+      "CONSTANTS": "FrikyBot Module"
     },
     "variables": {
-      "CONSTANTS": {
-        "type": "CONSTANTS Module",
-        "description": "Bot Constants used to generalize Outputs and Settings."
-      },
       "express": {
         "type": "Express Module",
         "npm": "https://www.npmjs.com/package/express",
         "description": "Express WebApp hosting the Website and API."
+      },
+      "fs": {
+        "type": "FileSystem Module",
+        "description": "NodeJS File System interface to the Operating File System."
       },
       "path": {
         "type": "Path Module",
@@ -31,6 +32,10 @@
         "type": "TwitchIRC Module",
         "description": "TwitchIRC Module - used for the Message Class."
       },
+      "CONSTANTS": {
+        "type": "CONSTANTS Module",
+        "description": "Bot Constants used to generalize Outputs and Settings."
+      },
       "COMMAND_TEMPLATE": {
         "type": "Object",
         "description": "Template for Command Data."
@@ -39,9 +44,17 @@
         "type": "Object",
         "description": "The REQUIERED Template Fields for Command Data."
       },
-      "SETTINGS_REQUIERED": {
+      "TIMER_TEMPLATE": {
         "type": "Object",
-        "description": "The REQUIERED Config Settings."
+        "description": "Template for Timer Data."
+      },
+      "TIMER_TEMPLATE_REQUIRED": {
+        "type": "Object",
+        "description": "The REQUIERED Template Fields for Timer Data."
+      },
+      "PACKAGE_DETAILS": {
+        "type": "Object",
+        "description": "Package Information Details"
       }
     },
     "classes": {
@@ -57,28 +70,20 @@
         "constructor": {
           "params": [
             {
-              "name": "expressapp",
-              "type": "Express.js:Express"
+              "name": "webappinteractor",
+              "type": "WebApp.js::WebAppInteractor"
             },
             {
               "name": "twitchirc",
-              "opt": true,
               "type": "TwitchIRC.js:TwitchIRC"
             },
             {
               "name": "twitchapi",
-              "opt": true,
               "type": "TwitchAPI.js:TwitchAPI"
             },
             {
               "name": "datacollection",
-              "opt": true,
               "type": "DataCollection.js:DataCollection"
-            },
-            {
-              "name": "startparameters",
-              "opt": true,
-              "type": "Object"
             },
             {
               "name": "logger",
@@ -93,26 +98,39 @@
             "type": "Object",
             "description": "Collection of all the Command Variables that can be used in a Command."
           },
-          "Variables": {
+          "CustomVariables": {
             "type": "Object",
             "description": "The Custom Variables Contents."
           },
           "CustomCommands": {
-            "type": "Object",
+            "type": "Array",
             "description": "Collection of all Custom Commands."
           },
           "onCooldown": {
-            "type": "Object",
+            "type": "Array",
             "description": "Collection of all Commands on Cooldown. They are only removed, when they are called again after their cooldown ended."
           },
           "HardcodedCommands": {
             "type": "Object",
             "description": "Collection of all Hardcoded Commands."
+          },
+          "Timers": {
+            "type": "Array",
+            "description": "Collection of all Custom Timers."
+          },
+          "ActiveTimers": {
+            "type": "Array",
+            "description": "Collection of all Active Timers and their Intervals."
           }
         },
         "functions": {
           "Init": {
-            "params": null,
+            "params": [
+              {
+                "name": "startparameters",
+                "type": "String"
+              }
+            ],
             "is-async": true,
             "description": "Initiates/Loads all Variables and sets up the TwitchIRC Callback when Messages are sent."
           },
@@ -121,14 +139,10 @@
             "is-async": true,
             "description": "Reloads the Comamnds/Variables/Custom Variables Data."
           },
-          "CheckSettings": {
-            "params": [
-              {
-                "name": "settings",
-                "type": "Object"
-              }
-            ],
-            "description": "Checks the Config for any missing Requiered Settings."
+          "disable": {
+            "params": null,
+            "is-async": true,
+            "description": "Disable Active Timers."
           },
           "CommandHandler": {
             "params": [
@@ -161,15 +175,6 @@
               }
             ],
             "description": "Checks the used Custom Commands for the right Userlevel and onCooldown Status."
-          },
-          "parseCooldownString": {
-            "params": [
-              {
-                "name": "cooldownString",
-                "type": "String"
-              }
-            ],
-            "description": "Returns the number of seconds the cooldownString represents."
           },
           "executeCuCommand": {
             "params": [
@@ -238,87 +243,36 @@
             ],
             "description": "Extracts all inner-most-cascaded found Variables from the commandOutString."
           },
-          "addCommand": {
+          "addCooldown": {
             "params": [
               {
                 "name": "name",
                 "type": "String"
               },
               {
-                "name": "data",
-                "type": "Object"
+                "name": "relative_endtime",
+                "type": "Number"
               }
             ],
-            "description": "Adds a Custom Command."
+            "description": "Adds a Command to the onCooldown List with the given End-Time."
           },
-          "editCommand": {
-            "params": [
-              {
-                "name": "name",
-                "type": "String"
-              },
-              {
-                "name": "data",
-                "type": "Object"
-              }
-            ],
-            "description": "Edit a Custom Command."
-          },
-          "renameCommand": {
-            "params": [
-              {
-                "name": "oldName",
-                "type": "String"
-              },
-              {
-                "name": "newName",
-                "type": "String"
-              }
-            ],
-            "description": "Rename a Custom Command."
-          },
-          "removeCommand": {
+          "removeCooldown": {
             "params": [
               {
                 "name": "name",
                 "type": "String"
               }
             ],
-            "description": "Delete a Custom Command."
+            "description": "Remove a Command from the onCooldown List."
           },
-          "getObjectFromPath": {
-            "params": [
-              {
-                "name": "obj",
-                "type": "Object"
-              },
-              {
-                "name": "path",
-                "type": "String"
-              }
-            ],
-            "description": "Returns the Object inside an Object at the given Path."
-          },
-          "loadCommands": {
-            "params": null,
-            "description": "Loads the previous created Custom Commands."
-          },
-          "loadVariables": {
-            "params": null,
-            "description": "Loads the previous created Custom Command Variables Content."
-          },
-          "addCustomCommands": {
+          "isOnCooldown": {
             "params": [
               {
                 "name": "name",
                 "type": "String"
-              },
-              {
-                "name": "customCommand",
-                "type": "Object"
               }
             ],
-            "description": "Adds a Custom Command AND VALIDATES THEM."
+            "description": "Checks if the given Command is currently on Cooldown. This also removes it from the Cooldown List, when no longer on Cooldown."
           },
           "addHardcodedCommands": {
             "params": [
@@ -333,18 +287,78 @@
             ],
             "description": "Adds a Hardcoded Command."
           },
-          "addCommandVariable": {
+          "removeHardcodedCommands": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              }
+            ],
+            "description": "Remove a Hardcoded Command."
+          },
+          "loadCommands": {
+            "params": null,
+            "description": "Loads the previous created Custom Commands."
+          },
+          "saveCommands": {
+            "params": null,
+            "description": "Save the current Custom Commands."
+          },
+          "addCommand": {
+            "params": [
+              {
+                "name": "command",
+                "type": "Object"
+              },
+              {
+                "name": "user",
+                "type": "String"
+              }
+            ],
+            "description": "Adds a Custom Command."
+          },
+          "editCommand": {
+            "params": [
+              {
+                "name": "command",
+                "type": "Object"
+              },
+              {
+                "name": "user",
+                "type": "String"
+              }
+            ],
+            "description": "Edit a Custom Command."
+          },
+          "renameCommand": {
+            "params": [
+              {
+                "name": "oldName",
+                "type": "String"
+              },
+              {
+                "name": "newName",
+                "type": "String"
+              },
+              {
+                "name": "user",
+                "type": "String"
+              }
+            ],
+            "description": "Rename a Custom Command."
+          },
+          "removeCommand": {
             "params": [
               {
                 "name": "name",
                 "type": "String"
               },
               {
-                "name": "VariableObj",
-                "type": "Variable"
+                "name": "user",
+                "type": "String"
               }
             ],
-            "description": "Adds a Command Variable."
+            "description": "Delete a Custom Command."
           },
           "validate": {
             "params": [
@@ -355,7 +369,118 @@
             ],
             "description": "Checks the given Command for the requiered Parameters and Syntax."
           },
-          "validateCommandName": {
+          "loadVariables": {
+            "params": null,
+            "description": "Loads the previous created Custom Command Variables Content."
+          },
+          "saveVariables": {
+            "params": null,
+            "description": "Saves the current Custom Command Variables Content."
+          },
+          "editCustomVariable": {
+            "params": [
+              {
+                "name": "path",
+                "type": "String"
+              },
+              {
+                "user": "data",
+                "type": "Any"
+              },
+              {
+                "user": "user",
+                "type": "String"
+              }
+            ],
+            "description": "Creates a new or updates an old Custom Command Variable at the given path."
+          },
+          "removeCustomVariable": {
+            "params": [
+              {
+                "name": "path",
+                "type": "String"
+              },
+              {
+                "user": "user",
+                "type": "String"
+              }
+            ],
+            "description": "Removes a Custom Command Variable at the given path."
+          },
+          "loadTimers": {
+            "params": null,
+            "description": "Loads the previous created Timers."
+          },
+          "saveTimers": {
+            "params": null,
+            "description": "Saves the current Timers."
+          },
+          "addTimer": {
+            "params": [
+              {
+                "name": "timer",
+                "type": "Object"
+              },
+              {
+                "name": "user",
+                "type": "String"
+              }
+            ],
+            "description": "Adds a new Timer."
+          },
+          "editTimer": {
+            "params": [
+              {
+                "name": "timer",
+                "type": "Object"
+              },
+              {
+                "name": "user",
+                "type": "String"
+              }
+            ],
+            "description": "Edits a Timer."
+          },
+          "removeTimer": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              },
+              {
+                "name": "user",
+                "type": "String"
+              }
+            ],
+            "description": "Removes a Timer."
+          },
+          "renameTimer": {
+            "params": [
+              {
+                "name": "oldName",
+                "type": "String"
+              },
+              {
+                "name": "newName",
+                "type": "String"
+              },
+              {
+                "name": "user",
+                "type": "String"
+              }
+            ],
+            "description": "Renames a Timer."
+          },
+          "validateTimer": {
+            "params": [
+              {
+                "name": "timer",
+                "type": "Object"
+              }
+            ],
+            "description": "Checks the given Timer for the requiered Parameters and Syntax."
+          },
+          "validateName": {
             "params": [
               {
                 "name": "name",
@@ -363,19 +488,106 @@
               }
             ],
             "description": "Checks the given Name for conform Characters and duplicates."
+          },
+          "getFormatedStringVariables": {
+            "params": [
+              {
+                "name": "string",
+                "type": "String"
+              }
+            ],
+            "description": "Returns a Variable List embedded into the String."
+          },
+          "getObjectFromPath": {
+            "params": [
+              {
+                "name": "obj",
+                "type": "Object"
+              },
+              {
+                "name": "path",
+                "type": "String"
+              }
+            ],
+            "description": "Returns the Object inside an Object at the given Path."
+          },
+          "createObjectPath": {
+            "params": [
+              {
+                "name": "obj",
+                "type": "Object"
+              },
+              {
+                "name": "path",
+                "type": "String"
+              }
+            ],
+            "description": "Creates Objects along the given Path inside an Object."
+          },
+          "setObjectAtPath": {
+            "params": [
+              {
+                "name": "obj",
+                "type": "Object"
+              },
+              {
+                "name": "path",
+                "type": "String"
+              },
+              {
+                "name": "value",
+                "type": "Any"
+              }
+            ],
+            "description": "Updates or Creates an Object Value at the given Path."
+          },
+          "deleteObjectAtPath": {
+            "params": [
+              {
+                "name": "obj",
+                "type": "Object"
+              },
+              {
+                "name": "path",
+                "type": "String"
+              }
+            ],
+            "description": "Removes a given Object Key at the given Path."
+          },
+          "getRelativeTimeString": {
+            "params": [
+              {
+                "name": "timeMS",
+                "type": "Number"
+              },
+              {
+                "name": "cut_at_day",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Returns a String that represents a relative Time in a Human readable format."
+          },
+          "parseCooldownString": {
+            "params": [
+              {
+                "name": "cooldownString",
+                "type": "String"
+              }
+            ],
+            "description": "Returns the number of seconds the cooldownString represents."
           }
         },
         "API": {
-          "ROOT": "frikybot.de/Commands/api/",
           "Endpoints": [
             {
               "name": "Get Commands",
               "endpoint": "/Commands",
-              "description": "Returns Hardcoded and Custom Commands.",
+              "description": "Returns Hardcoded and Custom Commands. Moderators also get disabled Commands.",
+              "restriction": "partial",
               "request": null,
               "response": {
                 "Custom": {
-                  "type": "Object",
+                  "type": "Array",
                   "description": "Collection of Custom Commands."
                 },
                 "Hardcoded": {
@@ -392,13 +604,9 @@
               "request": {
                 "method": "POST",
                 "body": {
-                  "CommandName": {
-                    "type": "String",
-                    "description": "Name of the new Command."
-                  },
-                  "CommandData": {
+                  "command": {
                     "type": "Object",
-                    "description": "Command Data: output, userlevel, etc."
+                    "description": "Command Data: name, output, userlevel, etc."
                   }
                 }
               },
@@ -414,43 +622,18 @@
               }
             },
             {
-              "name": "Remove a Command",
-              "restricted": "full",
-              "endpoint": "/Commands",
-              "description": "Removes a Custom Command.",
-              "request": {
-                "method": "DELETE",
-                "body": {
-                  "CommandName": {
-                    "type": "String",
-                    "description": "Name of the Command to be removed."
-                  }
-                }
-              },
-              "response": {
-                "data": {
-                  "type": "String",
-                  "description": "Confirmation that the Command has been removed successfully."
-                },
-                "err": {
-                  "type": "String",
-                  "description": "Error is returned if u messed up ... or the server did :)"
-                }
-              }
-            },
-            {
-              "name": "Remove a Command",
+              "name": "Rename a Command",
               "restricted": "full",
               "endpoint": "/Commands",
               "description": "Rename a Custom Command.",
               "request": {
                 "method": "MOVE",
                 "body": {
-                  "OldName": {
+                  "oldname": {
                     "type": "String",
                     "description": "Name of the old Command to be removed."
                   },
-                  "NewName": {
+                  "newname": {
                     "type": "String",
                     "description": "Name of the new Command to be created."
                   }
@@ -473,13 +656,9 @@
               "endpoint": "/Commands",
               "description": "Edit a Custom Command.",
               "request": {
-                "method": "MOVE",
+                "method": "PUT",
                 "body": {
-                  "CommandName": {
-                    "type": "String",
-                    "description": "Name of the Command to be editted."
-                  },
-                  "CommandData": {
+                  "command": {
                     "type": "Object",
                     "description": "Command Data: output, userlevel, etc."
                   }
@@ -497,13 +676,38 @@
               }
             },
             {
-              "name": "Get Variables",
-              "restricted": "partial",
-              "endpoint": "/Variables",
-              "description": "Get Variables - Authorized Users get extended Variable Details.",
-              "request": null,
+              "name": "Remove a Command",
+              "restricted": "full",
+              "endpoint": "/Commands",
+              "description": "Removes a Custom Command.",
+              "request": {
+                "method": "DELETE",
+                "body": {
+                  "name": {
+                    "type": "String",
+                    "description": "Name of the Command to be removed."
+                  }
+                }
+              },
               "response": {
                 "data": {
+                  "type": "String",
+                  "description": "Confirmation that the Command has been removed successfully."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error is returned if u messed up ... or the server did :)"
+                }
+              }
+            },
+            {
+              "name": "Get Command Variables",
+              "restricted": "partial",
+              "endpoint": "/Variables",
+              "description": "Get Command Variables. Moderators also get disabled Commands.",
+              "request": null,
+              "response": {
+                "variables": {
                   "type": "Object",
                   "description": "Collection of the Command Variables."
                 }
@@ -511,7 +715,7 @@
             },
             {
               "name": "Get Custom Variables Content",
-              "endpoint": "/Variables/Content",
+              "endpoint": "/variables/custom",
               "description": "Get the Custom Command Variables Content.",
               "request": null,
               "response": {
@@ -522,93 +726,27 @@
               }
             },
             {
-              "name": "Add Custom Variables",
-              "endpoint": "/Variables/Content",
-              "description": "Add a Custom Command Variable.",
-              "restricted": "full",
-              "request": {
-                "method": "POST",
-                "body": {
-                  "path": {
-                    "type": "String",
-                    "description": "A dot-seperated Path to a specific Key inside the Command Variable Contents Object."
-                  },
-                  "content": {
-                    "type": "any",
-                    "description": "The Value u want to set to the Path. !!Replacing Values is done in another Endpoint!!"
-                  }
-                }
-              },
-              "response": {
-                "data": {
-                  "type": "Object",
-                  "description": "Collection of the Custom Command Requested Variables Content."
-                },
-                "err": {
-                  "type": "String",
-                  "description": "Error is returned if u messed up ... or the server did :)"
-                }
-              }
-            },
-            {
-              "name": "Edit Custom Variables",
-              "endpoint": "/Variables/Content",
-              "description": "Change a Custom Command Variables Content.",
+              "name": "Update Custom Variables",
+              "endpoint": "/variables/custom",
+              "description": "Add/Edit a Custom Command Variable.",
               "restricted": "full",
               "request": {
                 "method": "PUT",
                 "body": {
                   "path": {
                     "type": "String",
-                    "description": "A dot-seperated Path to a specific !!Object!! inside the Command Variable Contents Object."
+                    "description": "A dot-seperated Path to a specific Key inside the Command Variable Contents Object."
                   },
-                  "value": {
+                  "data": {
                     "type": "any",
-                    "description": "The Value u want to set to the Path. !!Replacing Values is done in another Endpoint!!"
-                  },
-                  "name": {
-                    "type": "String",
-                    "description": "The actual Key u want to set the Value to."
+                    "description": "The Value u want to set to the Path."
                   }
                 }
               },
               "response": {
-                "data": {
-                  "type": "Object",
-                  "description": "Collection of the Custom Command Requested Variables Content."
-                },
-                "err": {
-                  "type": "String",
-                  "description": "Error is returned if u messed up ... or the server did :)"
-                }
-              }
-            },
-            {
-              "name": "Rename Custom Variables",
-              "endpoint": "/Variables/Content",
-              "description": "Rename a Custom Command Variable.",
-              "restricted": "full",
-              "request": {
-                "method": "MOVE",
-                "body": {
-                  "path": {
-                    "type": "String",
-                    "description": "A dot-seperated Path to a specific !!Object!! inside the Command Variable Contents Object."
-                  },
-                  "newname": {
-                    "type": "String",
-                    "description": "The new Keys Name."
-                  },
-                  "currentname": {
-                    "type": "String",
-                    "description": "The actual Keys Name u want to rename."
-                  }
-                }
-              },
-              "response": {
-                "data": {
-                  "type": "Object",
-                  "description": "Collection of the Custom Command Requested Variables Content."
+                "code": {
+                  "type": "200",
+                  "description": "Returns HTTP Status Code 200 - OK."
                 },
                 "err": {
                   "type": "String",
@@ -618,7 +756,7 @@
             },
             {
               "name": "Delete Custom Variables",
-              "endpoint": "/Variables/Content",
+              "endpoint": "/variables/custom",
               "description": "Delete a Custom Command Variable.",
               "restricted": "full",
               "request": {
@@ -626,18 +764,14 @@
                 "body": {
                   "path": {
                     "type": "String",
-                    "description": "A dot-seperated Path to a specific !!Object!! inside the Command Variable Contents Object."
-                  },
-                  "name": {
-                    "type": "String",
-                    "description": "The actual Key u want to delete."
+                    "description": "A dot-seperated Path to a specific Key."
                   }
                 }
               },
               "response": {
-                "data": {
-                  "type": "Object",
-                  "description": "Collection of the Custom Command Requested Variables Content."
+                "code": {
+                  "type": "200",
+                  "description": "Returns HTTP Status Code 200 - OK."
                 },
                 "err": {
                   "type": "String",
@@ -646,14 +780,189 @@
               }
             },
             {
-              "name": "Get on Cooldown Commands - !!CURRENTLY NOT IMPLEMENTED!!",
+              "name": "Get Commands on Cooldown",
               "endpoint": "/OnCooldown",
               "description": "Get all Commands currently on Cooldown.",
               "request": null,
               "response": {
-                "data": {
-                  "type": "Object",
+                "onCooldown": {
+                  "type": "Array",
                   "description": "Collection of the Commands currently on Cooldown."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error is returned if u messed up ... or the server did :)"
+                }
+              }
+            },
+            {
+              "name": "Get Timers",
+              "endpoint": "/timers",
+              "restricted": "full",
+              "description": "Get all Timers.",
+              "request": null,
+              "response": {
+                "Timers": {
+                  "type": "Array",
+                  "description": "Collection of all Timers."
+                },
+                "ActiveTimers": {
+                  "type": "Array",
+                  "description": "Collection of all Active Timers."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error is returned if u messed up ... or the server did :)"
+                }
+              }
+            },
+            {
+              "name": "Add Timers",
+              "endpoint": "/timers",
+              "restricted": "full",
+              "description": "Add a Timers.",
+              "request": {
+                "method": "POST",
+                "body": {
+                  "timer": {
+                    "type": "Object",
+                    "description": "Timer Data: name, output, userlevel, etc."
+                  }
+                }
+              },
+              "response": {
+                "code": {
+                  "type": "200",
+                  "description": "Return HTTP Status Code 200 - OK."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error is returned if u messed up ... or the server did :)"
+                }
+              }
+            },
+            {
+              "name": "Edit Timers",
+              "endpoint": "/timers",
+              "restricted": "full",
+              "description": "Edit a Timers.",
+              "request": {
+                "method": "PUT",
+                "body": {
+                  "timer": {
+                    "type": "Object",
+                    "description": "Timer Data: name, output, userlevel, etc."
+                  }
+                }
+              },
+              "response": {
+                "code": {
+                  "type": "200",
+                  "description": "Return HTTP Status Code 200 - OK."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error is returned if u messed up ... or the server did :)"
+                }
+              }
+            },
+            {
+              "name": "Start Timers",
+              "endpoint": "/timers",
+              "restricted": "full",
+              "description": "Start a Timers.",
+              "request": {
+                "method": "UNLOCK",
+                "body": {
+                  "name": {
+                    "type": "String",
+                    "description": "Name of the Timer to start."
+                  }
+                }
+              },
+              "response": {
+                "code": {
+                  "type": "200",
+                  "description": "Return HTTP Status Code 200 - OK."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error is returned if u messed up ... or the server did :)"
+                }
+              }
+            },
+            {
+              "name": "Stop Timers",
+              "endpoint": "/timers",
+              "restricted": "full",
+              "description": "Stop a Timers.",
+              "request": {
+                "method": "LOCK",
+                "body": {
+                  "name": {
+                    "type": "String",
+                    "description": "Name of the Timer to stop."
+                  }
+                }
+              },
+              "response": {
+                "code": {
+                  "type": "200",
+                  "description": "Return HTTP Status Code 200 - OK."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error is returned if u messed up ... or the server did :)"
+                }
+              }
+            },
+            {
+              "name": "Rename Timers",
+              "endpoint": "/timers",
+              "restricted": "full",
+              "description": "Rename a Timers.",
+              "request": {
+                "method": "MOVE",
+                "body": {
+                  "oldname": {
+                    "type": "String",
+                    "description": "Name of the Timer to rename."
+                  },
+                  "newname": {
+                    "type": "String",
+                    "description": "New Name of the Timer."
+                  }
+                }
+              },
+              "response": {
+                "data": {
+                  "type": "String",
+                  "description": "Returns a confirmation string message."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error is returned if u messed up ... or the server did :)"
+                }
+              }
+            },
+            {
+              "name": "Remove Timers",
+              "endpoint": "/timers",
+              "restricted": "full",
+              "description": "Remove a Timers.",
+              "request": {
+                "method": "DELETE",
+                "body": {
+                  "name": {
+                    "type": "String",
+                    "description": "Name of the Timer to remove."
+                  }
+                }
+              },
+              "response": {
+                "code": {
+                  "type": "200",
+                  "description": "Return HTTP Status Code 200 - OK."
                 },
                 "err": {
                   "type": "String",
@@ -664,17 +973,18 @@
           ]
         },
         "FileHosting": {
-          "ROOT": "frikybot.de/Commands/",
+          "ROOT": "Commands/",
           "Static": "html",
           "Routes": {
-            "/edit": {
-              "type": "redirect",
-              "restricted": "full",
-              "description": "Redirects to the NewsFeed Css Stylesheet."
+            "/": {
+              "type": "normal",
+              "restricted": "partial",
+              "description": "Interface to look up, add or edit Commands."
             },
             "/variables": {
               "type": "redirect",
-              "description": "Redirects to the Command Variables Page."
+              "restricted": "partial",
+              "description": "Look up Command Variables - also Custom Command Variables for Moderators."
             }
           }
         }
@@ -694,7 +1004,7 @@
             {
               "name": "options",
               "opt": true,
-              "type": "TwitchAPI.js:TwitchAPI"
+              "type": "Object"
             }
           ],
           "description": "Just sets the HCCommand-Class Variables."
@@ -742,16 +1052,8 @@
                 "type": "Object"
               },
               {
-                "name": "commandOrigin",
-                "type": "Object"
-              },
-              {
-                "name": "commandOrigin",
-                "type": "Object"
-              },
-              {
-                "name": "cooldowns",
-                "type": "Object"
+                "name": "parameters",
+                "type": "Array"
               }
             ],
             "is-async": true,
@@ -761,10 +1063,6 @@
             "params": [
               {
                 "name": "userMessageObj",
-                "type": "Object"
-              },
-              {
-                "name": "cooldowns",
                 "type": "Object"
               }
             ],
@@ -779,24 +1077,6 @@
             ],
             "description": "Checks if the Command and User Userlevel match."
           },
-          "matches": {
-            "params": [
-              {
-                "name": "message",
-                "type": "String"
-              }
-            ],
-            "description": "Checks if given Message calls the Command."
-          },
-          "matchesIdx": {
-            "params": [
-              {
-                "name": "message",
-                "type": "String"
-              }
-            ],
-            "description": "Returns the Index of the Command call in the given Message. returns -1 if the Command isnt called."
-          },
           "isEnabled": {
             "params": null,
             "description": "Returns the current Command Enable Status."
@@ -808,15 +1088,6 @@
           "toJSON": {
             "params": null,
             "description": "Returns the Command Data in a JSON Format."
-          },
-          "parseCooldownString": {
-            "params": [
-              {
-                "name": "cooldownString",
-                "type": "String"
-              }
-            ],
-            "description": "Returns the number of seconds the cooldownString represents."
           }
         }
       },
@@ -886,15 +1157,6 @@
             ],
             "is-async": true,
             "description": "Returns the Value of this Custom Command Variable by calling the set callback Function."
-          },
-          "getFormatedStringVariables": {
-            "params": [
-              {
-                "name": "string",
-                "type": "String"
-              }
-            ],
-            "description": "Returns the Formatted Variables (their name, start and end-positions) in the Variable String."
           },
           "getDetails": {
             "params": null,

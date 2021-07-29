@@ -75,4 +75,9 @@
     //Move to selected
     if (HasURLParam("ext") && document.getElementById(GetURLParamContent('ext')))
         document.getElementById(GetURLParamContent('ext')).scrollIntoView();
+    else
+        for (let hash of GetURLHashArray()) {
+            let target = document.getElementById(hash.name);
+            if (target) document.getElementById('content').scrollTop = target.offsetTop;
+        }
 }

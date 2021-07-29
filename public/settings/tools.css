@@ -1,0 +1,135 @@
+#grid #content {
+    background-color: #f5f5f5;
+}
+
+    #grid #content button {
+        cursor: pointer;
+    }
+
+#HEADER {
+    font-size: 40px;
+    font-family: 'Roboto', sans-serif;
+}
+
+#TOOLS {
+    height: 100%;
+    display: none;
+    position: relative;
+}
+
+button, input, textarea{
+    outline: none;
+}
+
+/* TOOL SELECT */
+#TOOL_SELECT {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-column-gap: 10px;
+    grid-row-gap: 10px;
+}
+    #TOOL_SELECT .TOOL {
+        height: auto;
+        max-height: 140px;
+        padding: 5px;
+        cursor: pointer;
+        background-color: white;
+        overflow: hidden;
+        padding: 5px;
+        border: 1px solid white;
+    }
+.darkmode #TOOL_SELECT .TOOL {
+    background-color: #4f4f4f !important;
+}
+
+        #TOOL_SELECT .TOOL:not([data-targetid]){
+            cursor: default;
+        }
+
+    #TOOL_SELECT .TOOL:hover{
+        border-color: gray;
+    }
+
+        #TOOL_SELECT .TOOL .header {
+            border-bottom: 1px solid black;
+            font-size: 20px;
+        }
+
+        #TOOL_SELECT .TOOL .desc {
+            margin-top: 10px;
+            height: calc(100% - 20px);
+            overflow: scroll !important;
+        }
+
+#TOOL_BACK {
+    position: absolute;
+    top: 0;
+    right: 0;
+
+    display: inline-block;
+    color: gray;
+    font-size: 20px;
+    border: 1px solid lightgray;
+    cursor: pointer;
+    padding: 5px 20px;
+}
+
+    #TOOL_BACK:hover {
+        color: black;
+        border-color: gray;
+    }
+
+/* TOOL CONTENT */
+.TOOL_CONTENT{
+    display: none;
+}
+
+/* API TREE */
+#API_TREE_WRAPPER h2, #API_TREE_WRAPPER h3 {
+    border-bottom: 1px solid gray;
+}
+/* TTV SCROPE TRANSLATION */
+#TTV_SCOPES_TRANSLATOR_WRAPPER {
+    height: calc(100% - 100px);
+    overflow-y: scroll;
+}
+    #TTV_SCOPES_TRANSLATOR_WRAPPER > div {
+        height: calc(100% - 30px);
+        display: grid;
+        grid-template-columns: 40% auto 30%;
+        grid-column-gap: 10px;
+        grid-row-gap: 10px;
+    }
+    #TTV_SCOPES_TRANSLATOR_WRAPPER.vertical > div {
+        grid-template-columns: auto;
+    }
+    #TTV_SCOPES_TRANSLATOR_WRAPPER > div > div {
+        min-height: 200px;
+        width: calc(100% - 20px);
+        background-color: white;
+        padding: 10px;
+    }
+.darkmode #TTV_SCOPES_TRANSLATOR_WRAPPER > div > div {
+    background-color: #4f4f4f;
+}
+
+    #TTV_SCOPES_TRANSLATOR_WRAPPER #TTV_SCOPES_TRANSLATOR_editor  {
+        overflow-y: scroll;
+    }
+        #TTV_SCOPES_TRANSLATOR_WRAPPER #TTV_SCOPES_TRANSLATOR_editor > div {
+            margin-top: 10px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 25% calc(75% - 80px) 70px;
+            grid-column-gap: 5px;
+        }
+#TTV_SCOPES_TRANSLATOR_WRAPPER h2 {
+    margin: 0;
+}
+#TTV_SCOPES_TRANSLATOR_WRAPPER textarea {
+    width: 100%;
+    height: calc(100% - 40px);
+}
+.darkmode #TTV_SCOPES_TRANSLATOR_WRAPPER textarea {
+    background: none;
+}

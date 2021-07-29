@@ -19,7 +19,6 @@
         filter: brightness(105%);
     }
 
-
 /*
     -----------------
         Changelog
@@ -30,21 +29,50 @@
     background-color: white;
     padding: 10px;
 }
+.darkmode .CHANGELOG {
+    color: white;
+    background-color: #4f4f4f;
+}
 
     /*HEADER*/
     .CHANGELOG h1 {
-        text-transform: uppercase;
-        font-weight: 700 !important;
-        font-style: italic;
-        font-size: 40px;
         position: relative;
     }
+        .CHANGELOG h1 a {
+            text-transform: uppercase;
+            font-weight: 700 !important;
+            font-style: italic;
+            font-size: 40px;
+            color: black;
+            text-decoration: none;
+        }
+        .darkmode .CHANGELOG h1 a {
+            color: white;
+        }
     .CHANGELOG h1 button {
         position: absolute;
         right: 0;
         bottom: -20px;
         padding: 5px;
     }
+
+    .CHANGELOG h1 div {
+        font-size: 15px;
+        margin: 0;
+        color: gray;
+        position: absolute;
+        top: -20px;
+        right: 0px;
+    }
+
+        .CHANGELOG h1 div[scheduled]::before {
+            content: 'SCHEDULED';
+            margin-right: 5px;
+            background-color: gray;
+            padding: 1px 5px;
+            border-radius: 5px;
+            color: white;
+        }
 
     .CHANGELOG h2 {
         border-bottom: 1px solid gray;
@@ -153,8 +181,21 @@
             background-color: #028deb;
             color: white;
         }
-
             .CHANGELOG .CHANGES .SERVER .IMG img {
+                background-color: #fd7214;
+                height: 60px;
+                width: 60px;
+                padding: 5px;
+                filter: invert(1);
+                border-color: black;
+            }
+
+
+        .CHANGELOG .CHANGES .MODULEBASE {
+            background-color: #028deb;
+            color: white;
+        }
+            .CHANGELOG .CHANGES .MODULEBASE .IMG img {
                 background-color: #fd7214;
                 height: 60px;
                 width: 60px;
@@ -280,3 +321,207 @@
             .CHANGELOG .CHANGES .CONTENT ul {
                 margin-top: 0;
             }
+
+/*
+    -----------------------
+        Changelog Maker
+    -----------------------
+*/
+
+#NEWS_FEED_ChangelogMaker {
+    margin: 15px;
+    height: calc(100% - 55px);
+    display: none;
+    grid-template-columns: minmax(476px, 50%) 50%;
+    grid-template-rows: auto;
+    grid-column-gap: 5px;
+}
+
+
+    #NEWS_FEED_ChangelogMaker > div::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    #NEWS_FEED_ChangelogMaker .Editor {
+        padding: 15px;
+        background-color: white;
+    }
+.darkmode #NEWS_FEED_ChangelogMaker .Editor {
+    background-color: #4f4f4f;
+}
+
+        #NEWS_FEED_ChangelogMaker .Editor h1 {
+            margin: 0px;
+        }
+
+            #NEWS_FEED_ChangelogMaker .Editor h1 #SaveBTN {
+                background-color: lime;
+                float: right;
+                width: 130px;
+                cursor: pointer;
+                font-size: 25px;
+                border: none;
+                color: black;
+            }
+                #NEWS_FEED_ChangelogMaker .Editor h1 #SaveBTN[disabled] {
+                    cursor: default;
+                    background-color: gray;
+                }
+
+.darkmode #NEWS_FEED_ChangelogMaker .Editor input {
+    background: none;
+    border-color: white;
+    color: white;
+}
+    .darkmode #NEWS_FEED_ChangelogMaker .Editor input::placeholder {
+        color: gray;
+    }
+
+        #NEWS_FEED_ChangelogMaker .Editor input:not([type="datetime-local"]), #NEWS_FEED_ChangelogMaker .Editor textarea {
+            width: 100%;
+            min-height: 20px;
+            margin-bottom: 5px;
+            outline: none;
+            resize: vertical;
+        }
+
+        #NEWS_FEED_ChangelogMaker .Editor select {
+            outline: none;
+        }
+
+        #NEWS_FEED_ChangelogMaker .Editor #Editor_Input_Date {
+            width: 175px;
+            position: absolute;
+            top: 0;
+            right: -5px;
+        }
+
+        #NEWS_FEED_ChangelogMaker .Editor #Editor_Input_Title {
+            font-size: 30px;
+        }
+
+        /* List*/
+        #NEWS_FEED_ChangelogMaker .Editor .List {
+            position: relative;
+        }
+        #NEWS_FEED_ChangelogMaker .Editor .List > h4 {
+            font-size: 20px;
+            margin: 6px;
+        }
+            #NEWS_FEED_ChangelogMaker .Editor .List > img {
+                position: absolute;
+                top: 0;
+                right: 35px;
+                height: 20px;
+                width: 20px;
+                padding: 5px;
+                cursor: no-drop;
+                background-color: rgba(0, 0, 0, 0.1);
+                filter: invert(50%) sepia(82%) saturate(5074%) hue-rotate(336deg) brightness(113%) contrast(111%);
+            }
+
+            #NEWS_FEED_ChangelogMaker .Editor .List > button {
+                position: absolute;
+                top: 0;
+                right: 0;
+                cursor: pointer;
+                border: none;
+                height: 30px;
+                width: 30px;
+                font-size: 25px;
+            }
+                #NEWS_FEED_ChangelogMaker .Editor .List > button:hover {
+                    filter: brightness(0.9);
+                }
+
+            #NEWS_FEED_ChangelogMaker .Editor .List > .List_Content {
+                border-top: 1px solid gray;
+            }
+
+            /* Element */
+            #NEWS_FEED_ChangelogMaker .Editor .List .List_Content .Element {
+                display: grid;
+                grid-template-columns: 20px auto 20px;
+                grid-template-rows: auto;
+                margin-top: 5px;
+                background-color: lavender;
+            }
+
+.darkmode #NEWS_FEED_ChangelogMaker .Editor .List .List_Content .Element {
+    background-color: #914d4d;
+}
+
+                #NEWS_FEED_ChangelogMaker .Editor .List .List_Content .Element .Element {
+                    background-color: #cacafa;
+                }
+
+                    #NEWS_FEED_ChangelogMaker .Editor .List .List_Content .Element .Element .Element {
+                        background-color: #b8b8fc;
+                    }
+
+                #NEWS_FEED_ChangelogMaker .Editor .List .List_Content .Element > div:first-child {
+                    width: 100%;
+                    height: 100%;
+                    position: relative;
+                    border-right: 1px dashed gray;
+                }
+                    #NEWS_FEED_ChangelogMaker .Editor .List .List_Content .Element > div:first-child > span {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                    }
+
+                #NEWS_FEED_ChangelogMaker .Editor .List .List_Content .Element > div:nth-child(2) {
+                    width: calc(100% - 10px);
+                    padding: 5px;
+                }
+
+                    #NEWS_FEED_ChangelogMaker .Editor .List .List_Content .Element > div:nth-child(2) > input, #NEWS_FEED_ChangelogMaker .Editor .List .List_Content .Element > div:nth-child(2) > textarea {
+                        width: calc(100% - 8px);
+                    }
+
+                    #NEWS_FEED_ChangelogMaker .Editor .List .List_Content .Element > div:nth-child(2) input[type="checkbox"] {
+                        cursor: pointer;
+                    }
+
+                #NEWS_FEED_ChangelogMaker .Editor .List .List_Content .Element > img {
+                    border-left: 1px dashed gray;
+                    padding: 2px;
+                    width: calc(100% - 4px);
+                    height: calc(100% - 4px);
+                    cursor: move;
+                }
+
+            #NEWS_FEED_ChangelogMaker .Editor .List .List_Content .Element_Content > select:first-child {
+                margin-bottom: 5px;
+            }
+
+                /* CONTENT */
+        #NEWS_FEED_ChangelogMaker .Editor .CHANGELOGMAKER_CHANGES {
+            display: grid;
+            grid-template-columns: auto 50px;
+            grid-template-areas: "inone intwo" "list list";
+        }
+            #NEWS_FEED_ChangelogMaker .Editor .CHANGELOGMAKER_CHANGES > input:first-child {
+                grid-area: inone;
+            }
+            #NEWS_FEED_ChangelogMaker .Editor .CHANGELOGMAKER_CHANGES > input:nth-child(2) {
+                grid-area: intwo;
+            }
+
+        #NEWS_FEED_ChangelogMaker .Editor .CHANGELOGMAKER_CHANGES > .List{
+            grid-area: list;
+        }
+
+        /* SCroll */
+
+    #NEWS_FEED_ChangelogMaker .Editor {
+        height: 100%;
+        overflow-y: scroll;
+    }
+
+    #NEWS_FEED_ChangelogMaker #CHANGELOG_PREVIEW {
+        height: 100%;
+        overflow-y: scroll;
+    }

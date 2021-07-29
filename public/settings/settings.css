@@ -1,4 +1,7 @@
-﻿
+﻿#content {
+    width: calc(100% - 10px) !important;
+}
+
 #WAITING_FOR_DATA {
     margin: 0 auto;
     margin-top: 10vh;
@@ -6,7 +9,7 @@
 }
 
 body.darkmode #content {
-    background-color: #363636 !important;
+    background-color: #2e2e2e !important;
     color: white;
 }
 

@@ -21,6 +21,7 @@
 #grid #naviHeader {
     background-color: #8b0000;
     padding: 0;
+    height: 100%;
 }
     #grid #naviHeader a {
         position: relative;
@@ -40,6 +41,7 @@
         left: 32px;
         bottom: -13px;
     }
+
 
 /* 
     ////////////////////////////////////
@@ -72,6 +74,7 @@
 
 #grid #contentHeader {
     background-color: #a83232;
+    position: relative;
 }
 
     #grid #contentHeader #DOCS_URL_HEADER {
@@ -87,6 +90,11 @@
         white-space: nowrap;
     }
 
+    #grid #contentHeader .HOVERPROFILE {
+        position: absolute;
+        top: 0;
+        right: 5px;
+    }
 /* 
     ////////////////////////////////////
             MAIN GRID CONTENT
@@ -99,6 +107,18 @@
     font-family: 'Roboto', sans-serif;
     overflow-x: hidden;
 }
+
+    #grid #content::-webkit-scrollbar {
+        width: 20px;
+    }
+
+    #grid #content::-webkit-scrollbar-track {
+        background: none;
+    }
+
+    #grid #content::-webkit-scrollbar-thumb {
+        background: #888;
+    }
 
 .darkmode #grid #content {
     background-color: #1f1f1f;

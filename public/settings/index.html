@@ -61,7 +61,7 @@
 
         <!-- ACTUAL CONTENT -->
         <div class="cellM" id="content" onscroll="NAVIGATIONV2_SCROLL_HL_CHECK()">
-            <div id="OUTPUT"></div>
+            <output></output>
 
             <div id="WAITING_FOR_DATA">
                 <div class="LOADING_RING">
@@ -74,65 +74,15 @@
 
                 <h2>Core Modules</h2>
                 <div id="Modules">
-                    <div class="Module" id="Module_WebApp">
-                        <span class="hdr">WebApp</span>
-                        <div class="misc onlineTable">
-                            <span>API Status:</span><green>ONLINE</green>
-                            <span>Authenticator:</span><blue>FrikyBot Auth.</blue>
-                            <span>Authenticator Status:</span><green>ONLINE</green>
-                            <span>Errors:</span><span>NONE</span>
-                        </div>
-                    </div>
-                    <div class="Module" id="Module_TwitchAPI">
-                        <span class="hdr">Twitch API</span>
-                        <div class="ctrl">
-                            <button>install</button>
-                        </div>
-                        <div class="misc">
-                            <center>not installed</center>
-                        </div>
-                    </div>
-                    <div class="Module" id="Module_TwitchIRC">
-                        <span class="hdr">Twitch IRC</span>
-                        <div class="ctrl">
-                            <button>install</button>
-                        </div>
-                        <div class="misc">
-                            <center>not installed</center>
-                        </div>
-                    </div>
-                    <div class="Module" id="Module_DataCollection">
-                        <span class="hdr">DataCollection</span>
-                        <div class="ctrl">
-                            <button>install</button>
-                        </div>
-                        <div class="misc">
-                            <center>not installed</center>
-                        </div>
-                    </div>
-                    <div class="Module" id="Module_Config" installed>
-                        <span class="hdr">Config</span>
-                        <div class="misc">
-                            <button>Reset</button>
-                            <a href="settings/setup">Change Settings</a>
-                        </div>
-                    </div>
+
                 </div>
 
                 <h2>Packages</h2>
-                <h4>No Packages installed</h4>
                 <div id="Packages">
-                    <div class="Package" style="display: none;">
-                        <span class="hdr">NewsFeed</span>
-                        <div class="ctrl">
-                            <button>START</button>
-                        </div>
-                        <div class="misc"></div>
-                    </div>
-                    <div class="Package" id="ADD_PACKAGE">
+                    <div id="ADD_PACKAGE">
                         <span class="hdr">Add Packages</span>
-                        <div class="misc">
-                            <button>+</button>
+                        <div>
+                            <a href="settings/packages">Go to Package Control</a>
                         </div>
                     </div>
                 </div>

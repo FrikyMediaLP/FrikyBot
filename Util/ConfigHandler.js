@@ -28,6 +28,7 @@ const SettingTypes = [
             { name: 'type', check: (x, optionSet) => x instanceof Array || 'type missmatch' },
             {
                 name: 'selection', check: (x, optionSet) => {
+                    if (x.length == 0 && optionSet.allow_empty) return true;
                     if (x.length == 0 && optionSet.selection.length > 0) return 'array is no subset of the selection';
                     for (let elt of x) if (optionSet.selection.find(el => el === elt) === undefined) return 'array is no subset of the selection';
                     return true;
@@ -43,10 +44,15 @@ const SettingTypes = [
                     return true;
                 }
             }
-        ], default: [], compare: (a, b) => { for (let elt of a) if (b.find(el => el === elt) === undefined) return false; return true; }
+        ], default: [], compare: (a, b) => {
+            if (!(a instanceof Array && b instanceof Array)) return false;
+            if (a.length !== b.length) return false;
+            for (let elt of a) if (b.find(el => el === elt) === undefined) return false;
+            return true;
+        }
     }, {
         name: 'config', options: [
-            { name: 'type', check: (x, optionSet) => x instanceof Config || 'type missmatch' }
+            { name: 'type', check: (x, optionSet) => x instanceof Object || 'type missmatch' }
         ], default: {}
     }
 ];
@@ -74,6 +80,7 @@ class ConfigHandler{
         }
         
         this.Configs = [];
+        this.Preloaded = {};
     }
 
     //Interface
@@ -81,19 +88,22 @@ class ConfigHandler{
         if (!config instanceof Config) return ['Config type missmatch'];
 
         this.Configs.push(config);
+        config.parent = this;
         config.Save = () => this.Save();
         config.Load = () => this.Load();
     }
-    RemoveConfgi(name) {
+    RemoveConfig(name) {
         let index;
-        let cfg = this.Configs((elt, idx) => { if (elt.GetName() === name) { index = idx; return true; } });
+        this.Configs.find((elt, idx) => { if (elt.GetName() === name) { index = idx; return true; } });
         if (index === undefined) return false;
 
+        //Remove
+        this.Configs[index].Save = this.Configs[index].DefaultSave;
+        this.Configs[index].Load = this.Configs[index].DefaultLoad;
         this.Configs.splice(index, 1);
-        cfg.Save = (x) => x;
         return true;
     }
-
+    
     //Configs
     GetConfigs() {
         return this.Configs;
@@ -108,7 +118,7 @@ class ConfigHandler{
         return json;
     }
     GetConfigJSON() {
-        let json = {};
+        let json = JSON.parse(JSON.stringify(this.Preloaded));
 
         for (let cfg of this.Configs) {
             json[cfg.GetName()] = cfg.GetConfig();
@@ -117,7 +127,7 @@ class ConfigHandler{
         return json;
     }
     GetConfigJSONWithoutDefaults() {
-        let copy = {};
+        let copy = JSON.parse(JSON.stringify(this.Preloaded));
 
         for (let cfg of this.Configs) {
             copy[cfg.GetName()] = cfg.GetConfigWithoutDefaults();
@@ -126,7 +136,7 @@ class ConfigHandler{
         return copy;
     }
     GetConfigJSONREDACTED() {
-        let copy = {};
+        let copy = JSON.parse(JSON.stringify(this.Preloaded));
 
         for (let cfg of this.Configs) {
             copy[cfg.GetName()] = cfg.GetConfigREDACTED();
@@ -191,7 +201,8 @@ class ConfigHandler{
     Load() {
         try {
             let s = fs.readFileSync(path.resolve(this.Settings.export_dir + this.Settings.export_name + '.json'));
-            return this.UpdateConfig(JSON.parse(s));
+            this.Preloaded = JSON.parse(s);
+            return this.UpdateConfig(this.Preloaded);
         } catch (err) {
             return [err.message];
         }
@@ -217,19 +228,22 @@ class Config {
         this.Template = template;
         this.options = options;
         this.parentConfig = parentConfig;
+        if (!options) options = {};
 
         this.Settings = {
-            file_path: null
+            export_dir: null,
+            export_name: 'config'
         };
         
         //Copy Settings
-        for (let set in settings) this.Settings[set] = options[set];
+        for (let set in settings) this.Settings[set] = settings[set];
 
         //Init
         this.Config = options.preloaded || this.CreateBlankConfig();
         delete options.preloaded;
 
-        //Child Configs
+        //Cascaded Configs
+        this.parent = null;
         this.children = [];
     }
 
@@ -237,6 +251,16 @@ class Config {
     AddSettingTemplates(settings = []) {
         if (!(settings instanceof Array)) settings = [settings];    //convert to array
         for(let stg of settings) this.Template.push(stg);           //Add Array Elements to Templates
+    }
+    EditSettingTemplate(settingName, changes = {}) {
+        if (!settingName) return false;
+
+        let setting = this.Template.find(elt => elt.name === settingName);
+        if (setting === undefined) return 'Setting not found';
+
+        for (let change in changes) {
+            setting[change] = changes[change];
+        }
     }
     RemoveSettingTemplate(settingName) {
         if (!settingName) return false;
@@ -258,6 +282,8 @@ class Config {
         
         //Add Config
         this.children.push(cfgObj);
+        cfgObj.Load();
+        cfgObj.FillConfig();
         return true;
     }
     RemoveChildConfig(name) {
@@ -275,6 +301,7 @@ class Config {
 
         //Remove
         this.children[idx].Save = this.children[idx].DefaultSave;
+        this.children[idx].Load = this.children[idx].DefaultLoad;
         this.children.splice(idx, 1);
         return true;
     }
@@ -300,7 +327,8 @@ class Config {
         }
 
         let copyCat = this.GetConfig();
-        copyCat[stgName] = updatedSetting;
+        if (updatedSetting === undefined) delete copyCat[stgName];
+        else copyCat[stgName] = updatedSetting;
 
         //Update
         this.Config = copyCat;
@@ -373,8 +401,8 @@ class Config {
         //Skip unknown Types
         if (!TYPE) return true;
         
-        //Check and return result on error
-        let TYPEtype = TYPE.options.find(elt => elt.name === name);
+        //Check Type and return result on error
+        let TYPEtype = TYPE.options.find(elt => elt.name === 'type');
         if (!TYPEtype) return true; //Skip unknown
 
         let result = TYPEtype.check(value, options);
@@ -398,7 +426,7 @@ class Config {
             delete options['type'];
             delete options['opt'];
             delete options['default'];
-
+            
             //Check Variable Types
             for (let type in options) {
                 //Find Type - skip unknowns
@@ -431,6 +459,14 @@ class Config {
         let copy = {};
 
         for (let stgName in this.Config) {
+            let child = this.children.find(elt => elt.GetName() === stgName);
+            if (child) {
+                let settings = child.GetConfigWithoutDefaults();
+                copy[stgName] = settings;
+                continue;
+            }
+
+
             //Template
             let template = this.Template.find(elt => elt.name === stgName);
             if (!template) template = {};
@@ -442,11 +478,11 @@ class Config {
             //Compare
             let same = false;
             if (type.compare !== undefined) {
-                same = type.compare(template.default, this.Config[stgName]);
+                same = type.compare(this.GetSettingDefault(stgName), this.Config[stgName]);
             } else {
-                same = template.default === this.Config[stgName];
+                same = this.GetSettingDefault(stgName) === this.Config[stgName];
             }
-
+            
             //Add
             if (template.requiered === true || !same) {
                 //Recursive Children
@@ -481,9 +517,22 @@ class Config {
         return copy;
     }
 
-    GetTemplate(copy = true) {
-        if (copy) return this.Template.slice();
-        else return this.Template;
+    GetTemplate(copy = true, deep = false) {
+        if (!copy) return this.Template;
+        if (deep) {
+            let temps = [];
+            for (let cfgTmp of this.Template) {
+                if (cfgTmp.type !== 'config') temps.push(cfgTmp);
+                else {
+                    let childData = JSON.parse(JSON.stringify(cfgTmp));
+                    let child = this.children.find(elt => elt.GetName() === cfgTmp.name);
+                    if (child) childData['childTemplates'] = child.GetTemplate(true, true);
+                    temps.push(childData);
+                }
+            }
+            return temps;
+        }
+        return this.Template.slice();
     }
     GetOptions(copy = true) {
         if (copy) return JSON.parse(JSON.stringify(this.options));
@@ -492,11 +541,11 @@ class Config {
 
     //IO
     DefaultSave() {
-        if (this.Settings.file_path !== null) return [ 'No Ouput File set.' ];
+        if (this.Settings.export_dir == null || this.Settings.export_name == null) return [ 'No Ouput File set.' ];
 
         try {
             let s = this.GetConfigWithoutDefaults();
-            fs.writeFileSync(path.resolve(this.Settings.file_path), JSON.stringify(s, null, 4));
+            fs.writeFileSync(path.resolve(this.Settings.export_dir + this.Settings.export_name + '.json'), JSON.stringify(s, null, 4));
         } catch (err) {
             return [err.message];
         }
@@ -504,13 +553,24 @@ class Config {
     Save() {
         return this.DefaultSave();
     }
+    DefaultLoad() {
+        if (this.Settings.export_dir == null || this.Settings.export_name == null) return ['No Ouput File set.'];
+        
+        try {
+            let s = fs.readFileSync(path.resolve(this.Settings.export_dir + this.Settings.export_name + '.json'));
+            this.Preloaded = JSON.parse(s);
+            return this.UpdateConfig(this.Preloaded);
+        } catch (err) {
+            return [err.message];
+        }
+    }
+    Load() {
+        return this.DefaultLoad();
+    }
 
     //Util
     GetName() {
         return this.name;
-    }
-    OnChange(name, from, to) {
-        
     }
 }
 

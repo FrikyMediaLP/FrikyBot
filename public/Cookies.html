@@ -55,27 +55,33 @@
 
             </div>
             <div id="mainNavi">
-                
+
             </div>
+            <button id="LightModeButton" onclick="toggleLightMode()">DarkMode</button>
             <div id="license"> - <a href="https://fontawesome.com/license/free" target="_blank">Icon license</a> - </div>
         </div>
 
         <!-- ACTUAL CONTENT -->
         <div class="cellM" id="content">
-            <div id="OUTPUT"></div>
+            <output></output>
 
-            <center><h1>FrikyBot Data and Cookie Usage</h1></center>
+            <center style="margin-top: 10px;"><h1>FrikyBot Data and Cookie Usage</h1></center>
             <div style="background-color: white; margin: 20px 0; padding: 10px;">
                 <p>There are 3 Types of "Cookies": <b>LocalStorage</b>, <b>SessionStorage</b> and <b>Cookies</b>.</p>
-                <p>All "Cookies" are stored <b>ON YOUR DEVICE</b> BUT only <b>Cookies</b> are send / accessable to the server.</p>
-                <p>"Cookies" are used to provide Authentication over all pages (so you only need to log in ONCE), they provide a more plesant experience browsing, by storing frequently fetched data and much more... </p>
-                <p><b>Below are ALL "Cookies" the Bot uses:</b></p>
+                <p>"Local/Session Storage" are stored <b>ON YOUR DEVICE</b> BUT only "<b>Cookies</b>" are send / accessable to the server.</p>
+                <p>The Cookies/Storages are used to provide Authentication over all pages (so you only need to log in ONCE), they provide a more plesant experience browsing, by storing frequently fetched data and much more... </p>
+                <p><b>Below are ALL "Cookies" the Bot-Services use. You can allow each one seperatly, so only the data is stored that you want!</b></p>
+            </div>
+            <div id="ALL_BUTTONS">
+                <button onclick="toggle_Cookie_Setting_All(true)">ALLOW ALL COOKIES</button>
+                <button onclick="toggle_Cookie_Setting_All(false)">DECLINE ALL COOKIES</button>
+                <button id="SAVE_BUTTON" onclick="save_Cookie_Settings()" disabled>SAVE COOKIES SETTINGS</button>
             </div>
 
             <!-- LOCAL STORAGE -->
-            <div class="contentDiv" id="LocalStorage">
+            <div class="contentDiv" id="LocalStorage" style="margin-top: 50px;">
                 <h2>LocalStorage - Persistent Storage</h2>
-                <div class="COOKIE_TABLE" id="Table_LocalStorage" hidden>
+                <div id="Table_LocalStorage">
 
                 </div>
                 <div class="WAITING_PARENT">
@@ -91,7 +97,7 @@
             <!-- SESSION STORAGE -->
             <div class="contentDiv" id="SessionStorage">
                 <h2>SessionStorage - Data is deleted when Tab/Session is closed.</h2>
-                <div class="COOKIE_TABLE" id="Table_SessionStorage" hidden>
+                <div id="Table_SessionStorage">
 
                 </div>
                 <div class="WAITING_PARENT">
@@ -107,7 +113,7 @@
             <!-- COOKIES -->
             <div class="contentDiv" id="Cookies">
                 <h2>Cookies - Data sent to/by the server.</h2>
-                <div class="COOKIE_TABLE" id="Table_Cookies" hidden>
+                <div id="Table_Cookies">
 
                 </div>
                 <div class="WAITING_PARENT">
@@ -119,6 +125,7 @@
                     </div>
                 </div>
             </div>
+            <center style="margin-bottom: 30px;"><button class="BUTTON" onclick="deleteAllCookies();">REMOVE ALL COOKIE DATA</button></center>
         </div>
     </div>
 </body>

@@ -1,11 +1,13 @@
 {
   "Server": {
-    "description": "Main Function - Starting, Setup and maintaining the Bot.",
+    "description": "Main Script - Starting, Setup and maintaining the Bot.",
     "modules": {
       "express": "npm",
+      "colors": "npm",
       "fs": "NodeJS Module",
       "path": "NodeJS Module",
-      "colors": "npm",
+      "ConfigHandler": "FrikyBot Module",
+      "Logger": "FrikyBot Module",
       "CONSTANTS": "FrikyBot Module"
     },
     "variables": {
@@ -39,53 +41,25 @@
         "type": "Logger",
         "description": "Logger Class Formatted Console Output."
       },
-      "TWITCHIRC": {
-        "type": "TWITCHIRC Module",
-        "description": "TwitchIRC Module supporting the TwitchIRC COnnection Class and Twitch Message Class."
+      "CONFIGHANDLER_MODULE": {
+        "type": "ConfigHandler Module",
+        "description": "ConfigHandler Module enabling general Config Support and Sharing."
       },
-      "TwitchIRC": {
-        "type": "TWITCHIRC.TwitchIRC",
-        "description": "TwitchIRC Class used to connect to the Twitc Chat, read and write Chat Messages and execute Chat Commands."
-      },
-      "TWITCHAPI": {
-        "type": "TWITCHAPI Module",
-        "description": "TWITCHAPI Module supporting the TwitchAPI Class."
-      },
-      "TwitchAPI": {
-        "type": "TwitchAPI",
-        "description": "TwitchAPI Class giving access to the Twitch API Endpoints and Token Setup."
-      },
-      "DATACOLLECTION": {
-        "type": "DATACOLLECTION Module",
-        "description": "DATACOLLECTION Module supporting the DataCollection Class."
-      },
-      "DataCollection": {
-        "type": "DataCollection",
-        "description": "DataCollection Class handling and collecting Data from various Datapoints."
+      "ConfigHandler": {
+        "type": "ConfigHandler",
+        "description": "ConfigHandler managing multiple Child-Configs in one File."
       },
       "Server_Status": {
         "type": "Object",
         "description": "Current Status of the Bot."
       },
+      "INSTALLED_MODULES": {
+        "type": "Object",
+        "description": "All currently installed Bot Modules."
+      },
       "INSTALLED_PACKAGES": {
         "type": "Object",
         "description": "All currently installed Bot Packages."
-      },
-      "CONFIG": {
-        "type": "Object",
-        "description": "CONFIG Settings controlling the Bot."
-      },
-      "CONFIG_SETUP_TEMPLATE": {
-        "type": "Object",
-        "description": "Default CONFIG Settings"
-      },
-      "app": {
-        "type": "Express",
-        "description": "Express WebApp, API and File Routing."
-      },
-      "server": {
-        "type": "Express Server",
-        "description": "Express Server Socket"
       }
     },
     "functions": {
@@ -104,74 +78,87 @@
         "is-async": true,
         "description": "Checks the File Structure for any missing Folder."
       },
-      "Config_Setup_Wizard": {
-        "params": [
-          {
-            "name": "cfg",
-            "type": "Object"
-          }
-        ],
-        "is-async": true,
-        "description": "Creates the Config based on Console inputs."
-      },
       "INIT": {
         "params": null,
         "is-async": true,
         "description": "Initializing the Bot. Starting the WebServer, API and File Routing, Logging in to the Twitch IRC and API aswell as starting all installed Packages."
-      },
-      "INIT_Packages": {
-        "params": null,
-        "is-async": true,
-        "description": "Initializing the installed Packages previously loaded. Packages are only initilized with their Init()-Function any other setup is done seperatly!"
       },
       "POST_INIT": {
         "params": null,
         "is-async": true,
         "description": "Interconnecting Packages and calling the Post_Init()-Functions of all Packages, also setting 404-API and 404-File Routing Endpoints and enabling console input Commands."
       },
-      "loadConfig": {
+      "INIT_WEBAPP": {
         "params": null,
-        "description": "Loading the Bot Config, combining any extern data and Checks any missing parts. returns true on success and false on failure."
+        "is-async": true,
+        "description": "Setup WebApp API and start Server."
       },
-      "checkConfigContent": {
+      "autodetectModules": {
+        "params": null,
+        "description": "Returns a List of all Modules Folders in the Module Directory."
+      },
+      "loadModule": {
         "params": [
           {
-            "name": "config_content",
+            "name": "module",
+            "type": "String"
+          },
+          {
+            "name": "preloaded_config",
             "type": "Object"
           },
           {
-            "name": "virtual_config",
-            "type": "Object"
+            "name": "ConfigHandler",
+            "type": "ConfigHandler"
           }
         ],
-        "description": "Checks the Bot Config for all requiered Content and updates the Config if necessary."
+        "description": "Load a Module into the INSTALLED_MODULES Object."
       },
-      "combineConfigs": {
-        "params": [
-          {
-            "name": "config_content",
-            "type": "Object"
-          },
-          {
-            "name": "extern_config",
-            "type": "Object"
-          }
-        ],
-        "description": "Combines Contents of an extern config Object into a collective Config Object."
-      },
-      "ConsoleYN": {
+      "autodetectPackages": {
         "params": null,
-        "is-async": true,
-        "description": "Returns True or False, depending on the Console Input the User gave."
-      },
-      "ConsolePrompt": {
-        "params": null,
-        "is-async": true,
-        "description": "Returns an Line sent in the Console after hitting Enter."
+        "description": "Returns a List of all Packages Folders in the Packages Directory."
       },
       "loadPackages": {
-        "params": null,
+        "params": [
+          {
+            "name": "pack",
+            "type": "String"
+          },
+          {
+            "name": "preloaded_config",
+            "type": "Object"
+          }
+        ],
         "description": "Loads Package details from the Bot Config and prepares them in the INSTALLED_PACKAGES Object for later initilization."
+      },
+      "iniPackage": {
+        "params": [
+          {
+            "name": "pack",
+            "type": "String"
+          }
+        ],
+        "is-async": true,
+        "description": "Initilization of a Package."
+      },
+      "postIniPackage": {
+        "params": [
+          {
+            "name": "pack",
+            "type": "String"
+          }
+        ],
+        "description": "Post-Initilization of a Package."
+      },
+      "PackageInterconnectPackage": {
+        "params": [
+          {
+            "name": "pack",
+            "type": "String"
+          }
+        ],
+        "is-async": true,
+        "description": "Sending Package Interconnect Requests to available Packages."
       },
       "shutdown": {
         "params": [
@@ -181,117 +168,558 @@
           }
         ],
         "description": "Shutting down the Bot with Error Code 0. A Number in Seconds can be given to delay the shutdown."
+      },
+      "SERVER_MAIN_ROUTER": {
+        "params": [
+          {
+            "name": "req",
+            "type": "express::Request"
+          },
+          {
+            "name": "res",
+            "type": "express::Response"
+          },
+          {
+            "name": "next",
+            "type": "express::Middleware"
+          }
+        ],
+        "is-async": true,
+        "description": "Intercepting URL Requests and redirecting/using Query information to Change behaviour."
+      },
+      "API_Cookies": {
+        "params": [
+          {
+            "name": "req",
+            "type": "express::Request"
+          },
+          {
+            "name": "res",
+            "type": "express::Response"
+          },
+          {
+            "name": "next",
+            "type": "express::Middleware"
+          }
+        ],
+        "description": "Middleware for the /api/Cookies Endpoint."
       }
     },
     "API": {
-      "ROOT": "frikybot.de/api/",
       "Endpoints": [
         {
-          "name": "Bot Status",
-          "endpoint": "/BotStatus",
-          "description": "Returns the current Bot Status/Errors/Outages/...",
-          "response": {
-            "Status.status": {
-              "type": "String",
-              "description": "Current Bot Status as Text."
-            },
-            "Status.errors.fatal": {
-              "type": "Object",
-              "description": "Current Bot Errors."
-            },
-            "Status.errors.outage": {
-              "type": "Object",
-              "description": "Current Bot Outages."
-            },
-            "Username": {
-              "type": "String",
-              "description": "Twitch Bot Username"
-            },
-            "Channel": {
-              "type": "String",
-              "description": "Twitch Channel the Bot is currently joined."
-            },
-            "Description": {
-              "type": "String",
-              "description": "Twitch Bot User Description"
-            },
-            "Type": {
-              "type": "String",
-              "description": "Twitch Bot User Type"
-            },
-            "Image": {
-              "type": "String",
-              "description": "Twitch Bot User Profile Image"
-            }
-          },
-          "request": null
-        },
-        {
-          "name": "Get Website Navigation",
-          "endpoint": "/Navi",
-          "description": "Returns the Website Side Navigation Data based on installed Packages and Bot Status.",
+          "name": "Get Cookies",
+          "endpoint": "/api/Cookies",
+          "description": "Get a List of the all Cookies used by the FrikyBot, its Modules and Packages.",
+          "restricted": "full",
           "request": null,
           "response": {
-            "Main": {
-              "type": "Array",
-              "description": "Array containing Navigation Data for the Main Section."
+            "data": {
+              "type": "Object",
+              "description": "Object containing the 3 Types of Cookies: 'LocalStorage', 'SessionStorage' and 'Cookies'."
             },
-            "Packages": {
-              "type": "Array",
-              "description": "Array containing Navigation Data for the Packages Section."
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Start Module",
+          "endpoint": "/api/modules/control/start",
+          "description": "Start or Enable a Module.",
+          "restricted": "full",
+          "request": {
+            "query": {
+              "module_name": {
+                "type": "String",
+                "description": "Name of the Module."
+              }
+            }
+          },
+          "response": {
+            "module_name": {
+              "type": "String",
+              "description": "Echoes back the Module Name in the query."
             },
-            "Settings": {
-              "type": "Array",
-              "description": "Array containing Navigation Data for the Settings Section."
+            "enable": {
+              "type": "Boolean",
+              "description": "Status of the enable-Process."
+            },
+            "status": {
+              "type": "Boolean",
+              "description": "New Enable-State of the Module."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Stop Module",
+          "endpoint": "/api/modules/control/stop",
+          "description": "Stop or Disable a Module.",
+          "restricted": "full",
+          "request": {
+            "query": {
+              "module_name": {
+                "type": "String",
+                "description": "Name of the Module."
+              }
+            }
+          },
+          "response": {
+            "module_name": {
+              "type": "String",
+              "description": "Echoes back the Module Name in the query."
+            },
+            "enable": {
+              "type": "Boolean",
+              "description": "Status of the disable-Process."
+            },
+            "status": {
+              "type": "Boolean",
+              "description": "New Enable-State of the Module."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Add Module",
+          "endpoint": "/api/modules/control/add",
+          "description": "Add a Module, this only adds it to the Config and then restarts the Bot 5 Seconds Later!",
+          "restricted": "full",
+          "request": {
+            "query": {
+              "module_name": {
+                "type": "String",
+                "description": "Name of the Module."
+              }
+            }
+          },
+          "response": {
+            "module_name": {
+              "type": "String",
+              "description": "Echoes back the Module Name in the query."
+            },
+            "added": {
+              "type": "String",
+              "description": "will be 'success'."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Remove Module",
+          "endpoint": "/api/modules/control/remove",
+          "description": "Remove a Module, this only removes it from the Config and then restarts the Bot 5 Seconds Later!",
+          "restricted": "full",
+          "request": {
+            "query": {
+              "module_name": {
+                "type": "String",
+                "description": "Name of the Module."
+              },
+              "is_unknown": {
+                "type": "Boolean",
+                "description": "Ability to remove Unknown Modules."
+              }
+            }
+          },
+          "response": {
+            "module_name": {
+              "type": "String",
+              "description": "Echoes back the Module Name in the query."
+            },
+            "removed": {
+              "type": "String",
+              "description": "will be 'success'."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
             }
           }
         },
         {
           "name": "Get Packages",
-          "endpoint": "/Packages",
-          "description": "Returns currently installed Packages.",
+          "endpoint": "/api/packages",
+          "description": "Returns all currently installed Packages! Staff Members also get Disabled Packages.",
           "restricted": "partial",
           "request": null,
           "response": {
-            "Packages": {
+            "data": {
               "type": "Object",
-              "description": "Object contains the Information Details of all currently installed Packages."
-            }
-          }
-        },
-        {
-          "name": "Get Cookie and LocalStorage Information",
-          "endpoint": "/Cookies",
-          "description": "Returns Cookie/LocalStorage information, uses and more.",
-          "request": null,
-          "response": {
-            "LocalStorage": {
-              "type": "Object",
-              "description": "Object containing all LocalStorage Keys with Parameters: Set By, When Set, When Removed and Used for"
+              "description": "Echoes back the Module Name in the query."
             },
-            "SessionStorage": {
+            "data.Packages": {
               "type": "Object",
-              "description": "Object containing all SessionStorage Keys with Parameters: Set By, When Set and Used for"
-            }
-          }
-        },
-        {
-          "name": "Endpoint not found",
-          "endpoint": "/*",
-          "description": "Returns a 404 Error Message. Is triggered at the end of any API Request on the main API Route.",
-          "request": null,
-          "response": {
+              "description": "Object containing the Package Details."
+            },
             "err": {
               "type": "String",
-              "description": "contains the String \"404 - API Endpoint not found\""
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Change Package Settings",
+          "endpoint": "/api/packages/settings",
+          "description": "Change Package Settings.",
+          "restricted": "full",
+          "request": {
+            "method": "POST",
+            "query": {
+              "package_name": {
+                "type": "String",
+                "description": "Name of the Package."
+              }
+            },
+            "body": {
+              "cfg": {
+                "type": "Object",
+                "description": "Key in the Object represents a Package Setting and their values."
+              }
+            }
+          },
+          "response": {
+            "status": {
+              "type": "String",
+              "description": "Will be success."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Start Package",
+          "endpoint": "/api/packages/control/start",
+          "description": "Start or Enable a Package.",
+          "restricted": "full",
+          "request": {
+            "query": {
+              "package_name": {
+                "type": "String",
+                "description": "Name of the Package."
+              }
+            }
+          },
+          "response": {
+            "enable": {
+              "type": "String",
+              "description": "Will be success."
+            },
+            "reload": {
+              "type": "String",
+              "description": "Will be success."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Stop Package",
+          "endpoint": "/api/packages/control/stop",
+          "description": "Stop or Disable a Package.",
+          "restricted": "full",
+          "request": {
+            "query": {
+              "package_name": {
+                "type": "String",
+                "description": "Name of the Package."
+              }
+            }
+          },
+          "response": {
+            "disable": {
+              "type": "String",
+              "description": "Will be success."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Reload Package",
+          "endpoint": "/api/packages/control/reload",
+          "description": "Reload a Package.",
+          "restricted": "full",
+          "request": {
+            "query": {
+              "package_name": {
+                "type": "String",
+                "description": "Name of the Package."
+              }
+            }
+          },
+          "response": {
+            "reload": {
+              "type": "String",
+              "description": "Will be success."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Remove Package",
+          "endpoint": "/api/packages/control/reload",
+          "description": "Remove a Package.",
+          "restricted": "full",
+          "request": {
+            "query": {
+              "package_name": {
+                "type": "String",
+                "description": "Name of the Package."
+              }
+            }
+          },
+          "response": {
+            "removed": {
+              "type": "String",
+              "description": "Will be success."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Get Page Navigation",
+          "endpoint": "/api/pages/navigation",
+          "description": "Get the Main Navigation Data for the Website. Selected Userlevels also get more Links.",
+          "restricted": "partial",
+          "request": null,
+          "response": {
+            "data": {
+              "type": "Array",
+              "description": "<a href=\"Misc/Navigation2\">Navigation2</a> Formatted Datastructure of the Navigation Data."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Get Login Page",
+          "endpoint": "/api/pages/login",
+          "description": "Returns the Data requiered by the Login Page.",
+          "request": null,
+          "response": {
+            "authenticator": {
+              "type": "String",
+              "description": "Name of the current Authenticator or is 'UNAVAILABLE'."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Get Setup Settings Page",
+          "endpoint": "/api/pages/settings/setup",
+          "description": "Returns the Data requiered by the Setup Page.",
+          "request": null,
+          "response": {
+            "data.cfg": {
+              "type": "Object",
+              "description": "Main Config Settings of the Bot."
+            },
+            "data.tmpl": {
+              "type": "Array",
+              "description": "Main Config Template Settings of the Bot."
+            },
+            "data.auths": {
+              "type": "Array",
+              "description": "All currently available Authenticators."
+            },
+            "data.ttv_api": {
+              "type": "Array",
+              "description": "Twitch API Information Data."
+            },
+            "data.ttv_irc": {
+              "type": "Array",
+              "description": "Twitch IRC Information Data."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Get Dashboard Settings Page",
+          "endpoint": "/api/pages/settings/dashboard",
+          "description": "Returns the Data requiered by the Dashboard Page.",
+          "request": null,
+          "response": {
+            "data.Modules": {
+              "type": "Array",
+              "description": "All currently installed Modules."
+            },
+            "data.Packages": {
+              "type": "Array",
+              "description": "All currently installed Packages."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Get Module Settings Page",
+          "endpoint": "/api/pages/settings/modules",
+          "description": "Returns the Data requiered by the Module Page.",
+          "request": null,
+          "response": {
+            "data.Modules": {
+              "type": "Array",
+              "description": "All currently installed Modules."
+            },
+            "data.Unknown_Modules": {
+              "type": "Array",
+              "description": "All Unknown Modules in the Config."
+            },
+            "data.auto_detected": {
+              "type": "Array",
+              "description": "All Foldernames of Modules in the Module Directory."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Get Package Settings Page",
+          "endpoint": "/api/pages/settings/packages",
+          "description": "Returns the Data requiered by the Package Page.",
+          "request": null,
+          "response": {
+            "data.Packages": {
+              "type": "Array",
+              "description": "All currently installed Packages."
+            },
+            "data.auto_detected": {
+              "type": "Array",
+              "description": "All Foldernames of Packages in the Packages Directory."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Get Logs Settings Page",
+          "endpoint": "/api/pages/settings/logs",
+          "description": "Returns the Data requiered by the Logs Page.",
+          "request": null,
+          "response": {
+            "data.Packages": {
+              "type": "Array",
+              "description": "All Logs of the installed Packages."
+            },
+            "data.Modules": {
+              "type": "Array",
+              "description": "All Logs of the installed Modules."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Get Settings Page Navigation",
+          "endpoint": "/api/pages/settings/navigation",
+          "description": "Returns the Navigation for all Settings Pages.",
+          "request": null,
+          "response": {
+            "data": {
+              "type": "Array",
+              "description": "<a href=\"Misc/Navigation2\">Navigation2</a> Formatted Datastructure of the Navigation Data."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Get Tools Settings Page",
+          "endpoint": "/api/pages/settings/tools",
+          "description": "Returns the Data requiered by the Tools Page.",
+          "request": null,
+          "response": {
+            "data.api_tree": {
+              "type": "Object",
+              "description": "API Structore of the Bot - still a WIP."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
+            }
+          }
+        },
+        {
+          "name": "Get Bot Status",
+          "endpoint": "/api/BotStatus",
+          "description": "Returns the Bot Status including TTV API, IRC and Datacollection. Packages will follow soonTM.",
+          "request": null,
+          "response": {
+            "Status": {
+              "type": "Object",
+              "description": "Object containing detailed Errors/Outages of Modules."
+            },
+            "Username": {
+              "type": "String",
+              "description": "Bot Username."
+            },
+            "Channel": {
+              "type": "String",
+              "description": "Bot active Channel."
+            },
+            "Live": {
+              "type": "Boolean",
+              "description": "The active Bot Channel is live?"
+            },
+            "Type": {
+              "type": "String",
+              "description": "Is the Bot user Affiliate/Partner/verified Bot?"
+            },
+            "Image": {
+              "type": "String",
+              "description": "The Bot users Profile Picture."
+            },
+            "err": {
+              "type": "String",
+              "description": "Error Message, when something went wrong."
             }
           }
         }
       ]
     },
     "FileHosting": {
-      "ROOT": "frikybot.de/",
-      "Static": "public",
       "Routes": {
         "/favicon.ico": {
           "type": "redirect",
@@ -299,17 +727,11 @@
         },
         "/Twitch-redirect?": {
           "type": "Analysis / redirect",
-          "restricted": "full",
           "description": "Redirects after a Twitch Login to the Bot Page and creates a Bot User Access Token for the Twitch API."
         },
         "/Twitch-redirect": {
           "type": "redirect",
           "description": "Redirects back to the login Page."
-        },
-        "/Settings": {
-          "type": "redirect",
-          "restricted": "full",
-          "description": "Redirects to the settings Page after Authentication."
         }
       }
     }

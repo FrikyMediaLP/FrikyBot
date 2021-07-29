@@ -1,198 +1,231 @@
-﻿const CONSTANTS = require('./../../Util/CONSTANTS.js');
-const express = require('express');
-const fs = require('fs');
+﻿const express = require('express');
 const PATH = require('path');
+const Datastore = require('nedb');
 
 const PACKAGE_DETAILS = {
     name: "NewsFeed",
-    description: "News Feed used to Share Updates and Informations on recent Events."
+    description: "News Feed used to Share Updates and Informations on recent Events.",
+    picture: "/images/icons/newspaper-solid.svg"
 };
-
-const SETTINGS_REQUIERED = {
-    HTML_ROOT_NAME: "News",
-    API_ROOT_NAME: "News",
-    News_File_Dir: "Packages/NewsFeed/News/",
-    News_File: "News.json",
-    Changelog_Dir: "Packages/NewsFeed/News/Changelogs/"
+const COOKIES = {
+    SessionStorage: [
+        { name: 'NEWS_FEED_DATA', by: 'News Feed Embedded', set: 'When new News were fetched', reason: 'Reduce loadtimes by storing a temporary dataset of the News Data.' }
+    ]
 };
-
-const API_SETTINGS = {
-    API_NEWS_FIRST_DEFAULT: 10,
-    API_NEWS_OLDEST_FIRST_DEFAULT: 1,
-    API_NEWS_LATEST_FIRST_DEFAULT: 1,
-    API_NEWS_DATE_FIRST_DEFAULT: 1
-};
-
 const API_ENDPOINT_PARAMETERS = {
-    latest: {
-        first: true,
-        pagination: true
-    },
-    oldest: {
-        first: true,
-        pagination: true
+    'oldest-news': {
+        first: 'filter',
+        pagination: 'filter'
     },
     news: {
-        idx: true,
-        page: true,
-        title: true,
-        date: true,
-        first: true,
-        pagination: true
+        id: 'query',
+        page: 'query',
+        title: 'query',
+        day: 'query',
+        start: 'query',
+        end: 'query',
+        first: 'filter',
+        pagination: 'filter'
+    },
+    changelogs: {
+        id: 'query',
+        changelog: 'query',
+        title: 'query',
+        day: 'query',
+        start: 'query',
+        end: 'query',
+        first: 'filter',
+        pagination: 'filter'
     }
 };
 
-class NewsFeed extends require('./../PackageBase.js').PackageBase {
-    constructor(expressapp, twitchirc, twitchapi, datacollection, logger) {
-        super(PACKAGE_DETAILS, expressapp, twitchirc, twitchapi, datacollection, logger);
+class NewsFeed extends require('./../../Util/PackageBase.js').PackageBase {
+    constructor(webappinteractor, twitchirc, twitchapi, datacollection, logger) {
+        super(PACKAGE_DETAILS, webappinteractor, twitchirc, twitchapi, datacollection, logger);
+
+        //Change Config Defaults
+        this.Config.EditSettingTemplate('HTML_ROOT_NAME', { default: 'News' });
+        this.Config.EditSettingTemplate('API_ROOT_NAME', { default: 'News' });
+        
+        this.Config.AddSettingTemplates([
+            { name: 'API_NEWS_FIRST_DEFAULT', type: 'number', default: 10, min: 0 },
+            { name: 'API_CHANGELOG_FIRST_DEFAULT', type: 'number', default: 10, min: 0 }
+        ]);
+        this.Config.Load();
+        this.Config.FillConfig();
+
+        //Cookies
+        this.setWebCookies(COOKIES);
+
+        //Databases
+        this.NEWS_DATABASE;
+        this.CHANGELOG_DATABASE;
     }
 
     async Init(startparameters) {
         if (!this.isEnabled()) return Promise.resolve();
-
+        
         //API ROUTE
         let APIRouter = express.Router();
-        APIRouter.get('/latest', this.checkParams, async (request, response) => {
-            let params = request.query;
-            let news_data = this.getLatest(params.first, params.pagination);
 
-            if (news_data && typeof (news_data) != "string") {
-                if (Array.isArray(news_data)) {
-                    response.json({
-                        status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
-                        data: {                             //Data
-                            News: news_data
-                        }
-                    });
-                } else {
-                    response.json({
-                        status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
-                        data: news_data
-                    });
-                }
-            } else {
-                response.json({
-                    status: CONSTANTS.STATUS_FAILED,    //Sending Failure confimation
-                    err: typeof (news_data) == "string" ? news_data : "Internal Error."
-                });
+        APIRouter.get('/', async (req, res) => {
+            let authenticated = false;
+
+            try {
+                await this.WebAppInteractor.AuthorizeUser(res.locals.user, { user_level: 'moderator' });
+                authenticated = true;
+            } catch (err) {
+
+            }
+            
+            try {
+                res.json({ data: await this.getNews(req.query, authenticated) });
+            } catch (err) {
+                res.json({ err: "Internal Error." });
             }
         });
-        APIRouter.get('/oldest', this.checkParams, async (request, response) => {
-            let params = request.query;
-            let news_data = this.getOldest(params.first, params.pagination);
+        APIRouter.get('/oldest', async (req, res) => {
+            let authenticated = false;
 
-            if (news_data && typeof (news_data) != "string") {
-                if (Array.isArray(news_data)) {
-                    response.json({
-                        status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
-                        req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                        data: {                             //Data
-                            News: news_data
-                        }
-                    });
-                } else {
-                    response.json({
-                        status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
-                        req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                        data: news_data
-                    });
-                }
-            } else {
-                response.json({
-                    status: CONSTANTS.STATUS_FAILED,    //Sending Failure confimation
-                    req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                    err: typeof (news_data) == "string" ? news_data : "Internal Error."
-                });
+            try {
+                await this.WebAppInteractor.AuthorizeUser(res.locals.user, { user_level: 'moderator' });
+                authenticated = true;
+            } catch (err) {
+
+            }
+
+            try {
+                res.json({ data: await this.getOldestNews(req.query, authenticated) });
+            } catch (err) {
+                res.json({ err: "Internal Error." });
             }
         });
-        APIRouter.get('/News', this.checkParams, async (request, response) => {
-            let params = request.query;
-            let news_data = this.getNews(params);
+        super.setAuthenticatedAPIEndpoint('/', { user_level: 'moderator' }, async (req, res) => {
+            let news_data = req.body;
 
-            if (news_data && typeof (news_data) != "string") {
-                if (Array.isArray(news_data)) {
-                    response.json({
-                        status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
-                        req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                        data: {                             //Data
-                            News: news_data
-                        }
-                    });
-                } else {
-                    response.json({
-                        status: CONSTANTS.STATUS_SUCCESS,   //Sending Success confimation
-                        req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                        data: news_data
-                    });
-                }
-            } else {
-                response.json({
-                    status: CONSTANTS.STATUS_FAILED,    //Sending Failure confimation
-                    req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                    err: typeof (news_data) == "string" ? news_data : "Internal Error."
-                });
-            }
-        });
-        
-        APIRouter.get('/Changelog', async (request, response) => {
-            response.json({
-                data: {
-                    DEV: ['LATEST', '13_09_2020'],
-                    RELEASE: []
-                }
-            });
-        });
-        APIRouter.get('/Changelog/:changelog', async (request, response) => {
-            let data = request.params.changelog === 'latest' ? this.GetLastestChangelog() : this.GetChangelog(request.params.changelog);
-            if (data instanceof Object) {
-                response.json({ data: data});
-            } else {
-                response.json({ error: "404", message: "changelog not found" });
-            }
-        });
-        super.setAPIRouter(APIRouter);
-
-        //Publish
-        super.setAuthenticatedAPIEndpoint('/publish', { user_level: 'moderator' }, async (request, response) => {
-            let news_data = request.body;
-
-            let dta = this.validate(news_data);
+            let dta = this.validateNews(news_data);
 
             if (dta == true) {
-                this.LoadNews();
-                this.News.push(news_data);
-
-                if (!this.ExportNews()) {
-                    console.log("NEWS EXPORT FAILED!");
+                try {
+                    await this.AddNews(news_data);
+                    res.json({ state: "News saved!" });
+                } catch (err) {
+                    res.json({ err: "News save failed!" });
                 }
-
-                response.json({
-                    status: CONSTANTS.STATUS_SUCCESS,    //Sending Failure confimation
-                    req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                    data: {
-                        status: "News Successfully published"
-                    }
-                });
             } else {
-                response.json({
-                    status: CONSTANTS.STATUS_FAILED,    //Sending Failure confimation
-                    req: request.body,                  //Mirror-Request (for debug reasons / sending error detection)
-                    err: "News unfinished / has errors"
-                });
+                res.json({ err: "News unfinished / has errors" });
             }
+
+            return Promise.resolve();
         }, 'POST');
-        //NewsMakerAccess
-        super.setAuthenticatedAPIEndpoint('/access', {user_level: 'moderator' }, async (request, response) => {
+        super.setAuthenticatedAPIEndpoint('/', { user_level: 'moderator' }, async (req, res) => {
+            try {
+                res.json({ removed: await this.RemoveNews(req.body.page) });
+            } catch (err) {
+                if (err.message !== 'News Data not found' && err.message !== 'News Data not in the correct format' && err.message !== 'News Page Identifier not found') res.json({ err: "Internal Error." });
+                else res.json({ err: err.message });
+            }
+
+            return Promise.resolve();
+        }, 'DELETE');
+        super.setAuthenticatedAPIEndpoint('/', { user_level: 'moderator' }, async (req, res) => {
+            let news_data = req.body;
+
+            let dta = this.validateNews(news_data);
+
+            if (dta == true) {
+                try {
+                    await this.EditNews(news_data);
+                    res.json({ state: "News saved!" });
+                } catch (err) {
+                    res.json({ err: "News save failed!" });
+                }
+            } else {
+                res.json({ err: "News unfinished / has errors" });
+            }
+
+            return Promise.resolve();
+        }, 'PUT');
+
+        //Changelog
+        APIRouter.get('/Changelog', async (req, res) => {
+            let authenticated = false;
+
+            try {
+                await this.WebAppInteractor.AuthorizeUser(res.locals.user, { user_level: 'moderator' });
+                authenticated = true;
+            } catch (err) {
+
+            }
+
+            try {
+                res.json({ data: await this.getChangelogs(req.query, authenticated) });
+            } catch (err) {
+                res.json({ err: "Internal Error." });
+            }
+        });
+        super.setAuthenticatedAPIEndpoint('/Changelog', { user_level: 'moderator' }, async (req, res) => {
+            let changelog_data = req.body;
+
+            let dta = this.validateChangelog(changelog_data);
+
+            if (dta == true) {
+                try {
+                    await this.AddChangelog(changelog_data);
+                    res.json({ state: "Changelog saved!" });
+                } catch (err) {
+                    res.json({ err: "Changelog save failed!" });
+                }
+            } else {
+                res.json({ err: "Changelog unfinished / has errors" });
+            }
+
+            return Promise.resolve();
+        }, 'POST');
+        super.setAuthenticatedAPIEndpoint('/Changelog', { user_level: 'moderator' }, async (req, res) => {
+            try {
+                res.json({ removed: await this.RemoveChangelog(req.body.page) });
+            } catch (err) {
+                if (err.message !== 'Changelog Data not found' && err.message !== 'Changelog Data not in the correct format' && err.message !== 'Changelog Page Identifier not found') res.json({ err: "Internal Error." });
+                else res.json({ err: err.message });
+            }
+
+            return Promise.resolve();
+        }, 'DELETE');
+        super.setAuthenticatedAPIEndpoint('/Changelog', { user_level: 'moderator' }, async (req, res) => {
+            let changelog_data = req.body;
+
+            let dta = this.validateChangelog(changelog_data);
+
+            if (dta == true) {
+                try {
+                    await this.EditChangelog(changelog_data);
+                    res.json({ state: "Changelog saved!" });
+                } catch (err) {
+                    res.json({ err: "Changelog save failed!" });
+                }
+            } else {
+                res.json({ err: "Changelog unfinished / has errors" });
+            }
+
+            return Promise.resolve();
+        }, 'PUT');
+        
+        //Acces Check
+        super.setAuthenticatedAPIEndpoint('/access', { user_level: 'moderator' }, async (request, response) => {
             return response.json({ data: "ACCESS GRANTED" });
         });
-
+        super.setAPIRouter(APIRouter);
+        
         //STATIC FILE ROUTE
         let StaticRouter = express.Router();
         StaticRouter.use("/", (req, res, next) => {
-            let url = req.url.toLowerCase();
-
+            let url = req.url.split('?')[0].toLowerCase();
+            
             if (url == "/newsmaker") {
                 res.sendFile(PATH.resolve(this.getMainPackageRoot() + "NewsFeed/html/NewsMaker.html"));
+            } else if(url == "/changelogmaker") {
+                res.sendFile(PATH.resolve(this.getMainPackageRoot() + "NewsFeed/html/ChangelogMaker.html"));
             } else if (url == "/news_styles") {
                 res.sendFile(PATH.resolve(this.getMainPackageRoot() + "NewsFeed/html/style/NewsFeed.css"));
             } else if (url == "/news_scripts") {
@@ -210,55 +243,24 @@ class NewsFeed extends require('./../PackageBase.js').PackageBase {
         super.setFileRouter(StaticRouter);
 
         //HTML Navigation
-        super.setWebNavigation({
+        this.setWebNavigation({
             name: "News",
             href: this.getHTMLROOT(),
             icon: "images/icons/newspaper-solid.svg"
         });
-
-        //Create File Structure
-        if (!fs.existsSync(PATH.resolve(this.Settings.News_File_Dir))) {
-            try {
-                fs.mkdirSync(PATH.resolve(this.Settings.News_File_Dir));
-            } catch (err) {
-                this.Logger.error("Corrupted Installation: News Folder couldnt be created!");
-                return false;
-            }
-        }
-        if (!fs.existsSync(PATH.resolve(this.Settings.News_File_Dir + this.Settings.News_File))) {
-            try {
-                fs.writeFileSync(PATH.resolve(this.Settings.News_File_Dir + this.Settings.News_File), JSON.stringify({ News: [] }, null, 4));
-            } catch (err) {
-                this.Logger.error("Corrupted Installation: News File couldnt be created!");
-                return false;
-            }
-        }
-
-        if (!fs.existsSync(PATH.resolve(this.Settings.Changelog_Dir))) {
-            try {
-                fs.mkdirSync(PATH.resolve(this.Settings.Changelog_Dir));
-            } catch (err) {
-                this.Logger.error("Corrupted Installation: Changelogs Folder couldnt be created!");
-                return false;
-            }
-        }
-
+        
         //Load Data
         return this.reload();
     }
-    
     async reload() {
         if (!this.isEnabled()) return Promise.reject(new Error("Package is disabled!"));
 
         //Load News Data
         this.LoadNews();
-
+        this.LoadChangelog();
+        
         this.Logger.info("NewsFeed (Re)Loaded!");
         return Promise.resolve();
-    }
-
-    CheckSettings(settings) {
-        return this.AddObjectElementsToOtherObject(settings, SETTINGS_REQUIERED, msg => this.Logger.info("CONFIG UPDATE: " + msg));
     }
     
     //////////////////////////////////////////
@@ -267,329 +269,143 @@ class NewsFeed extends require('./../PackageBase.js').PackageBase {
 
     //News
     LoadNews() {
-        //Check Settings
-        if (!this.Settings.News_File_Dir || !this.Settings.News_File) {
-            return false;
-        }
-
-        try {
-            let s = super.readFile(PATH.resolve(this.Settings.News_File_Dir + this.Settings.News_File));
-            let json = JSON.parse(s);
-
-            if (json.News) {
-                this.News = json.News;
-                return true;
-            } else {
-                this.News = [];
-                return false;
-            }
-        } catch (err) {
-            this.Logger.error(err.message);
-            this.News = [];
-            return false;
-        }
+        if (!this.NEWS_DATABASE) this.NEWS_DATABASE = new Datastore({ filename: PATH.resolve(this.getMainPackageRoot() + 'NewsFeed/News_Index.db'), autoload: true });
+        else this.NEWS_DATABASE.loadDatabase();
     }
-    ExportNews() {
-        if (!this.Settings.News_File_Dir || !this.Settings.News_File || !this.News) {
-            return false;
-        }
-
+    async AddNews(news_data) {
+        if (!news_data) return Promise.reject(new Error('News Data not found'));
+        if (!(news_data instanceof Object)) return Promise.reject(new Error('News Data not in the correct format'));
+        if (!news_data.page) return Promise.reject(new Error('News Page Identifier not found'));
+        
         try {
-            super.writeFile(this.Settings.News_File_Dir + this.Settings.News_File, JSON.stringify({ News: this.News }, null, 4));
-            return true;
+            let news = await this.AccessNeDB(this.NEWS_DATABASE, { page: news_data.page });
+            if (news.length > 0) return Promise.reject(new Error('News Page Identifier allready in use'));
         } catch (err) {
-            return false;
+            return Promise.reject(err);
         }
+
+        return new Promise((resolve, reject) => {
+            this.NEWS_DATABASE.insert(news_data, function (err, newDoc) {
+                if (err) return reject(new Error(err));
+                else return resolve(newDoc);
+            });
+        });
     }
+    async EditNews(news_data) {
+        if (!news_data) return Promise.reject(new Error('News Data not found'));
+        if (!(news_data instanceof Object)) return Promise.reject(new Error('News Data not in the correct format'));
+        if (!news_data.page) return Promise.reject(new Error('News Page Identifier not found'));
 
-    getNews(param) {
-        //Returns:
-        //      - NULL: when internal Error
-        //      - string: when an error String is available
-        //      - Object/Array: when all went well
+        return new Promise((resolve, reject) => {
+            this.NEWS_DATABASE.update({ page: news_data.page }, news_data, {}, function (err, numReplaced) {
+                if (err) return reject(new Error(err));
+                else return resolve(numReplaced);
+            });
+        });
+    }
+    async RemoveNews(page) {
+        if (!page) return Promise.reject(new Error('Page not found'));
 
+        return new Promise((resolve, reject) => {
+            this.NEWS_DATABASE.remove({ page }, {}, function (err, numRemoved) {
+                if (err) return reject(new Error(err));
+                else return resolve(numRemoved);
+            });
+        });
+    }
+    
+    async getNews(params, include_scheduled = false) {
+        let News = [];
+        let pagination;
+        let cfg = this.Config.GetConfig();
 
-        if (!this.News) {
-            return null;
-        }
-
-        ////////////////////////////////
-        //     NO PAGINATION
-        ////////////////////////////////
-        if (param.idx) {
-            if (isNaN(param.idx) || parseInt(param.idx) < 0 || parseInt(param.idx) >= this.News.length) {
-                return "Parameter is NaN or out of Bounds.";
-            } else {
-                return [this.News[parseInt(param.idx)]];
+        //Scheduled
+        if (include_scheduled == false) {
+            try {
+                if (!(params.end && parseInt(params.end) < Date.now())) params.end = Date.now() + "";
+            } catch (err) {
+                params.end = Date.now() + "";
             }
-        } else if (param.page) {
-            return this.getPage(param.page);
-        } else if (param.title) {
-            return this.getTitle(param.title);
+        }
+        
+        //Fetch
+        try {
+            News = await this.AccessNeDB(this.NEWS_DATABASE, this.createNEDBQuery('news', params));
+        } catch (err) {
+            return Promise.reject(err);
+        }
+        
+        //Filter
+        News.sort((a, b) => b.date - a.date);
+        if (params.pagination) {
+            //index;first
+            pagination = this.getNextArrayPagination(News, params.pagination);
+            News = this.getArrayPage(News, params.pagination);
+        } else if (params.first) {
+            try {
+                pagination = this.getNextArrayPagination(News, '0;' + parseInt(params.first));
+                News = News.slice(0, parseInt(params.first));
+            } catch (err) {
+                News = News.slice(0, cfg['API_NEWS_FIRST_DEFAULT']);
+            }
         } else {
-            ////////////////////////////////
-            //     YES PAGINATION
-            ////////////////////////////////
-
-            //Pagination Consistency Test
-
-            //Date Filter
-            if (param.date) {
-                if (param.date.indexOf("-") == -1) {
-                    return this.getDate(param.date, param.date, param.first, param.pagination);
-                } else {
-                    return this.getDate(param.date.substring(0, param.date.indexOf("-")), param.date.substring(param.date.indexOf("-") + 1), param.first, param.pagination);
-                }
-            } else {
-                //All News
-
-                //First - Check
-                let first = API_SETTINGS.API_NEWS_FIRST_DEFAULT;
-
-                if (param.first) {
-                    first = param.first;
-                }
-
-                //Pagination - Check
-                let pagination = 0;
-
-                if (param.pagination) {
-                    pagination = this.decryptPage(param.pagination, first);
-
-                    if (isNaN(pagination)) {
-                        return pagination ? pagination : "Internal error";
-                    }
-                }
-
-                //Output Data
-                let output = {
-                    pagination: this.getPagination(first, pagination / first, true),
-                    News: []
-                };
-
-                for (let i = pagination; i < pagination + first && i < this.News.length; i++) {
-                    output.News.push(this.News[i]);
-                }
-
-                //Error Check
-                if (typeof (output.News) == "string") {
-                    return output.News;
-                } else if (output.News.length == 0) {
-                    return "News not found";
-                }
-
-                return output;
-            }
+            News = News.slice(0, cfg['API_NEWS_FIRST_DEFAULT']);
         }
+
+        for (let nws of News) {
+            delete nws['_id'];
+        }
+
+        return Promise.resolve({ News, pagination });
     }
+    async getOldestNews(params, include_scheduled = false) {
+        let News = [];
+        let pagination;
+        let cfg = this.Config.GetConfig();
 
-    //Pagination
-    getLatest(first, pagination) {
-        if (!this.News) {
-            return null;
-        }
-
-        //First - Check
-        if (!first) {
-            first = API_SETTINGS.API_NEWS_LATEST_FIRST_DEFAULT;
-        } else if (isNaN(first)) {
-            return "Parameter is not a Number";
-        }
-
-        //pagination - Check
-        if (!pagination) {
-            pagination = 0;
-        } else if (typeof (pagination) == "string") {
-            pagination = this.decryptPage(pagination, first);
-
-            if (isNaN(pagination)) {
-                return pagination ? pagination : "Internal error";
+        //Scheduled
+        if (include_scheduled == false) {
+            try {
+                if (!(params.end && parseInt(params.end) < Date.now())) params.end = Date.now() + "";
+            } catch (err) {
+                params.end = Date.now() + "";
             }
         }
 
-        //Get News
-        let output = {
-            pagination: this.getPagination(first, pagination / first, true),
-            News: []
-        };
-
-        for (let i = this.News.length - pagination - 1; i >= 0 && i >= this.News.length - first - pagination; i--) {
-            output.News.push(this.News[i]);
+        //Fetch
+        try {
+            News = await this.AccessNeDB(this.NEWS_DATABASE, this.createNEDBQuery('oldest-news', params));
+        } catch (err) {
+            return Promise.reject(err);
         }
 
-        output.News.reverse();
+        News = News.reverse();
 
-        //Error Check
-        return output;
+        //Filter
+        if (params.pagination) {
+            //index;first
+            pagination = this.getNextArrayPagination(News, params.pagination);
+            News = this.getArrayPage(News, params.pagination);
+        } else if (params.first) {
+            try {
+                pagination = this.getNextArrayPagination(News, '0;' + parseInt(params.first));
+                News = News.slice(0, parseInt(params.first));
+            } catch (err) {
+                News = News.slice(0, cfg['API_NEWS_FIRST_DEFAULT']);
+            }
+        } else {
+            News = News.slice(0, cfg['API_NEWS_FIRST_DEFAULT']);
+        }
+
+        for (let nws of News) {
+            delete nws['_id'];
+        }
+
+        return Promise.resolve({ News, pagination });
     }
-    getOldest(first, pagination) {
-        if (!this.News) {
-            return null;
-        }
-
-        //First - Check
-        if (!first) {
-            first = API_SETTINGS.API_NEWS_OLDEST_FIRST_DEFAULT;
-        } else if (isNaN(first)) {
-            return "Parameter is not a Number";
-        }
-
-        //pagination - Check
-        if (!pagination) {
-            pagination = 0;
-        } else if (typeof (pagination) == "string") {
-            pagination = this.decryptPage(pagination, first);
-
-            if (isNaN(pagination)) {
-                return pagination ? pagination : "Internal error";
-            }
-        }
-
-        //Get News
-        let output = {
-            pagination: this.getPagination(first, pagination / first, true),
-            News: []
-        };
-
-        for (let i = pagination; i < first + pagination && i < this.News.length; i++) {
-            output.News.push(this.News[i]);
-        }
-
-        //Error Check
-        return output;
-    }
-    getDate(start, end, first, pagination) {
-        if (!this.News) {
-            return null;
-        }
-
-        //start - Check
-        if (!start) {
-            return "No Start Date specified";
-        } else if (isNaN(start)) {
-            return "Parameter is not a Number";
-        }
-
-        //Convert to ms
-        start = start * Math.pow(10, 13 - ("" + start).length);
-
-        //end - Check
-        if (!end) {
-            end = start;
-        } else if (isNaN(end)) {
-            return "Parameter is not a Number";
-        }
-
-        //Convert to ms
-        end = end * Math.pow(10, 13 - ("" + end).length);
-
-        //First - Check
-        if (!first) {
-            first = API_SETTINGS.API_NEWS_DATE_FIRST_DEFAULT;
-        } else if (isNaN(first)) {
-            return "Parameter is not a Number";
-        }
-
-        //pagination - Check
-        if (!pagination) {
-            pagination = 0;
-        } else if (typeof (pagination) == "string") {
-            pagination = this.decryptPage(pagination, first);
-
-            if (isNaN(pagination)) {
-                return pagination ? pagination : "Internal error";
-            }
-        }
-
-        //Get News
-        let output = {
-            pagination: this.getPagination(first, pagination / first, true),
-            News: []
-        };
-
-        //Create Dates
-        let Date1 = new Date(parseInt(start));
-        let Date2 = new Date(parseInt(end));
-
-        //Check if dates are valid
-        if (!(Date1.getTime() === Date1.getTime())) {
-            return "Date is invalid";
-        }
-        if (!(Date2.getTime() === Date2.getTime())) {
-            return "Date is invalid";
-        }
-
-        //Used to Check end point
-        let i = pagination;
-
-        //Start at Pagination (last end) until enough Elements (first) are collected or no News left
-        for (i; output.News.length < first && i < this.News.length; i++) {
-            if (this.News[i].date && !isNaN(this.News[i].date)) {
-
-                //Create News Date
-                let t = new Date(this.News[i].date);
-
-                //Check if News Date is valid
-                if (!(t.getTime() === t.getTime())) {
-                    continue;
-                } else {
-                    //Year in Range, Month in Range, Day in Range
-                    if (Date1.getFullYear() <= t.getFullYear() && t.getFullYear() <= Date2.getFullYear()) {
-                        if (Date1.getMonth() <= t.getMonth() && t.getMonth() <= Date2.getMonth()) {
-                            if (Date1.getDate() <= t.getDate() && t.getDate() <= Date2.getDate()) {
-                                //Add to Output
-                                output.News.push(this.News[i]);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        //Dont increment Pagination when all News have been checked
-        if (i == this.News.length) {
-            output.News.pagination = this.getPagination(first, pagination / first, false);
-        }
-
-        //Error Check
-        return output;
-    }
-
-    //No Pagination
-    getPage(pageString) {
-        if (typeof (pageString) != "string") {
-            return "Parameter is not a string";
-        } else if (!this.News) {
-            return null;
-        }
-
-        for (let news of this.News) {
-            if (news.Page && news.Page == pageString) {
-                return [news];
-            }
-        }
-
-        return "News not found";
-    }
-    getTitle(titleString) {
-        if (typeof (titleString) != "string") {
-            return "Parameter is not a string";
-        } else if (!this.News) {
-            return null;
-        }
-
-        for (let news of this.News) {
-            if (news.title && news.title == titleString) {
-                return [news];
-            }
-        }
-
-        return "News not found";
-    }
-
-    //VALIDATE POST
-    validate(jsonData) {
-        if (!jsonData.title || !jsonData.date) {
+    
+    validateNews(jsonData) {
+        if (!jsonData.title || !jsonData.date || !jsonData.page) {
             return false;
         }
 
@@ -669,136 +485,177 @@ class NewsFeed extends require('./../PackageBase.js').PackageBase {
     }
 
     //Changelog
-    GetLastestChangelog() {
+    LoadChangelog() {
+        if (!this.CHANGELOG_DATABASE) this.CHANGELOG_DATABASE = new Datastore({ filename: PATH.resolve(this.getMainPackageRoot() + 'NewsFeed/Changelogs_Index.db'), autoload: true });
+        else this.CHANGELOG_DATABASE.loadDatabase();
+    }
+    async AddChangelog(changelog_data) {
+        if (!changelog_data) return Promise.reject(new Error('Changelog Data not found'));
+        if (!(changelog_data instanceof Object)) return Promise.reject(new Error('Changelog Data not in the correct format'));
+        if (!changelog_data.page) return Promise.reject(new Error('Changelog Page Identifier not found'));
+
         try {
-            let paths = fs.readdirSync(PATH.resolve(this.Settings.Changelog_Dir));
-
-            if (paths.length == 0) {
-                return false;
-            }
-
-            let latest = [0, 0, 0];
-
-            for (let path of paths) {
-                let y = parseInt(path.split("_")[2]);
-                let m = parseInt(path.split("_")[1]);
-                let d = parseInt(path.split("_")[0]);
-
-                if (y > latest[2] || (y == latest[2] && m > latest[1]) || (y == latest[2] && m == latest[1] && d > latest[0])) {
-                    latest = [d, m, y];
-                }
-            }
-
-            for (let i = 0; i < latest.length; i++) {
-                if (latest[i] < 10) {
-                    latest[i] = "0" + latest[i];
-                }
-            }
-
-            return this.GetChangelog(latest[0] + "_" + latest[1] + "_" + latest[2]);
+            let changelogs = await this.AccessNeDB(this.CHANGELOG_DATABASE, { page: changelog_data.page });
+            if (changelogs.length > 0) return Promise.reject(new Error('Changelog Page Identifier allready in use'));
         } catch (err) {
-            console.log(err);
+            return Promise.reject(err);
         }
 
-        return false;
+        return new Promise((resolve, reject) => {
+            this.CHANGELOG_DATABASE.insert(changelog_data, function (err, newDoc) {
+                if (err) return reject(new Error(err));
+                else return resolve(newDoc);
+            });
+        });
     }
-    GetChangelog(name) {
-        if (!name) {
-            return;
-        }
+    async EditChangelog(changelog_data) {
+        if (!changelog_data) return Promise.reject(new Error('Changelog Data not found'));
+        if (!(changelog_data instanceof Object)) return Promise.reject(new Error('Changelog Data not in the correct format'));
+        if (!changelog_data.page) return Promise.reject(new Error('Changelog Page Identifier not found'));
 
-        if (fs.existsSync(PATH.resolve(this.Settings.Changelog_Dir + name + ".json"))) {
+        return new Promise((resolve, reject) => {
+            this.CHANGELOG_DATABASE.update({ page: changelog_data.page }, changelog_data, {}, function (err, numReplaced) {
+                if (err) return reject(new Error(err));
+                else return resolve(numReplaced);
+            });
+        });
+    }
+    async RemoveChangelog(page) {
+        if (!page) return Promise.reject(new Error('Page not found'));
+
+        return new Promise((resolve, reject) => {
+            this.CHANGELOG_DATABASE.remove({ page }, {}, function (err, numRemoved) {
+                if (err) return reject(new Error(err));
+                else return resolve(numRemoved);
+            });
+        });
+    }
+    
+    async getChangelogs(params, include_scheduled = false) {
+        let Changelogs = [];
+        let pagination;
+        let cfg = this.Config.GetConfig();
+
+        //Scheduled
+        if (include_scheduled == false) {
             try {
-                let json = JSON.parse(fs.readFileSync(PATH.resolve(this.Settings.Changelog_Dir + name + ".json")));
-                return json;
+                if (!(params.end && parseInt(params.end) < Date.now())) params.end = Date.now() + "";
             } catch (err) {
-                this.Logger.error(err.message);
+                params.end = Date.now() + "";
             }
         }
 
-        return false;
-    }
-
-    //////////////////////////////////////////
-    //              UTIL
-    //////////////////////////////////////////
-    getPagination(first, pagination, autoInc) {
-        //A...B -> PageIndex by given Settings   ... Is resettet to the last available Page, when there is no next page
-        //B...C -> Max News per Page
-        //C...D -> News Count at creation (used for error checking)
-
-        if (autoInc && autoInc == true)
-            return "A" + (this.News.length / first <= pagination / first + 1 ? pagination / first : pagination / first + 1) + "B" + first + "C" + this.News.length + "D";
-        else
-            return "A" + pagination + "B" + first + "C" + this.News.length + "D";
-    }
-    decryptPage(paginationString, first) {
-        //Returns:
-        //      - NULL: when internal Error
-        //      - string: when an error String is available
-        //      - integer: when all went well
-
-        //A...B -> PageIndex by given Settings
-        //B...C -> Max News per Page
-        //C...D -> News Count at creation (used for error checking)
-
-        if (!paginationString || !this.News) {
-            return null;
-        } else if (paginationString.indexOf("A") == -1 || paginationString.indexOf("B") == -1 || paginationString.indexOf("C") == -1 || paginationString.indexOf("D") == -1 || !this.charsInWrongOrder(paginationString, ["A", "B", "C", "D"])) {
-            return "Pagination not valid"
+        //Fetch
+        try {
+            Changelogs = await this.AccessNeDB(this.CHANGELOG_DATABASE, this.createNEDBQuery('changelogs', params));
+        } catch (err) {
+            return Promise.reject(err);
         }
 
-        let idx = paginationString.substring(1, paginationString.indexOf("B"));
-        let max = paginationString.substring(paginationString.indexOf("B") + 1, paginationString.indexOf("C"));
-        let count = paginationString.substring(paginationString.indexOf("C") + 1, paginationString.indexOf("D"));
-
-        if (isNaN(idx) || isNaN(max) || isNaN(count)) {
-            return "Pagination not valid";
+        //Filter
+        Changelogs.sort((a, b) => b.date - a.date);
+        if (params.pagination) {
+            //index;first
+            pagination = this.getNextArrayPagination(Changelogs, params.pagination);
+            Changelogs = this.getArrayPage(Changelogs, params.pagination);
+        } else if (params.first) {
+            try {
+                pagination = this.getNextArrayPagination(Changelogs, '0;' + parseInt(params.first));
+                Changelogs = Changelogs.slice(0, parseInt(params.first));
+            } catch (err) {
+                Changelogs = Changelogs.slice(0, cfg['API_CHANGELOG_FIRST_DEFAULT']);
+            }
         } else {
-            if (parseInt(count) != this.News.length) {
-                return "Pagination outdated"
-            } else if (max != first) {
-                return "First doesnt match given Pagination"
-            } else {
-                return parseInt(idx) * parseInt(max);
-            }
+            Changelogs = Changelogs.slice(0, cfg['API_CHANGELOG_FIRST_DEFAULT']);
         }
+
+        for (let nws of Changelogs) {
+            delete nws['_id'];
+        }
+
+        return Promise.resolve({ Changelogs, pagination });
     }
-    checkParams(req, res, next) {
-        let url = req.route.path.substring(1);
-        let params = req.query;
-        if (API_ENDPOINT_PARAMETERS[url]) {
-            for (let param in params) {
-                if (!API_ENDPOINT_PARAMETERS[url][param]) {
-                    res.json({
-                        status: CONSTANTS.STATUS_FAILED,    //Sending Failure confimation
-                        err: "Unkown Paramerter: " + param
-                    });
-                    return;
-                }
-            }
+    
+    validateChangelog(jsonData) {
+        if (!jsonData.title || !jsonData.date || !jsonData.page) {
+            return false;
         }
-        next();
-    }
-    charsInWrongOrder(s, charArr) {
-        //Checks the string s, if the given Chars in the charArr come in that order
-        //DOESNT CHECK, if they even exist
-
-        let toTest = [];
-
-        for (let i = 0; i < charArr.length; i++) {
-            if (i == 0) {
-                toTest.push(s.indexOf(charArr[i]));
-            } else {
-                if (s.indexOf(charArr[i]) < toTest[i - 1]) {
-                    return false;
-                } else {
-                    toTest.push(s.indexOf(charArr[i]));
-                }
-            }
+        if (isNaN(jsonData.date) || typeof (jsonData.title) != "string") {
+            return false;
         }
-
         return true;
+    }
+
+    //UTIL
+    createNEDBQuery(dir, params) {
+        let query = [];
+
+        //Querry
+        for (let param in params) {
+            if (API_ENDPOINT_PARAMETERS[dir] && API_ENDPOINT_PARAMETERS[dir][param] === undefined) return null;
+            if (API_ENDPOINT_PARAMETERS[dir] && API_ENDPOINT_PARAMETERS[dir][param] !== 'query') continue;
+
+            try {
+                if (param === 'idx') {
+                    query.push({ [param]: parseInt(params.idx) });
+                } else if (param === 'day') {
+                    let start = (new Date(parseInt(params.day)));
+                    start.setHours(0, 0, 0, 0);
+                    let end = (new Date(parseInt(params.day)));
+                    end.setHours(23, 59, 59, 999);
+                    query.push({ date: { $gt: start.getTime(), $lt: end.getTime() } });
+                } else if (param === 'start' && params.end === undefined) {
+                    query.push({ date: { $gt: parseInt(params.start) } });
+                } else if (param === 'end' && params.start === undefined) {
+                    query.push({ date: { $lt: parseInt(params.end) } });
+                } else if (param === 'start') {
+                    query.push({ date: { $gt: parseInt(params.start), $lt: parseInt(params.end) } });
+                } else {
+                    query.push({ [param]: params[param] });
+                }
+            } catch (err) {
+
+            }
+        }
+
+        return { $and: query };
+    }
+    getNeDBTimeQuery(type, a, b) {
+        try {
+            if (type === 'day') {
+                let start = (new Date(a));
+                start.setHours(0, 0, 0, 0);
+                let end = (new Date(b));
+                end.setHours(23, 59, 59, 999);
+
+                return { $gt: start.getTime(), $lt: end.getTime() };
+            } else {
+                return a;
+            }
+        } catch (err) {
+            return a;
+        }
+    }
+
+    getArrayPage(array, pagination) {
+        try {
+            let index = parseInt(pagination.split(';')[0]);
+            let first = parseInt(pagination.split(';')[1]);
+
+            return array.slice(first * index, first * (index + 1));
+        } catch (err) {
+            return array;
+        }
+    }
+    getNextArrayPagination(array, pagination) {
+        try {
+            let index = parseInt(pagination.split(';')[0]);
+            let first = parseInt(pagination.split(';')[1]);
+            let max = Math.floor(array.length / first);
+            return (max > (index + 1) ? (index + 1) : max) + ';' + first;
+        } catch (err) {
+            return pagination;
+        }
     }
 }
 

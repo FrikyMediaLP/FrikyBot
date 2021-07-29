@@ -262,10 +262,10 @@ __pycache__/
 *.pyc
 
 # OWN STUFF
+DATA/
 TOKENS/
 Logs/
 config.json
-*.db
 
 # Package Specific
 

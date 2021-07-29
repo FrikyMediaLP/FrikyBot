@@ -4,12 +4,17 @@
     "modules": {
       "fs": "NodeJS Module",
       "path": "NodeJS Module",
-      "CONSTANTS": "FrikyBot Module"
+      "CONSTANTS": "FrikyBot Module",
+      "CONFIGHANDLER": "FrikyBot Module"
     },
     "variables": {
       "CONSTANTS": {
         "type": "CONSTANTS Module",
         "description": "Bot Constants used to generalize Outputs and Settings."
+      },
+      "CONFIGHANDLER": {
+        "type": "ConfigHandler Module",
+        "description": "Bot Config Handler managing Changes and sub-Configs."
       },
       "fs": {
         "type": "FileSystem Module",
@@ -18,53 +23,32 @@
       "path": {
         "type": "Path Module",
         "description": "Path Module used for manipulating FileSystem Paths."
-      },
-      "PACKAGE_SETTINGS_REQUIERED": {
-        "type": "Object",
-        "description": "General Requiered Package Settings."
-      },
-      "PACKAGE_SETTINGS": {
-        "type": "Object",
-        "description": "General Optional Package Settings Content."
       }
     },
     "classes": {
       "PackageBase": {
-        "description": "Parent Class of Packages. Providing all neccacary features to create and maintain a Package.",
+        "description": "Parent Class of Packages. Providing all necessary features to create and maintain a Package.",
         "constructor": {
           "params": [
             {
-              "name": "packagename",
-              "type": "String"
+              "name": "package_details",
+              "type": "Object"
             },
             {
-              "name": "description",
-              "type": "String"
-            },
-            {
-              "name": "expressapp",
-              "opt": true,
-              "type": "Express.js:Express"
+              "name": "webappinteractor",
+              "type": "WebApp::WebAppInteractor"
             },
             {
               "name": "twitchirc",
-              "opt": true,
-              "type": "TwitchIRC.js:TwitchIRC"
+              "type": "TwitchIRC::TwitchIRC"
             },
             {
               "name": "twitchapi",
-              "opt": true,
-              "type": "TwitchAPI.js:TwitchAPI"
+              "type": "TwitchAPI:TwitchAPI"
             },
             {
               "name": "datacollection",
-              "opt": true,
-              "type": "DataCollection.js:DataCollection"
-            },
-            {
-              "name": "startparameters",
-              "opt": true,
-              "type": "Object"
+              "type": "DataCollection:DataCollection"
             },
             {
               "name": "logger",
@@ -74,11 +58,82 @@
           ],
           "description": "Sets all neccacary Variables, Settings and Logging Functions requiered for a Package."
         },
+        "variables": {
+          "Package_Details": {
+            "type": "Object",
+            "description": "Package Details Informations."
+          },
+          "Config": {
+            "type": "ConfigHandler.js::Config",
+            "description": "Settings of the current Filter."
+          },
+          "Package_Interconnects": {
+            "type": "Array",
+            "description": "All Active Package Interconnects."
+          },
+          "Requested_Package_Interconnects": {
+            "type": "Array",
+            "description": "All Requested Package Interconnects."
+          },
+          "Allowed_Package_Interconnects": {
+            "type": "Array",
+            "description": "All Packages that are allowed to request Package Interconnects."
+          },
+          "WebAppInteractor": {
+            "type": "WebApp.js::WebAppInteractor",
+            "description": "The WebAppInteractor interfacing with the Express App."
+          },
+          "TwitchIRC": {
+            "type": "TwitchIRC.js:TwitchIRC",
+            "description": "Twitch Chat Connection."
+          },
+          "TwitchAPI": {
+            "type": "TwitchAPI.js:TwitchAPI",
+            "description": "Twitch API Connection."
+          },
+          "Datacollection": {
+            "type": "Datacollection.js:Datacollection",
+            "description": "Datacollection Module Object."
+          },
+          "USE_HTML_HOSTING": {
+            "type": "Boolean",
+            "description": "Flag if this Package provides HTML Documents."
+          },
+          "USE_API_HOSTING": {
+            "type": "Boolean",
+            "description": "Flag if this Package provides API Endpoint."
+          },
+          "RESTRICTED_HTML_HOSTING": {
+            "type": "Boolean",
+            "description": "Flag if this Package provides HTML Documents that are restricted by Authentication."
+          },
+          "WEB_COOKIES": {
+            "type": "Object",
+            "description": "WebCookie Information the Package Uses on its WebSite."
+          },
+          "DISPLAYABELS": {
+            "type": "Array",
+            "description": "Displayable Stats of the Package."
+          },
+          "LOGS": {
+            "type": "Array",
+            "description": "Loging Databases of the Package."
+          },
+          "Logger": {
+            "type": "Any Logger Object",
+            "description": "Console Logger."
+          }
+        },
         "functions": {
           "Init": {
-            "params": null,
+            "params": [
+              {
+                "name": "WebInter",
+                "type": "WebApp::WebInteractor"
+              }
+            ],
             "is-async": true,
-            "description": "Used for custom Initializations - Default: returns resolved Promise."
+            "description": "Overwrite this Function to Setup Variables and Directories."
           },
           "PostInit": {
             "params": null,
@@ -100,28 +155,6 @@
             "is-async": true,
             "description": "Used to reload the Packages Settings/Data/... - Default: calls 'Init()' and 'PostInit()' and returns a resolved Promise."
           },
-          "loadSettings": {
-            "params": null,
-            "description": "Loads the config.json File provided by the Package and checks the content."
-          },
-          "CheckSettings": {
-            "params": [
-              {
-                "name": "settings",
-                "type": "Object"
-              }
-            ],
-            "description": "Custom Settings Check. Return true on success and false on discrepancy - Default: returns true."
-          },
-          "changeSettings": {
-            "params": [
-              {
-                "name": "settings",
-                "type": "Object"
-              }
-            ],
-            "description": "Sets requiered Package Variables and enables/disables Features."
-          },
           "setEnable": {
             "params": [
               {
@@ -139,6 +172,15 @@
               }
             ],
             "description": "Sets the Class´s Logger Functions. The Logger Object needs an info(msg:string), a warn(msg:string) and an error(msg:error) Function."
+          },
+          "setStartparameters": {
+            "params": [
+              {
+                "name": "parameters",
+                "type": "Object"
+              }
+            ],
+            "description": "Overwrite this Function to set custom Settings based on the start parameters."
           },
           "allowPackageInterconnects": {
             "params": [
@@ -179,28 +221,6 @@
             ],
             "description": "Adds an allowed Package Interconnect, otherwise blocks and returns false."
           },
-          "setPackageInterconnect": {
-            "params": [
-              {
-                "name": "package_name",
-                "type": "String"
-              },
-              {
-                "name": "callback",
-                "type": "Function"
-              }
-            ],
-            "description": "Adds a Packge Interconnect Callback to the Package_Interconnects Object."
-          },
-          "removePackageInterconnect": {
-            "params": [
-              {
-                "name": "package_name",
-                "type": "String"
-              }
-            ],
-            "description": "Removes a Packge Interconnect from the Package_Interconnects Object."
-          },
           "useDefaultFileRouter": {
             "params": null,
             "description": "Sets an Express Router to static Files inside the Packages 'html' Folder."
@@ -223,14 +243,65 @@
             ],
             "description": "Sets an Express Router to the Package API-URL Route."
           },
-          "setHTMLNavigation": {
+          "setAuthenticatedAPIRouter": {
+            "params": [
+              {
+                "name": "router",
+                "type": "Express::Router"
+              },
+              {
+                "name": "method",
+                "type": "Object"
+              }
+            ],
+            "description": "Sets an Express Router to the Package API-URL Route and provides Authentication Protection."
+          },
+          "setAPIEndpoint": {
+            "params": [
+              {
+                "name": "endpoint",
+                "type": "String"
+              },
+              {
+                "name": "callback",
+                "type": "Function"
+              },
+              {
+                "name": "method",
+                "type": "Object"
+              }
+            ],
+            "description": "Sets an API Endpoint to the Package API-URL Route."
+          },
+          "setAuthenticatedAPIEndpoint": {
+            "params": [
+              {
+                "name": "endpoint",
+                "type": "String"
+              },
+              {
+                "name": "auth_method",
+                "type": "Object"
+              },
+              {
+                "name": "callback",
+                "type": "Function"
+              },
+              {
+                "name": "method",
+                "type": "String"
+              }
+            ],
+            "description": "Sets an API Endpoint to the Package API-URL Route and provides Authentication Protection."
+          },
+          "setWebNavigation": {
             "params": [
               {
                 "name": "data",
                 "type": "Object"
               }
             ],
-            "description": "Sets the isNaviEnabled() Content, providing information about Navigation settings on the Website."
+            "description": "Sets the Navigation settings on the Website."
           },
           "getHTMLROOT": {
             "params": null,
@@ -252,13 +323,105 @@
             "params": null,
             "description": "Returns the Package Details including Description and Html Root, if provided."
           },
+          "setWebCookies": {
+            "params": [
+              {
+                "name": "cookie_data",
+                "type": "Object"
+              }
+            ],
+            "description": "Sets the given cookie_data to the 'WEB_COOKIES' Object."
+          },
+          "addWebCookie": {
+            "params": [
+              {
+                "name": "type",
+                "type": "String"
+              },
+              {
+                "name": "cookie_data",
+                "type": "Object"
+              }
+            ],
+            "description": "Sets all Keys of the given cookie_data to the 'WEB_COOKIES' Object of the given Type."
+          },
+          "getWebCookies": {
+            "params": null,
+            "description": "Returns the WebCookies of this Package."
+          },
+          "addDisplayable": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              },
+              {
+                "name": "value",
+                "type": "Any"
+              }
+            ],
+            "description": "Pushes a Displayable Stat to the 'DISPLAYABELS' Array."
+          },
+          "addDisplayables": {
+            "params": [
+              {
+                "name": "displayables",
+                "type": "Array"
+              }
+            ],
+            "description": "Pushes all Displayable Stats to the 'DISPLAYABELS' Array."
+          },
+          "removeDisplayable": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              }
+            ],
+            "description": "Pops the given Displayable Stat off the 'DISPLAYABELS' Array."
+          },
+          "GetDisplayables": {
+            "params": null,
+            "description": "Returns the 'DISPLAYABELS' Array."
+          },
+          "addLog": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              },
+              {
+                "name": "query",
+                "type": "nedb::Datastore"
+              },
+              {
+                "name": "query",
+                "type": "Object"
+              }
+            ],
+            "description": "Pushes a Log to the 'LOGS' Array."
+          },
+          "removeLog": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              }
+            ],
+            "description": "Pops a Log off the 'LOGS' Array."
+          },
+          "GetLogs": {
+            "params": null,
+            "is-async": true,
+            "description": "Returns the 'LOGS' Array."
+          },
+          "getMainPackageRoot": {
+            "params": null,
+            "description": "Returns the Package File Root."
+          },
           "isEnabled": {
             "params": null,
             "description": "Returns the current enable State of the Package."
-          },
-          "isNaviEnabled": {
-            "params": null,
-            "description": "Returns Information about the Website Navigation Settings. Default: false"
           },
           "writeFile": {
             "params": [
@@ -295,6 +458,19 @@
             ],
             "description": "Copies a given File to the new given Dir."
           },
+          "getFilesFromDir": {
+            "params": [
+              {
+                "name": "path",
+                "type": "String"
+              },
+              {
+                "name": "options",
+                "type": "Object"
+              }
+            ],
+            "description": "Returns all File names in the Array."
+          },
           "HTMLFileExists": {
             "params": [
               {
@@ -303,6 +479,20 @@
               }
             ],
             "description": "Converts a URL String into a FileSystem Path and Returns that File, if it exist."
+          },
+          "AccessNeDB": {
+            "params": [
+              {
+                "name": "datastore",
+                "type": "nedb::Datastore"
+              },
+              {
+                "name": "query",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Allows Access to an NEDB Database Asynchronously."
           },
           "AddObjectElementsToOtherObject": {
             "params": [
@@ -400,6 +590,23 @@
               }
             ],
             "description": "Shifts the given Array Elements up n(default: 1) places."
+          },
+          "replaceAll": {
+            "params": [
+              {
+                "name": "string",
+                "type": "String"
+              },
+              {
+                "name": "replace",
+                "type": "String"
+              },
+              {
+                "name": "wITH",
+                "type": "String"
+              }
+            ],
+            "description": "Replaces all 'replace'-substrings with the 'with'-contents."
           }
         }
       }

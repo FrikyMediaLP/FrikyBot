@@ -8,6 +8,10 @@
       "CONSTANTS": "FrikyBot Module"
     },
     "variables": {
+      "fs": {
+        "type": "FileSystem Module",
+        "description": "NodeJS File System interface to the Operating File System."
+      },
       "path": {
         "type": "Path Module",
         "description": "Path Module used for manipulating FileSystem Paths."
@@ -21,10 +25,6 @@
         "type": "nedb Module",
         "npm": "https://www.npmjs.com/package/nedb",
         "description": "Database Module for ... maintaining Databases."
-      },
-      "CONSTANTS": {
-        "type": "CONSTANTS Module",
-        "description": "Bot Constants used to generalize Outputs and Settings."
       }
     },
     "classes": {
@@ -43,6 +43,10 @@
           "Settings": {
             "type": "Object",
             "description": "Settings are the Core of the Logger, keeping Track of Lengths and Output Modes. Everything is saved in the Setting! That way you can export and import Loggers from Bot to Bot."
+          },
+          "LogDataBase": {
+            "type": "nedb::Datastore",
+            "description": "Database containing RAW Data of Console Logs."
           }
         },
         "functions": {
@@ -54,6 +58,110 @@
               }
             ],
             "description": "Add Custom Sources with their own Colors and Displays. These Sources can have a \"display\" Callback Function where you can customize the Source Display Tag. "
+          },
+          "info": {
+            "params": [
+              {
+                "name": "message",
+                "type": "String"
+              },
+              {
+                "name": "source",
+                "type": "String"
+              }
+            ],
+            "description": "Print an Info Message from the given Source."
+          },
+          "warn": {
+            "params": [
+              {
+                "name": "message",
+                "type": "String"
+              },
+              {
+                "name": "source",
+                "type": "String"
+              }
+            ],
+            "description": "Print a warning Message from the given Source."
+          },
+          "error": {
+            "params": [
+              {
+                "name": "message",
+                "type": "String"
+              },
+              {
+                "name": "source",
+                "type": "String"
+              }
+            ],
+            "description": "Print an error Message from the given Source."
+          },
+          "input": {
+            "params": [
+              {
+                "name": "message",
+                "type": "String"
+              },
+              {
+                "name": "source",
+                "type": "String"
+              },
+              {
+                "name": "onInput",
+                "type": "Async Functions"
+              }
+            ],
+            "is-async": true,
+            "description": "Print a message and awaits a User Input. every Input Line is given to the onInput Callback. Resolve the callback to clear the Input process or Reject to keep request a new Line."
+          },
+          "createOutput": {
+            "params": [
+              {
+                "name": "message",
+                "type": "String"
+              },
+              {
+                "name": "type",
+                "type": "String"
+              },
+              {
+                "name": "source",
+                "type": "String"
+              },
+              {
+                "name": "colored",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Create a Console Output String based on the given parameters. The Output can be BW or colored, when 'colored' is set to true."
+          },
+          "space": {
+            "params": [
+              {
+                "name": "message",
+                "type": "String"
+              },
+              {
+                "name": "source",
+                "type": "String"
+              }
+            ],
+            "description": "Print a Spaced Message without the Source and Time Indicators and Leave the Cursor in the same Line."
+          },
+          "spaceln": {
+            "params": [
+              {
+                "name": "message",
+                "type": "String"
+              },
+              {
+                "name": "source",
+                "type": "String"
+              }
+            ],
+            "description": "Print a Spaced Message without the Source and Time Indicators and move the Cursor to the next Line."
           },
           "print": {
             "params": [
@@ -70,53 +178,101 @@
                 "type": "String"
               }
             ],
-            "description": "Print a Message with the given Source and Type."
+            "description": "Print a Message with the given Source and Type and keep the Cursor in the current Line."
           },
-          "info": {
+          "println": {
             "params": [
               {
                 "name": "message",
                 "type": "String"
-              }
-            ],
-            "description": "Print an Info Message."
-          },
-          "warn": {
-            "params": [
+              },
               {
-                "name": "message",
+                "name": "type",
+                "type": "String"
+              },
+              {
+                "name": "source",
                 "type": "String"
               }
             ],
-            "description": "Print a warning Message."
+            "description": "Print a Message with the given Source and Type and move the cursor to the next Line."
           },
-          "error": {
+          "GetTimeString": {
             "params": [
               {
-                "name": "message",
-                "type": "String"
+                "name": "time",
+                "type": "Date"
+              },
+              {
+                "name": "curL",
+                "type": "Number"
+              },
+              {
+                "name": "colored",
+                "type": "Boolean"
               }
             ],
-            "description": "Print an error Message."
+            "description": "Returns the Time as a String when its enabled."
           },
           "GetTime": {
             "params": [
               {
                 "name": "date",
-                "opt": true,
                 "type": "Date"
+              },
+              {
+                "name": "colored",
+                "type": "Boolean"
               }
             ],
             "description": "Returns the Time surrounded by Brackets."
+          },
+          "GetSourceString": {
+            "params": [
+              {
+                "name": "source",
+                "type": "String"
+              },
+              {
+                "name": "curL",
+                "type": "Number"
+              },
+              {
+                "name": "colored",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Returns the General or Custom Display of the given Source when its enabled."
           },
           "GetSource": {
             "params": [
               {
                 "name": "source",
                 "type": "String"
+              },
+              {
+                "name": "colored",
+                "type": "Boolean"
               }
             ],
             "description": "Returns the General or Custom Display of the given Source"
+          },
+          "GetTypeString": {
+            "params": [
+              {
+                "name": "type",
+                "type": "String"
+              },
+              {
+                "name": "curL",
+                "type": "Number"
+              },
+              {
+                "name": "colored",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Returns the Display of the given Type and moves it to its indented Position."
           },
           "GetType": {
             "params": [
@@ -127,6 +283,23 @@
             ],
             "description": "Returns the Display of the given Type."
           },
+          "GetMessageString": {
+            "params": [
+              {
+                "name": "message",
+                "type": "String"
+              },
+              {
+                "name": "curL",
+                "type": "Number"
+              },
+              {
+                "name": "colored",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Returns the Display of the given message and moves it to its indented Position."
+          },
           "GetMessage": {
             "params": [
               {
@@ -134,11 +307,122 @@
                 "type": "String"
               }
             ],
-            "description": "Returns the Display of the given message. Unused"
+            "description": "Returns the Display of the given message."
+          },
+          "onLog": {
+            "params": [
+              {
+                "name": "time",
+                "type": "Date"
+              },
+              {
+                "name": "message",
+                "type": "String"
+              },
+              {
+                "name": "type",
+                "type": "String"
+              },
+              {
+                "name": "source",
+                "type": "String"
+              },
+              {
+                "name": "outputString",
+                "type": "String"
+              },
+              {
+                "name": "outputStringBW",
+                "type": "String"
+              },
+              {
+                "name": "lineBreak",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Saving the given Console Log Data to the Databases and print it in the Console."
+          },
+          "ConsoleYN": {
+            "params": null,
+            "is-async": true,
+            "description": "Awaits a Console Input that is either 'yes', 'y' or 'no', 'n'. Resolves with either true or false."
+          },
+          "GetConsoleInputLine": {
+            "params": null,
+            "is-async": true,
+            "description": "Awaits a Console Input and returns any input when the Enter Key was pressed."
+          },
+          "trimInputLine": {
+            "params": [
+              {
+                "name": "answerString",
+                "type": "String"
+              }
+            ],
+            "description": "Trims the Incomming Console Input and removes additional OS Characters."
+          },
+          "Save2Log": {
+            "params": [
+              {
+                "name": "time",
+                "type": "Date"
+              },
+              {
+                "name": "consoleString",
+                "type": "String"
+              },
+              {
+                "name": "type",
+                "type": "String"
+              }
+            ],
+            "description": "Saves the Console String into its Type Log File and into the Latest File."
+          },
+          "Save2DB": {
+            "params": [
+              {
+                "name": "time",
+                "type": "Date"
+              },
+              {
+                "name": "source",
+                "type": "String"
+              },
+              {
+                "name": "type",
+                "type": "String"
+              },
+              {
+                "name": "message",
+                "type": "String"
+              }
+            ],
+            "description": "Saves the RAW Console Output Data into the Main Database."
+          },
+          "ResetLatest": {
+            "params": null,
+            "description": "Clears the Latest File."
           },
           "identify": {
             "params": null,
             "description": "Returns an Identifier String telling that this is a FrikyBot Logger :) Used to Check if you can use FrikyBot Logger Syntax or use other."
+          },
+          "replaceAll": {
+            "params": [
+              {
+                "name": "string",
+                "type": "String"
+              },
+              {
+                "name": "replace",
+                "type": "String"
+              },
+              {
+                "name": "wITH",
+                "type": "String"
+              }
+            ],
+            "description": "Replaces all 'replace'-substrings with the 'with'-contents."
           }
         }
       }

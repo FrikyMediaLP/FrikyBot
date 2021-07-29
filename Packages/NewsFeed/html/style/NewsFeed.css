@@ -4,7 +4,7 @@
     ----------------
 */
 
-#NEWS_FEED_Feed .NEWS_FEED_NO_NEWS {
+#NEWS_FEED_Feed .NEWS_FEED_NO_NEWS, #NEWS_FEED_FullPage .NEWS_FEED_NO_NEWS {
     padding: 5px;
     border: 1px solid lightgray;
     font-weight: bold;
@@ -23,6 +23,10 @@
 #NEWS_FEED_Feed {
     width: 100%;
     font-family: Arial;
+    color: black;
+}
+.darkmode #NEWS_FEED_Feed {
+    color: white;
 }
 
     #NEWS_FEED_Feed .News_Feed_News {
@@ -31,6 +35,10 @@
         background-color: white;
         overflow: hidden;
     }
+
+.darkmode #NEWS_FEED_Feed  .News_Feed_News {
+    background-color: #4f4f4f;
+}
 
         #NEWS_FEED_Feed .News_Feed_News .News_Feed_Header {
             position: relative;
@@ -44,14 +52,29 @@
                     text-decoration: none;
                     color: black;
                 }
+                .darkmode #NEWS_FEED_Feed .News_Feed_News .News_Feed_Header h2 a {
+                    color: white;
+                }
 
-            #NEWS_FEED_Feed .News_Feed_News .News_Feed_Header p {
-                margin: 0;
-                color: gray;
-                position: absolute;
-                top: 0px;
-                right: 10px;
-            }
+#NEWS_FEED_Feed .News_Feed_News .News_Feed_Header p {
+    margin: 0;
+    color: gray;
+    position: absolute;
+    top: 0px;
+    right: 10px;
+}
+.darkmode #NEWS_FEED_Feed .News_Feed_News .News_Feed_Header p {
+    color: white;
+}
+
+                #NEWS_FEED_Feed .News_Feed_News .News_Feed_Header p[scheduled]::before {
+                    content: 'SCHEDULED';
+                    margin-right: 5px;
+                    background-color: gray;
+                    padding: 1px 5px;
+                    border-radius: 5px;
+                    color: white;
+                }
 
         #NEWS_FEED_Feed .News_Feed_News .News_Feed_Body {
             margin: 15px;
@@ -136,6 +159,10 @@
                         font-size: 18px;
                     }
 
+.darkmode #NEWS_FEED_Feed .News_Feed_News .News_Feed_Body .News_Feed_Text_Miscs .News_Feed_Text_Misc a {
+    color: #2ee6c0;
+}
+
 
 /*
     ----------------
@@ -147,12 +174,19 @@
     font-family: Arial;
     margin: 15px;
     overflow: hidden;
+    color: black;
+}
+.darkmode #NEWS_FEED_FullPage {
+    color: white;
 }
 
-    #NEWS_FEED_FullPage .Wrapper {
-        background-color: white;
-        padding: 5px;
-    }
+#NEWS_FEED_FullPage .Wrapper {
+    background-color: white;
+    padding: 5px;
+}
+.darkmode #NEWS_FEED_FullPage .Wrapper {
+    background-color: #4f4f4f;
+}
 
     #NEWS_FEED_FullPage .News_Feed_Header {
         position: relative;
@@ -174,6 +208,18 @@
             top: 0px;
             right: 10px;
         }
+        .darkmode #NEWS_FEED_FullPage .News_Feed_Header p {
+            color: white;
+        }
+
+                #NEWS_FEED_FullPage .News_Feed_Header p[scheduled]::before {
+                    content: 'SCHEDULED';
+                    margin-right: 5px;
+                    background-color: gray;
+                    padding: 1px 5px;
+                    border-radius: 5px;
+                    color: white;
+                }
 
     #NEWS_FEED_FullPage .News_Feed_Body {
         margin: 0 15px;
@@ -234,6 +280,9 @@
                     text-decoration: none;
                     font-size: 18px;
                 }
+.darkmode #NEWS_FEED_FullPage .News_Feed_Body .News_Feed_Text_Miscs .News_Feed_Text_Misc a {
+    color: #2ee6c0;
+}
 
     #NEWS_FEED_FullPage .News_Feed_Images {
         grid-area: images;
@@ -273,7 +322,7 @@
 #NEWS_FEED_NewsMaker {
     margin: 15px;
     display: none;
-    grid-template-columns: 50% 50%;
+    grid-template-columns: minmax(370px, 50%) 50%;
     grid-template-rows: auto;
     grid-column-gap: 5px;
 }
@@ -283,29 +332,44 @@
         background-color: white;
     }
 
+.darkmode #NEWS_FEED_NewsMaker .Editor {
+    background-color: #4f4f4f;
+}
+
         #NEWS_FEED_NewsMaker .Editor h1 {
             margin: 0px;
         }
 
-            #NEWS_FEED_NewsMaker .Editor h1 #Publish_Button_disabled {
-                background-color: gray;
-                float: right;
-                width: 130px;
-                cursor: default;
-            }
-
-            #NEWS_FEED_NewsMaker .Editor h1 #Publish_Button_enabled {
+            #NEWS_FEED_NewsMaker .Editor h1 #SaveBTN {
                 background-color: lime;
                 float: right;
                 width: 130px;
                 cursor: pointer;
+                font-size: 25px;
+                border: none;
+                color: black;
             }
 
-        #NEWS_FEED_NewsMaker .Editor input, #NEWS_FEED_NewsMaker .Editor textarea {
-            width: 100%;
-            min-height: 20px;
-            margin-bottom: 5px;
-        }
+                #NEWS_FEED_NewsMaker .Editor h1 #SaveBTN[disabled] {
+                    cursor: default;
+                    background-color: gray;
+                }
+
+#NEWS_FEED_NewsMaker .Editor input, #NEWS_FEED_NewsMaker .Editor textarea {
+    width: 100%;
+    min-height: 20px;
+    margin-bottom: 5px;
+    outline: none;
+}
+
+.darkmode #NEWS_FEED_NewsMaker .Editor input, .darkmode #NEWS_FEED_NewsMaker .Editor textarea {
+    background: none;
+    border-color: white;
+    color: white;
+}
+    .darkmode #NEWS_FEED_NewsMaker .Editor input::placeholder, .darkmode #NEWS_FEED_NewsMaker .Editor textarea::placeholder {
+        color: gray;
+    }
 
         #NEWS_FEED_NewsMaker .Editor #Editor_Input_Date {
             width: 175px;
@@ -351,6 +415,10 @@
                 cursor: move;
             }
 
+.darkmode #NEWS_FEED_NewsMaker .Editor .List .Element {
+    background-color: #914d4d;
+}
+
                 #NEWS_FEED_NewsMaker .Editor .List .Element > center {
                     border-right: 1px dashed black;
                     padding-top: 20px;
@@ -362,6 +430,7 @@
 
                     #NEWS_FEED_NewsMaker .Editor .List .Element > div input {
                         width: 45%;
+                        margin-right: 5px;
                     }
 
         #NEWS_FEED_NewsMaker .Editor button {

@@ -31,13 +31,13 @@
     <script src="../misc/OUTPUT/OUTPUT.js"></script>
     <link href="../misc/OUTPUT/OUTPUT.css" rel="stylesheet">
 
-    <script src="../misc/HoverProfile/HoverProfile.js"></script>
-    <link href="../misc/HoverProfile/HoverProfile.css" rel="stylesheet">
+    <script src="../misc/Login/Login.js"></script>
+    <link href="../misc/Login/Login.css" rel="stylesheet">
 
     <script src="../misc/SwitchButton/SwitchButton.js"></script>
     <link href="../misc/SwitchButton/SwitchButton.css" rel="stylesheet">
 </head>
-<body onload="Standard_Page_Init({ NAVIGATION_ENABLE_DEFAULT: false }); init(); Control_init();">
+<body onload="Standard_Page_Init({ NAVIGATION_ENABLE_DEFAULT: false }); init(); Logs_init();">
     <!-- MAIN GRID -->
     <div id="grid">
         <!-- NAVI HEADER -->
@@ -61,7 +61,7 @@
 
         <!-- ACTUAL CONTENT -->
         <div class="cellM" id="content" onscroll="NAVIGATIONV2_SCROLL_HL_CHECK()">
-            <div id="OUTPUT"></div>
+            <output></output>
 
             <div id="WAITING_FOR_DATA">
                 <div class="LOADING_RING">
@@ -69,8 +69,8 @@
                 </div>
             </div>
 
-            <div id="SECTION_LOGS">
-                <center>LOGS</center>
+            <div id="LOGS">
+
             </div>
         </div>
     </div>

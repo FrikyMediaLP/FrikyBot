@@ -1,37 +1,28 @@
 {
   "NewsFeed": {
-    "description": "NewsFeed Package responsible for News and Updates.",
+    "description": "NewsFeed Package responsible for News and Changelogs.",
     "modules": {
-      "CONSTANTS": "FrikyBot Module",
       "express": "npm",
-      "fs": "NodeJS Module",
+      "nedb": "npm",
       "path": "NodeJS Module"
     },
     "variables": {
-      "CONSTANTS": {
-        "type": "CONSTANTS Module",
-        "description": "Bot Constants used to generalize Outputs and Settings."
-      },
       "express": {
         "type": "Express Module",
         "npm": "https://www.npmjs.com/package/express",
         "description": "Express WebApp hosting the Website and API."
       },
-      "fs": {
-        "type": "FileSystem Module",
-        "description": "NodeJS File System interface to the Operating File System."
-      },
-      "path": {
+      "PATH": {
         "type": "Path Module",
         "description": "Path Module used for manipulating FileSystem Paths."
       },
-      "SETTINGS_REQUIERED": {
+      "PACKAGE_DETAILS": {
         "type": "Object",
-        "description": "Requiered Config Settings."
+        "description": "Package Details Information."
       },
-      "API_SETTINGS": {
+      "COOKIES": {
         "type": "Object",
-        "description": "API Settings for Querries and Requests."
+        "description": "Cookie Data this Package uses."
       },
       "API_ENDPOINT_PARAMETERS": {
         "type": "Object",
@@ -43,33 +34,28 @@
         "description": "NewsFeed Package responsible for News and Updates.",
         "parent": {
           "name": "PackageBase",
-          "from": { "name": "PackageBase", "type": "FrikyBot Module" }
+          "from": {
+            "name": "PackageBase",
+            "type": "FrikyBot Module"
+          }
         },
         "constructor": {
           "params": [
             {
-              "name": "expressapp",
-              "type": "Express.js:Express"
+              "name": "webappinteractor",
+              "type": "WebApp.js::WebAppInteractor"
             },
             {
               "name": "twitchirc",
-              "opt": true,
               "type": "TwitchIRC.js:TwitchIRC"
             },
             {
               "name": "twitchapi",
-              "opt": true,
               "type": "TwitchAPI.js:TwitchAPI"
             },
             {
               "name": "datacollection",
-              "opt": true,
               "type": "DataCollection.js:DataCollection"
-            },
-            {
-              "name": "startparameters",
-              "opt": true,
-              "type": "Object"
             },
             {
               "name": "logger",
@@ -77,117 +63,94 @@
               "type": "Logger.js:Logger"
             }
           ],
-          "description": "Calls the Parent PackageBase class constructor."
+          "description": "Setting up Config Settings and calling the Parent contructor."
+        },
+        "variables": {
+          "NEWS_DATABASE": {
+            "type": "nedb::Datastore",
+            "description": "All News Entries."
+          },
+          "CHANGELOG_DATABASE": {
+            "type": "nedb::Datastore",
+            "description": "All Changelog Entries."
+          }
         },
         "functions": {
           "Init": {
-            "params": null,
+            "params": [
+              {
+                "name": "WebInter",
+                "type": "WebApp::WebInteractor"
+              }
+            ],
             "is-async": true,
-            "description": "Starts the NewsFeed API, the FileRouters and the HTML Navigation."
+            "description": "Setting up Package API and Datastructures."
           },
           "reload": {
             "params": null,
             "is-async": true,
-            "description": "Reloads the News Data Files."
-          },
-          "CheckSettings": {
-            "params": [
-              {
-                "name": "settings",
-                "type": "Object"
-              }
-            ],
-            "description": "Checks the Config for any missing Requiered Settings."
+            "description": "Reloads the News Data."
           },
           "LoadNews": {
             "params": null,
             "description": "Loads the News Data."
           },
-          "ExportNews": {
-            "params": null,
-            "description": "Saves the News Data."
+          "AddNews": {
+            "params": [
+              {
+                "name": "news_data",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Adds a new News to the Database."
+          },
+          "EditNews": {
+            "params": [
+              {
+                "name": "news_data",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Edits a new News in the Database."
+          },
+          "RemoveNews": {
+            "params": [
+              {
+                "name": "page",
+                "type": "String"
+              }
+            ],
+            "is-async": true,
+            "description": "Remove a new News from the Database based on the Page identifier."
           },
           "getNews": {
             "params": [
               {
                 "name": "param",
                 "type": "Object"
-              }
-            ],
-            "description": "Returns NewsPages based on the given Parameters from the News Dataset."
-          },
-          "getLatest": {
-            "params": [
-              {
-                "name": "first",
-                "opt": true,
-                "type": "Number"
               },
               {
-                "name": "pagination",
-                "opt": true,
-                "type": "Number"
+                "name": "include_scheduled",
+                "type": "Boolean"
               }
             ],
-            "description": "Returns the latest NewsPages based on the given Pagination from the News Dataset."
+            "is-async": true,
+            "description": "Returns News based on the given Parameters from the Database."
           },
-          "getOldest": {
+          "getOldestNews": {
             "params": [
               {
-                "name": "first",
-                "opt": true,
-                "type": "Number"
+                "name": "param",
+                "type": "Object"
               },
               {
-                "name": "pagination",
-                "opt": true,
-                "type": "Number"
+                "name": "include_scheduled",
+                "type": "Boolean"
               }
             ],
-            "description": "Returns the oldest NewsPages based on the given Pagination from the News Dataset."
-          },
-          "getDate": {
-            "params": [
-              {
-                "name": "start",
-                "opt": true,
-                "type": "Number"
-              },
-              {
-                "name": "end",
-                "opt": true,
-                "type": "Number"
-              },
-              {
-                "name": "first",
-                "opt": true,
-                "type": "Number"
-              },
-              {
-                "name": "pagination",
-                "opt": true,
-                "type": "Number"
-              }
-            ],
-            "description": "Returns NewsPages based on the given Date Range and Pagination from the News Dataset. Start and End are UNIX Timestamps."
-          },
-          "getPage": {
-            "params": [
-              {
-                "name": "pageString",
-                "type": "String"
-              }
-            ],
-            "description": "Returns the NewsPage behind the unique pageString."
-          },
-          "getTitle": {
-            "params": [
-              {
-                "name": "titleString",
-                "type": "String"
-              }
-            ],
-            "description": "Returns the NewsPages with the given Title."
+            "description": "Returns the oldest News based on the given Paramerters from the Database."
           },
           "validate": {
             "params": [
@@ -198,87 +161,169 @@
             ],
             "description": "Returns true, if the given News Data is valid, false otherwise."
           },
-          "getPagination": {
+          "LoadChangelog": {
+            "params": null,
+            "description": "Loads the Changelog Data."
+          },
+          "AddChangelog": {
             "params": [
               {
-                "name": "first",
-                "type": "Number"
+                "name": "changelog_data",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Adds a new Changelog to the Database."
+          },
+          "EditChangelog": {
+            "params": [
+              {
+                "name": "changelog_data",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Edits a new Changelog in the Database."
+          },
+          "RemoveChangelog": {
+            "params": [
+              {
+                "name": "page",
+                "type": "String"
+              }
+            ],
+            "is-async": true,
+            "description": "Remove a new Changelog from the Database based on the Page identifier."
+          },
+          "getChangelogs": {
+            "params": [
+              {
+                "name": "param",
+                "type": "Object"
               },
               {
-                "name": "pagination",
-                "type": "Number"
-              },
-              {
-                "name": "autoInc",
-                "opt": true,
+                "name": "include_scheduled",
                 "type": "Boolean"
               }
             ],
-            "description": "Translates the First and prev. Pagination into a new Pagination String."
+            "is-async": true,
+            "description": "Returns Changelogs based on the given Parameters from the Database."
           },
-          "decryptPage": {
+          "validateChangelog": {
             "params": [
               {
-                "name": "pageString",
+                "name": "jsonData",
+                "type": "Object"
+              }
+            ],
+            "description": "Returns true, if the given Changelog Data is valid, false otherwise."
+          },
+          "createNEDBQuery": {
+            "params": [
+              {
+                "name": "dir",
                 "type": "String"
               },
               {
-                "name": "first",
+                "name": "params",
+                "type": "Object"
+              }
+            ],
+            "description": "Creates a nedb Formatted Query verified by the 'API_ENDPOINT_PARAMETERS' at the given 'dir'."
+          },
+          "getNeDBTimeQuery": {
+            "params": [
+              {
+                "name": "type",
+                "type": "String"
+              },
+              {
+                "name": "a",
+                "type": "Number"
+              },
+              {
+                "name": "b",
                 "type": "Number"
               }
             ],
-            "description": "Returns a Number indicating the First News on the Page, Null or an Error-String otherwise."
+            "description": "Creates a nedb Formatted Query between the 2 given Timestamps. Currentply Supported Type: 'day'."
           },
-          "checkParams": {
+          "getArrayPage": {
             "params": [
               {
-                "name": "req",
-                "type": "Express.js:Request"
+                "name": "array",
+                "type": "Array"
               },
               {
-                "name": "res",
-                "type": "Express.js:Response"
-              },
-              {
-                "name": "next",
-                "type": "Express.js:Next"
-              }
-            ],
-            "description": "Middleware checking the Parameters of the Requested API Endpoint. Either forewards it or rejects the Request with \"Unknown Parameter: xy\"."
-          },
-          "charsInWrongOrder": {
-            "params": [
-              {
-                "name": "s",
+                "name": "pagination",
                 "type": "String"
-              },
-              {
-                "name": "charArr",
-                "type": "Arr"
               }
             ],
-            "description": "Checks the string s, if the given Chars in the charArr come in that order."
+            "description": "Returns the current Array slice based on the Pagination Cursor."
+          },
+          "getNextArrayPagination": {
+            "params": [
+              {
+                "name": "array",
+                "type": "Array"
+              },
+              {
+                "name": "pagination",
+                "type": "String"
+              }
+            ],
+            "description": "Returns the next Array slice based on the Pagination Cursor."
           }
         },
         "API": {
-          "ROOT": "frikybot.de/News/api/",
           "Endpoints": [
             {
-              "name": "Get Latest News",
-              "endpoint": "/latest",
-              "description": "Returns Latest News Pages.",
+              "name": "Get News",
+              "endpoint": "/api/News",
+              "description": "Returns News based on the given query - Moderator also get Scheduled News.",
+              "restricted": "partial",
               "request": {
-                "querry": {
+                "query": {
                   "first": {
                     "type": "Number",
                     "opt": true,
                     "default": "10",
                     "description": "Number of NewsPages to Receive."
                   },
+                  "id": {
+                    "type": "Number",
+                    "opt": true,
+                    "description": "IDs of the to be returned News."
+                  },
+                  "page": {
+                    "type": "String",
+                    "opt": true,
+                    "description": "Page identifiers of the News to be returned."
+                  },
+                  "title": {
+                    "type": "String",
+                    "opt": true,
+                    "description": "title of the News to be returned."
+                  },
+                  "day": {
+                    "type": "Number",
+                    "opt": true,
+                    "description": "Returns News from the given Day."
+                  },
+                  "start": {
+                    "type": "Number",
+                    "opt": true,
+                    "description": "Returns News after from the given Date."
+                  },
+                  "end": {
+                    "type": "Number",
+                    "opt": true,
+                    "description": "Returns News before from the given Date."
+                  },
                   "pagination": {
                     "opt": true,
                     "type": "String",
-                    "description": "Pagination String, a Cursor to the next/current/previous Dataset."
+                    "description": "Pagination String, a Cursor to the next/current/previous Dataslice."
                   }
                 }
               },
@@ -289,14 +334,14 @@
                 },
                 "err": {
                   "type": "String",
-                  "description": "Error is returned if something internally broke, or you did :)"
+                  "description": "Error Text, if something broke or no Data was found."
                 }
               }
             },
             {
               "name": "Get Oldest News",
-              "endpoint": "/oldest",
-              "description": "Returns Oldest News Pages.",
+              "endpoint": "/api/News/oldest",
+              "description": "Returns Oldest News Pages - Moderator also get Scheduled News.",
               "request": {
                 "querry": {
                   "first": {
@@ -319,89 +364,238 @@
                 },
                 "err": {
                   "type": "String",
-                  "description": "Error is returned if something internally broke, or you did :)"
+                  "description": "Error Text, if something broke or no Data was found."
                 }
               }
             },
             {
-              "name": "Get News",
-              "endpoint": "/News",
-              "description": "Returns News Pages.",
-              "request": {
-                "querry": {
-                  "idx": {
-                    "opt": true,
-                    "type": "Number",
-                    "description": "Index in the intern News Data Array."
-                  },
-                  "page": {
-                    "opt": true,
-                    "type": "String",
-                    "description": "Unique Page Identifier String."
-                  },
-                  "title": {
-                    "opt": true,
-                    "type": "String",
-                    "description": "News Title."
-                  },
-                  "date": {
-                    "opt": true,
-                    "type": "Number",
-                    "description": "UNIX Date of the News. A range can be set like this: [DateA]-[DateB]"
-                  },
-                  "first": {
-                    "opt": true,
-                    "type": "Number",
-                    "default": "10",
-                    "description": "Number of NewsPages to Receive."
-                  },
-                  "pagination": {
-                    "opt": true,
-                    "type": "String",
-                    "description": "Pagination String, a Cursor to the next/current/previous Dataset."
-                  }
-                }
-              },
-              "response": {
-                "News": {
-                  "type": "Array",
-                  "description": "Collection of the Requested NewsPages."
-                },
-                "err": {
-                  "type": "String",
-                  "description": "Error is returned if something internally broke, or you did :)"
-                }
-              }
-            },
-            {
-              "name": "Publish News",
-              "endpoint": "/Publish",
-              "description": "Publish a News Page.",
+              "name": "Add News",
+              "endpoint": "/api/News",
+              "description": "Add a new News.",
               "restricted": "full",
               "request": {
                 "method": "POST",
                 "body": {
-                  "data": {
-                    "type": "Number",
-                    "description": "Index in the intern News Data Array."
+                  "news_data": {
+                    "type": "Object",
+                    "description": "News Data to be added."
                   }
                 }
               },
               "response": {
-                "status": {
+                "state": {
                   "type": "String",
                   "description": "Returns a confirmation String."
                 },
                 "err": {
                   "type": "String",
-                  "description": "Error is returned if something internally broke, or you did :)"
+                  "description": "Error Text, if something broke or no Data was found."
+                }
+              }
+            },
+            {
+              "name": "Edit News",
+              "endpoint": "/api/News",
+              "description": "Edit a News.",
+              "restricted": "full",
+              "request": {
+                "method": "PUT",
+                "body": {
+                  "news_data": {
+                    "type": "Object",
+                    "description": "News Data to be editted."
+                  }
+                }
+              },
+              "response": {
+                "state": {
+                  "type": "String",
+                  "description": "Returns a confirmation String."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error Text, if something broke or no Data was found."
+                }
+              }
+            },
+            {
+              "name": "Remove News",
+              "endpoint": "/api/News",
+              "description": "Remove a News.",
+              "restricted": "full",
+              "request": {
+                "method": "DELETE",
+                "body": {
+                  "page": {
+                    "type": "Object",
+                    "description": "Page identifier of the News to be removed."
+                  }
+                }
+              },
+              "response": {
+                "removed": {
+                  "type": "Number",
+                  "description": "Number of deleted News."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error Text, if something broke or no Data was found."
+                }
+              }
+            },
+            {
+              "name": "Get Changelogs",
+              "endpoint": "/Changelog",
+              "description": "Get Changelogs based on the given parameters - Moderator also get Scheduled Changelogs.",
+              "restricted": "partial",
+              "request": {
+                "query": {
+                  "first": {
+                    "type": "Number",
+                    "opt": true,
+                    "default": "10",
+                    "description": "Number of Changelogs to Receive."
+                  },
+                  "id": {
+                    "type": "Number",
+                    "opt": true,
+                    "description": "IDs of the to be returned Changelogs."
+                  },
+                  "changelog": {
+                    "type": "String",
+                    "opt": true,
+                    "description": "Changelog identifiers of the Changelogs to be returned."
+                  },
+                  "title": {
+                    "type": "String",
+                    "opt": true,
+                    "description": "title of the Changelogs to be returned."
+                  },
+                  "day": {
+                    "type": "Number",
+                    "opt": true,
+                    "description": "Returns Changelogs from the given Day."
+                  },
+                  "start": {
+                    "type": "Number",
+                    "opt": true,
+                    "description": "Returns Changelogs after from the given Date."
+                  },
+                  "end": {
+                    "type": "Number",
+                    "opt": true,
+                    "description": "Returns Changelogs before from the given Date."
+                  },
+                  "pagination": {
+                    "opt": true,
+                    "type": "String",
+                    "description": "Pagination String, a Cursor to the next/current/previous Dataslice."
+                  }
+                }
+              },
+              "response": {
+                "data": {
+                  "type": "Array",
+                  "description": "Returns the requested Changelogs."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error Text, if something broke or no Data was found."
+                }
+              }
+            },
+            {
+              "name": "Add Changelog",
+              "endpoint": "/Changelog",
+              "description": "Add a new Changelog.",
+              "restricted": "full",
+              "request": {
+                "method": "POST",
+                "body": {
+                  "body": {
+                    "type": "Object",
+                    "description": "Changelog Formatted Data."
+                  }
+                }
+              },
+              "response": {
+                "state": {
+                  "type": "String",
+                  "description": "Confirmation of sucessfull adding."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error Text, if something broke or no Data was found."
+                }
+              }
+            },
+            {
+              "name": "Edit Changelog",
+              "endpoint": "/Changelog",
+              "description": "Edit a present Changelog.",
+              "restricted": "full",
+              "request": {
+                "method": "PUT",
+                "body": {
+                  "body": {
+                    "type": "Object",
+                    "description": "Changelog Formatted Data."
+                  }
+                }
+              },
+              "response": {
+                "state": {
+                  "type": "String",
+                  "description": "Confirmation of sucessfull editting."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error Text, if something broke or no Data was found."
+                }
+              }
+            },
+            {
+              "name": "Remove Changelog",
+              "endpoint": "/Changelog",
+              "description": "Remove a Changelog.",
+              "restricted": "full",
+              "request": {
+                "method": "DELETE",
+                "body": {
+                  "page": {
+                    "type": "String",
+                    "description": "Page identifier of the Changelog to be removed."
+                  }
+                }
+              },
+              "response": {
+                "state": {
+                  "type": "String",
+                  "description": "Confirmation of sucessfull editting."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error Text, if something broke or no Data was found."
+                }
+              }
+            },
+            {
+              "name": "Remove Changelog",
+              "endpoint": "/access",
+              "description": "Checks your Authentication to be allowed to add/edit/remove News/Changelogs.",
+              "restricted": "full",
+              "request": null,
+              "response": {
+                "data": {
+                  "type": "String",
+                  "description": "will be 'ACCESS GRANTED'."
                 }
               }
             }
           ]
         },
         "FileHosting": {
-          "ROOT": "frikybot.de/News/",
+          "ROOT": "News/",
           "Routes": {
             "/newsmaker": {
               "type": "redirect",

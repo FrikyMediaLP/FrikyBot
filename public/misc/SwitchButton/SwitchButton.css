@@ -167,9 +167,9 @@ SWITCHBUTTON[disabled] {
             left: 0;
         }
 
-SWITCHBUTTON[value=false] {
-    background-color: #d42828;
-}
+    SWITCHBUTTON[value=false] {
+        background-color: #d42828;
+    }
 
     SWITCHBUTTON[value=false] SWITCHBUTTONCURSOR {
         position: absolute;
@@ -479,7 +479,7 @@ SWITCHBUTTON[value=false] {
         background-color: white;
     }
 
-    .MISC_SELECT:hover .MISC_SELECT_OPTIONS {
+    .MISC_SELECT:hover .MISC_SELECT_OPTIONS, .MISC_SELECT.extend .MISC_SELECT_OPTIONS {
         height: auto;
         border: 1px solid #028deb;
         border-top: none;
@@ -488,7 +488,180 @@ SWITCHBUTTON[value=false] {
     .MISC_SELECT .MISC_SELECT_OPTIONS > div {
         padding: 0px 5px;
     }
+    .darkmode .MISC_SELECT .MISC_SELECT_OPTIONS > div {
+        color: black;
+    }
+
+    .MISC_SELECT .MISC_SELECT_OPTIONS > div[hidden] {
+        display: none;
+    }
         .MISC_SELECT .MISC_SELECT_OPTIONS > div:hover {
             background-color: lightgray;
             cursor: pointer;
+        }
+/* 
+    -----------------------
+            USERCONFIRM
+    -----------------------
+*/
+
+userconfirm {
+    position: absolute;
+    top: calc(20% + 50px);
+    left: 239px;
+    width: calc(100% - 270px);
+    z-index: 3 !important;
+    padding: 5px;
+    margin: 5px;
+    background-color: white;
+    font-family: 'Roboto', sans-serif;
+    border: 3px solid darkred;
+    box-shadow: rgba(100, 0, 0, 0.2) 5px 5px;
+}
+
+    userconfirm .userconfirm_question .head{
+        font-size: 30px;
+        color: darkred;
+        font-weight: bold;
+    }
+    userconfirm .userconfirm_question .sub {
+        font-size: 20px;
+    }
+
+    userconfirm .userconfirm_answers {
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, 200px);
+        grid-template-rows: 30px;
+        grid-column-gap: 10px;
+        grid-row-gap: 10px;
+        justify-content: center;
+    }
+
+    userconfirm .userconfirm_answer {
+        cursor: pointer;
+        border: none;
+        border-radius: 0;
+        outline: none;
+    }
+    userconfirm .userconfirm_answer:hover {
+        filter: brightness(0.9);
+    }
+
+/* 
+    -----------------------
+            USERCONFIRM
+    -----------------------
+*/
+
+customtable {
+    display: grid;
+    width: calc(100% - 3px) !important;
+    grid-template-rows: auto;
+    position: relative;
+    align-content: center !important;
+}
+
+    customtable customtable {
+        margin: 5px auto;
+        padding: 0 5px;
+        width: calc(100% - 10px) !important;
+    }
+
+    customtable tableheader {
+        width: calc(100% - 9px) !important;
+        display: block;
+        border: 1px solid #00497a;
+        border-right: none;
+        text-align: center;
+        text-transform: uppercase;
+        font-weight: bold;
+        font-size: 1.3em;
+        background-color: #028deb;
+        color: white;
+        padding: 0 5px;
+    }
+
+    customtable.blocked_caps_headers tableheader {
+        text-transform: none;
+    }
+
+    customtable customtable tableheader {
+        width: calc(100% - 8px) !important;
+        font-size: 1em;
+        filter: hue-rotate(-45deg);
+        font-weight: 400;
+    }
+
+    customtable tableheader:last-of-type {
+        border-right: 1px solid #00497a;
+    }
+
+    customtable tablecontent {
+        width: calc(100% - 8px) !important;
+        display: block;
+        border: 1px solid lightgray;
+        border-left: none;
+        border-top: none;
+        text-align: center;
+        padding: 4px;
+        min-height: 1.3em;
+    }
+
+    customtable customtable tablecontent {
+        font-size: 1em;
+    }
+        customtable tablecontent[no-split] {
+            border-right: none;
+            padding: 4px;
+            color: gray;
+        }
+    customtable tablecontent[left] {
+        border-left: 1px solid gray;
+        width: calc(100% - 8px) !important;
+    }
+    customtable customtable tablecontent[left] {
+        width: calc(100% - 9px) !important;
+    }
+    customtable tablecontent[right] {
+        border-right: 1px solid gray;
+        width: calc(100% - 6px) !important;
+    }
+    customtable customtable tablecontent[right] {
+        width: calc(100% - 5px) !important;
+    }
+        customtable tablecontent[bottom] {
+            border-bottom: 1px solid gray;
+        }
+
+    customtable tablecontent img {
+        max-width: 100%;
+    }
+
+    customtable tablecontent tableemptytext{
+        position: absolute;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+
+    /* VERTICAL TABLE */
+    customtable.vertical {
+        grid-template-columns: calc(1.3em + 5px) auto !important;
+    }
+        customtable.vertical > tableheader {
+            width: calc(100% - 12px) !important;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            word-break: break-all;
+            text-orientation: upright !important;
+            border: 1px solid #00497a !important;
+            border-bottom: none !important;
+        }
+            customtable.vertical > tableheader:last-child {
+                border-bottom: 1px solid #00497a !important;
+            }
+
+        customtable.vertical > tablecontent {
+            border: 1px solid lightgray;
+            border-left: none;
         }

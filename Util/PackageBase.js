@@ -1,24 +1,18 @@
 ﻿const fs = require('fs');
 const path = require('path');
 const CONSTANTS = require('./../Util/CONSTANTS.js');
-
-const PACKAGE_SETTINGS_REQUIERED = {
-    enabled: true
-};
-
-const PACKAGE_SETTINGS = {
-    enabled: true,
-    HTML_ROOT_NAME: "",
-    API_ROOT_NAME: ""
-};
+const CONFIGHANDLER = require('./../Util/ConfigHandler.js');
 
 class PackageBase {
     constructor(package_details = {}, webappinteractor, twitchirc, twitchapi, datacollection, logger) {
         //PRE-INIT
         this.Package_Details = {
-            name: package_details.name ? package_details.name : "UNKNOWN",
-            description: package_details.description ? package_details.description : ""
+            name: package_details.name || "UNKNOWN",
+            description: package_details.description || "",
+            picture: package_details.picture || null
         };
+
+        if (!this.getName() || this.getName() === "UNKNOWN") throw new Error("Package needs a name!");
 
         //LOGGER
         if (logger && logger && logger.identify != undefined && logger.identify() == "FrikyBotLogger") {
@@ -32,6 +26,16 @@ class PackageBase {
             this.setLogger(logger);
         }
 
+        //Config
+        this.Config = new CONFIGHANDLER.Config('config', [], null, { export_dir: 'Packages/' + this.Package_Details['name'] + '/' });
+        this.Config.AddSettingTemplates([
+            { name: 'HTML_ROOT_NAME', type: 'string', default: this.Package_Details['name'] },
+            { name: 'API_ROOT_NAME', type: 'string', default: this.Package_Details['name'] },
+            { name: 'enabled', type: 'boolean', requiered: true, default: true }
+        ]);
+        this.Config.Load();
+        this.Config.FillConfig();
+
         //INIT
         this.Package_Interconnects = [];
         this.Requested_Package_Interconnects = [];
@@ -42,16 +46,22 @@ class PackageBase {
         this.TwitchAPI = twitchapi;
         this.Datacollection = datacollection;
 
-        this.Settings = {
-            enabled: false
-        };
-        
         this.USE_HTML_HOSTING = false;
         this.USE_API_HOSTING = false;
+        this.RESTRICTED_HTML_HOSTING = null;
+
+        this.WEB_COOKIES = {
+            LocalStorage: [],
+            SessionStorage: [],
+            Cookies: []
+        };
+
+        //Infos
+        this.DISPLAYABELS = [];
+        this.LOGS = [];
 
         //Setup
         this.Logger.info("Package Setup ... ");
-        this.loadSettings();
     }
     
     /*
@@ -65,19 +75,29 @@ class PackageBase {
         return Promise.resolve();
     }
     async PostInit() {
-        for (let interconnect in this.Package_Interconnects) {
-            this.Package_Interconnects[interconnect](this);
+        for (let interconnect of this.Package_Interconnects) {
+            interconnect.callback(this);
         }
 
         return Promise.resolve();
     }
 
     async enable() {
+        if (this.isEnabled()) return Promise.resolve();
+
         this.setEnable(true);
+        if (this.isEnabled() !== true) return Promise.reject(new Error('enable failed'));
+
+        this.Logger.warn("Package enabled!");
         return Promise.resolve();
     }
     async disable() {
+        if (!this.isEnabled()) return Promise.resolve();
+
         this.setEnable(false);
+        if (this.isEnabled() !== false) return Promise.reject(new Error('disable failed'));
+
+        this.Logger.warn("Package disabled!");
         return Promise.resolve();
     }
 
@@ -97,88 +117,12 @@ class PackageBase {
      * /////////////////////////////////////////////////
      */
 
-    loadSettings() {
-        let resolvedPath = path.resolve(CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + this.getName() + "/config.json");
-
-        //SETUP CONFIG
-        let settings_file = {};
-
-        if (fs.existsSync(resolvedPath)) {
-            //Is File?
-            if (!fs.lstatSync(resolvedPath).isFile()) {
-                this.Logger.error("CONFIG PATH IS NOT A FILE! Needs to be a .json File!");
-                return false;
-            } else {
-                //Load Data
-                try {
-                    settings_file = JSON.parse(fs.readFileSync(resolvedPath));
-                } catch (err) {
-                    this.Logger.warn("FILE ERROR: " + err.message);
-                    console.log(err);
-                    return false;
-                }
-            }
-        } else {
-            this.Logger.warn("CONFIG File NOT found! Creating new from DEFAULT...");
-        }
-
-        //STD Settings CHECK
-        let check = this.AddObjectElementsToOtherObject(settings_file, PACKAGE_SETTINGS_REQUIERED, msg => this.Logger.info("CONFIG UPDATE: " + msg));
-        let update = check == true;
-
-        //Custom Check
-        check = this.CheckSettings(settings_file);
-        update = update || check == true;
-
-        if (update == true) {
-            try {
-                this.Logger.info("Updating Config File!");
-                fs.writeFileSync(resolvedPath, JSON.stringify(settings_file, null, 4));
-            } catch (err) {
-                this.Logger.warn("FILE ERROR: " + err.message);
-                console.log(err);
-            }
-        }
-
-        this.changeSettings(settings_file);
-    }
-    CheckSettings(settings) {
-        return true;
-    }
-    
-    changeSettings(settings = {}) {
-        //Update this.Settings
-        this.AddObjectElementsToOtherObject(this.Settings, settings, undefined, true);
-
-        //HTML ROOT Name
-        if (this.Settings.HTML_ROOT_NAME) {
-            this.getHTMLROOT = () => this.Settings.HTML_ROOT_NAME;
-        } else {
-            this.getHTMLROOT = () => this.getName();
-        }
-
-        //HTML ROOT Name
-        if (this.Settings.API_ROOT_NAME) {
-            this.getAPIROOT = () => this.Settings.API_ROOT_NAME;
-        } else {
-            this.getAPIROOT = () => this.getName();
-        }
-
-        //enabled
-        if (this.Settings.enabled == true) {
-            this.enable();
-        } else {
-            this.disable();
-            this.Logger.warn("Package is DISABLED!");
-        }
-    }
-
     setStartparameters(parameters = {}) {
 
     }
 
-    setEnable(enable) {
-        this.isEnabled = () => enable;
+    setEnable(state) {
+        this.Config.UpdateSetting('enabled', state === true);
     }
     setLogger(loggerObject) {
         if (loggerObject && loggerObject.info && loggerObject.warn && loggerObject.error) {
@@ -194,6 +138,8 @@ class PackageBase {
 
     //SETUP
     allowPackageInterconnects(allowed_packages = []) {
+        if (!(allowed_packages instanceof Array)) allowed_packages = [allowed_packages];
+
         try {
             for (let allowed_package of allowed_packages) {
                 this.Allowed_Package_Interconnects.push(allowed_package);
@@ -217,10 +163,10 @@ class PackageBase {
 
     //Requests From Other Packages to me
     requestPackageInterconnect(package_name, callback, description) {
-        let is_allowed = this.Allowed_Package_Interconnects.find(elt => elt.package_name === package_name);
+        let is_allowed = this.Allowed_Package_Interconnects.find(elt => elt === package_name || elt === 'all');
         
-        if (is_allowed || Object.getOwnPropertyNames(this.Allowed_Package_Interconnects).length == 0) {
-            this.Package_Interconnects.push(package_name, callback, description);
+        if (is_allowed) {
+            this.Package_Interconnects.push({ package_name, callback, description });
             return true;
         }
         
@@ -238,7 +184,7 @@ class PackageBase {
         this.USE_HTML_HOSTING = true;
         if (!this.WebAppInteractor) throw new Error("WebApp-Reference is not set!");
         
-        this.WebAppInteractor.addFileRoute("/" + this.getHTMLROOT(), (req, res, next) => { if (this.isEnabled()) next(); else res.sendFile(path.resolve("DATA/PAGES/PackageDisabled.html")); }, (req, res, next) => {
+        this.WebAppInteractor.addFileRoute("/" + this.getHTMLROOT(), (req, res, next) => { if (this.isEnabled()) next(); else res.sendFile(path.resolve("public/NotFound.html")); }, (req, res, next) => {
             let page = this.HTMLFileExists(req.url);
             //Check if File/Dir is Present
             if (page != "") {
@@ -271,18 +217,18 @@ class PackageBase {
             router);
     }
 
-    setAPIEndpoint(router, method) {
+    setAPIEndpoint(endpoint, callback, method) {
         this.USE_API_HOSTING = true;
         if (!this.WebAppInteractor) throw new Error("WebApp-Reference is not set!");
 
-        this.WebAppInteractor.addAPIEndpoint("/" + this.getAPIROOT(), method,
+        this.WebAppInteractor.addAPIEndpoint("/" + this.getAPIROOT() + endpoint, method,
             (req, res, next) => { if (this.isEnabled()) next(); else res.status(401).json({ err: 'Package Disabled!' }); },
-            router);
+            callback);
     }
     setAuthenticatedAPIEndpoint(endpoint, auth_method, callback, method = 'GET') {
         this.USE_API_HOSTING = true;
         if (!this.WebAppInteractor) throw new Error("WebApp-Reference is not set!");
-        
+
         return this.WebAppInteractor.addAuthAPIEndpoint("/" + this.getAPIROOT() + endpoint, auth_method, method,
             (req, res, next) => { if (this.isEnabled()) next(); else res.status(401).json({ err: 'Package Disabled!' }); }, callback);
     }
@@ -293,30 +239,111 @@ class PackageBase {
             this.getWebNavigation = () => data;
         }
     }
-    setWebCookies(data) {
-        if (typeof (data) != "object" || data.length != "undefinded") {
-            this.getWebCookies = () => data;
+    getWebNavigation() {
+        return null;
+    }
+    setWebCookies(cookie_data = {}) {
+        for (let cookie of cookie_data.LocalStorage || []) {
+            this.addWebCookie('localstorage', cookie);
+        }
+
+        for (let cookie of cookie_data.SessionStorage || []) {
+            this.addWebCookie('sessionstorage', cookie);
+        }
+
+        for (let cookie of cookie_data.Cookies || []) {
+            this.addWebCookie('cookie', cookie);
         }
     }
-    
+    addWebCookie(type, cookie_data = {}) {
+        cookie_data.origin = this.getName().toLowerCase();
+        
+        if (type === 'localstorage') {
+            this.WEB_COOKIES.LocalStorage.push(cookie_data);
+        } else if (type === 'sessionstorage') {
+            this.WEB_COOKIES.SessionStorage.push(cookie_data);
+        } else if (type === 'cookie') {
+            this.WEB_COOKIES.Cookies.push(cookie_data);
+        } else {
+            return false;
+        }
+    }
+    getWebCookies() {
+        return this.WEB_COOKIES;
+    }
+
+    /*
+     * /////////////////////////////////////////////////
+     *                 CUSTOM DATA LOGS
+     * /////////////////////////////////////////////////
+     */
+
+    addDisplayable(name, value) {
+        this.DISPLAYABELS.push({ name, value });
+    }
+    addDisplayables(displayables = []) {
+        for (let elt of displayables) {
+            this.DISPLAYABELS.push({ name: elt.name, value: elt.value });
+        }
+    }
+    removeDisplayable(name) {
+        let index = -1;
+        this.DISPLAYABELS.find((elt, idx) => {
+            if (elt === name) {
+                index = idx;
+                return true;
+            }
+            return false;
+        });
+        if (index >= 0) {
+            this.DISPLAYABELS.splice(index, 1);
+        }
+    }
+    GetDisplayables() {
+        let out = [];
+
+        for (let dis of this.DISPLAYABELS) {
+            if (dis.value instanceof Function) out.push({ name: dis.name, value: dis.value() });
+            else out.push({ name: dis.name, value: dis.value });
+        }
+
+        return [];
+    }
+
+    addLog(name, database, query) {
+        this.LOGS.push({ name, database, query });
+    }
+    removeLog(name) {
+        let index = -1;
+        this.LOGS.find((elt, idx) => {
+            if (elt === name) {
+                index = idx;
+                return true;
+            }
+            return false;
+        });
+        if (index >= 0) {
+            this.LOGS.splice(index, 1);
+        }
+    }
+    async GetLogs() {
+        let out = {};
+        for (let log of this.LOGS) {
+            try {
+                out[log.name] = await this.AccessNeDB(log.database, log.query || {});
+            } catch (err) {
+
+            }
+        }
+        return Promise.resolve(out);
+    }
+
     /*
      * /////////////////////////////////////////////////
      *                 GENERAL GETTERS
      * /////////////////////////////////////////////////
      */
-
-    isEnabled() {
-        return false;
-    }
-    getNavigation() {
-        return null;
-    }
-    getHTMLROOT() {
-        return this.getName();
-    }
-    getAPIROOT() {
-        return this.getName();
-    }
+    
     getName() {
         return this.Package_Details.name;
     }
@@ -328,19 +355,32 @@ class PackageBase {
             name: this.getName(),
             description: this.getDescription(),
             enabled: this.isEnabled(),
+            picture: this.Package_Details['picture'],
             html: (this.USE_HTML_HOSTING ? this.getHTMLROOT() : undefined),
             html_navi: (this.isNaviEnabled ? this.isNaviEnabled() : undefined),
-            api: (this.USE_API_HOSTING ? this.getAPIROOT() : undefined)
+            api: (this.USE_API_HOSTING ? this.getAPIROOT() : undefined),
+            restricted: this.RESTRICTED_HTML_HOSTING
         }
     }
-    
-    getWebNavigation() {
-        return null;
+
+    isEnabled() {
+        return this.Config.GetConfig()['enabled'] === true;
     }
-    getWebCookies() {
-        return null;
+    GetConfig(copy = true) {
+        if (copy) return this.Config.GetConfig();
+        else return this.Config;
     }
 
+    getNavigation() {
+        return null;
+    }
+    getHTMLROOT() {
+        return this.Config.GetConfig()['HTML_ROOT_NAME'];
+    }
+    getAPIROOT() {
+        return this.Config.GetConfig()['API_ROOT_NAME'];
+    }
+    
     getMainPackageRoot() {
         return CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT;
     }
@@ -392,6 +432,20 @@ class PackageBase {
         }
 
         return "";
+    }
+
+    async AccessNeDB(datastore, query = {}) {
+        if (!datastore) return Promise.resolve([]);
+
+        return new Promise((resolve, reject) => {
+            datastore.find(query, (err, docs) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(docs);
+                }
+            });
+        });
     }
 
     //Object/Array/... UTIL

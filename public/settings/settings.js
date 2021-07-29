@@ -1,4 +1,6 @@
-﻿async function init() {
+﻿PAGE_IS_PROTECTED = true;
+
+async function init() {
     OUTPUT_create();
     
     //Navigation

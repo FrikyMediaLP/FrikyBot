@@ -2,6 +2,10 @@
     border-bottom: 1px solid gray;
 }
 
+#DOCS_DATA {
+    margin-bottom: 20px;
+}
+
 /* 
   //////////////////////////
         DOCS Overview
@@ -171,13 +175,18 @@ a:not([href]) .DOCS_FUNCTION_HEADER {
     position: relative;
 }
 
-    .DOCS_FUNCTION_HEADER .DOCS_FUNCTION_HEADER_MAIN {
-        width: 100%;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow-x: hidden;
-        position: relative;
+    .DOCS_FUNCTION_HEADER .DOCS_FUNCTION_HEADER_ASYNC {
+        color: #2ee6c0;
+        padding-right: 5px;
     }
+
+.DOCS_FUNCTION_HEADER .DOCS_FUNCTION_HEADER_MAIN {
+    width: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow-x: hidden;
+    position: relative;
+}
 
     .DOCS_FUNCTION_HEADER .DOCS_FUNCTION_HEADER_NAME {
         color: #028deb;
@@ -228,6 +237,14 @@ a:not([href]) .DOCS_FUNCTION_HEADER {
         border: 1px solid gray;
         z-index: 1;
     }
+        .DOCS_FUNCTION_HEADER .DOCS_FUNCTION_HEADER_EXTENDED .DOCS_FUNCTION_HEADER_ASYNC {
+            color: #2ab89b;
+            padding-right: 5px;
+        }
+
+        .DOCS_FUNCTION_HEADER .DOCS_FUNCTION_HEADER_EXTENDED .DOCS_FUNCTION_HEADER_CLASSNAME {
+            color: #00497a;
+        }
 
         .DOCS_FUNCTION_HEADER .DOCS_FUNCTION_HEADER_EXTENDED .DOCS_FUNCTION_HEADER_PARAM_TYPE {
             color: #028deb;

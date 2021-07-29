@@ -309,11 +309,7 @@ function DOCS_createAPI(root, endpoints, printNone = false) {
     let s = '';
     
     if (root || endpoints || printNone == true) {
-        s += '<h2>API</h2>';
-    }
-
-    if (root) {
-        s += '<h3><b>Root: ' + root + '</b></h3>';
+        s += '<h2 id="API">API</h2>';
     }
 
     if (endpoints) {
@@ -326,18 +322,23 @@ function DOCS_createAPI(root, endpoints, printNone = false) {
             } else if (endpoint.restricted === "full") {
                 s += '<center class="DOCS_API_ENDPOINT_INFO">This Endpoint is restricted by Authentication!</center>';
             }
-
+            
             s += '<p>' + endpoint.description + '</p>';
+            s += '<p><b>URL: ' + endpoint.endpoint + '</b></p>';
+            s += '<p><b>Method: ' + ((endpoint.request || {}).method || "GET") + '</b></p>';
 
             //REQUEST
             if (endpoint.request) {
-                if (endpoint.request.querry) {
-                    s += '<h4>Request Querry Parameters</h4>';
-                    s += createTable(endpoint.request.querry, ['name', 'type', 'description']);
+                if (endpoint.request.params) {
+                    s += '<h4>Request Query Paramerters</h4>';
+                    s += createTable(endpoint.request.params, ['name', 'type', 'description']);
                 }
 
-                if (endpoint.request.method) {
-                    s += '<p><b>Method: ' + endpoint.request.method + '</b></p>';
+                if (endpoint.request.querry) endpoint.request.query = endpoint.request.querry;
+
+                if (endpoint.request.query) {
+                    s += '<h4>Request Query Parameters</h4>';
+                    s += createTable(endpoint.request.query, ['name', 'type', 'description']);
                 }
 
                 if (endpoint.request.body) {
@@ -406,8 +407,14 @@ function createFunctionHeader(name, funct, ClassName, showClass = true, desc) {
         funct.params = [];
 
     let s = '<div class="DOCS_FUNCTION_HEADER">';
-
+    
     s += '<div class="DOCS_FUNCTION_HEADER_MAIN">';
+
+    if (funct['is-async'] === true) {
+        s += '<span class="DOCS_FUNCTION_HEADER_ASYNC">async </span>';
+    }
+
+
     if (ClassName && showClass) {
         s += '<span class="DOCS_FUNCTION_HEADER_CLASSNAME">' + ClassName + '</span>';
         s += '<span class="DOCS_FUNCTION_HEADER_CLASSNAME_SEP">::</span>';
@@ -435,6 +442,11 @@ function createFunctionHeader(name, funct, ClassName, showClass = true, desc) {
     //Hover Info
     s += '<div class="DOCS_FUNCTION_HEADER_EXTENDED">';
     s += '<div class="DOCS_FUNCTION_HEADER_HEADER">';
+    
+    if (funct['is-async'] === true) {
+        s += '<span class="DOCS_FUNCTION_HEADER_ASYNC">async </span>';
+    }
+
     if (ClassName) {
         s += '<span class="DOCS_FUNCTION_HEADER_CLASSNAME">' + ClassName + '</span>';
         s += '<span class="DOCS_FUNCTION_HEADER_CLASSNAME_SEP">::</span>';

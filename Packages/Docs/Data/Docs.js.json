@@ -20,42 +20,42 @@
         "npm": "https://www.npmjs.com/package/express",
         "description": "Express WebApp hosting the Website and API."
       },
-      "SETTINGS_REQUIERED": {
+      "PACKAGE_DETAILS": {
         "type": "Object",
-        "description": "Requiered Config Settings + Default Values."
+        "description": "Packge Details Information."
+      },
+      "COOKIES": {
+        "type": "Object",
+        "description": "Cookie Information the Package uses."
       }
     },
     "classes": {
       "Docs": {
-        "modules": {
-          "PackageBase": "FrikyBot Module"
+        "parent": {
+          "name": "PackageBase",
+          "from": {
+            "name": "PackageBase",
+            "type": "FrikyBot Module"
+          }
         },
         "description": "Documentation Package serving all Docs Data and HTML/CSS/JS Files.",
         "constructor": {
           "params": [
             {
-              "name": "expressapp",
-              "type": "Express.js:Express"
+              "name": "webappinteractor",
+              "type": "WebApp.js::WebAppInteractor"
             },
             {
               "name": "twitchirc",
-              "opt": true,
               "type": "TwitchIRC.js:TwitchIRC"
             },
             {
               "name": "twitchapi",
-              "opt": true,
               "type": "TwitchAPI.js:TwitchAPI"
             },
             {
               "name": "datacollection",
-              "opt": true,
               "type": "DataCollection.js:DataCollection"
-            },
-            {
-              "name": "startparameters",
-              "opt": true,
-              "type": "Object"
             },
             {
               "name": "logger",
@@ -63,33 +63,33 @@
               "type": "Logger.js:Logger"
             }
           ],
-          "description": "Calls the Parent PackageBase class constructor."
+          "description": "Setting up Config Settings and calling the Parent contructor."
         },
         "variables": {
           "DOCS_NAV": {
             "type": "Object",
-            "description": "Object containing the latest Navigation Data for the Website."
+            "description": "Cached Navigation Data."
+          },
+          "DOCS_DATA": {
+            "type": "Object",
+            "description": "Cached Docs Data."
           }
         },
         "functions": {
           "Init": {
-            "params": null,
+            "params": [
+              {
+                "name": "WebInter",
+                "type": "WebApp::WebInteractor"
+              }
+            ],
             "is-async": true,
-            "description": "Sets the Express Routers."
+            "description": "Setting up Package API and Datastructures."
           },
           "reload": {
             "params": null,
             "is-async": true,
-            "description": "Reloads the Package."
-          },
-          "CheckSettings": {
-            "params": [
-              {
-                "name": "settings",
-                "type": "Object"
-              }
-            ],
-            "description": "Checks the Settings for any missing Keys."
+            "description": "Reloads the Docs Data when Caching is allowed."
           },
           "getData": {
             "params": [
@@ -100,19 +100,38 @@
             ],
             "description": "Gets the Docs Data, either though cacheing or the File System."
           },
-          "getNavigation": {
+          "updateNavigation": {
             "params": null,
-            "description": "Gets the Navigation Data, either though cacheing or the File System."
+            "description": "Update the Navigation Data from File System."
+          },
+          "loadModule": {
+            "params": [
+              {
+                "name": "module",
+                "type": "String"
+              }
+            ],
+            "description": "Loads Module Data from the File System."
+          },
+          "loadAllModules": {
+            "params": null,
+            "description": "Loads all Modules from the File System."
           }
         },
         "API": {
-          "ROOT": "frikybot.de/Docs/api/",
           "Endpoints": [
             {
               "name": "Get Module",
-              "endpoint": "/Data/:module",
+              "endpoint": "/api/Docs/Data/:module",
               "description": "Returns a Module by the given Name.",
-              "request": null,
+              "request": {
+                "params": {
+                  "module": {
+                    "type": "String",
+                    "description": "The Module Name to be returned."
+                  }
+                }
+              },
               "response": {
                 "data": {
                   "type": "Object",
@@ -130,9 +149,20 @@
             },
             {
               "name": "Get Class",
-              "endpoint": "/Data/:module/:class",
+              "endpoint": "/api/Docs/Data/:module/:class",
               "description": "Returns a Class of a Module by the given Names.",
-              "request": null,
+              "request": {
+                "params": {
+                  "module": {
+                    "type": "String",
+                    "description": "The Module Base Name of the Class."
+                  },
+                  "class": {
+                    "type": "String",
+                    "description": "The Module Class Name to be returned."
+                  }
+                }
+              },
               "response": {
                 "data": {
                   "type": "Object",
@@ -150,7 +180,7 @@
             },
             {
               "name": "Get Navigation",
-              "endpoint": "/Navigation",
+              "endpoint": "/api/Docs/Navigation",
               "description": "Returns the Navigation Data.",
               "request": null,
               "response": {
@@ -171,8 +201,8 @@
           ]
         },
         "FileHosting": {
-          "ROOT": "frikybot.de/ChatModeration/",
-          "Static": "Data",
+          "ROOT": "/Docs/",
+          "Static": "html",
           "Routes": {
             "/*": {
               "description": "Redirects to the Static File in the Data-Folder or back to the Main Index.html File."

@@ -1,0 +1,289 @@
+#SECTION_MODULES {
+    display: none;
+    margin-bottom: 20px;
+}
+
+#header{
+    font-size: 60px;
+    border-bottom: 1px solid dimgray;
+    position: relative;
+}
+
+
+/* UI */
+#UI {
+    font-size: 16px;
+    position: absolute;
+    top: 83px;
+    right: 0;
+}
+
+    #UI button {
+        cursor: pointer;
+    }
+
+    #UI button, #UI select, #UI input {
+        outline: none;
+    }
+
+    #UI.DISABLED button, #UI.DISABLED select, #UI.DISABLED input {
+        pointer-events: none;
+        cursor: default;
+        filter: grayscale(1);
+    }
+
+/* MODULES */
+.Module {
+    height: auto;
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: 90px auto;
+    grid-template-rows: auto auto;
+    background-color: rgba(255,255,255,0.2);
+    border: 1px black solid;
+    border-radius: 5px;
+    font-family: 'Roboto', sans-serif;
+}
+
+    .Module .IMG {
+        width: 100%;
+        padding-top: 100% !important;
+        background-color: #028deb;
+        border-bottom: 1px solid dimgray;
+        border-right: 1px solid dimgray;
+        position: relative;
+    }
+
+        .Module .IMG img {
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+            .Module .IMG img[src*="svg"] {
+                padding: 5px 10px;
+                width: calc(100% - 20px);
+                height: calc(100% - 10px);
+                filter: invert(100%);
+            }
+
+    .Module .Name {
+        border-bottom: 1px solid dimgray;
+        padding-left: 10px;
+        padding-top: 7px;
+        font-size: 4em;
+        cursor: pointer;
+    }
+
+    /* CONTROL */
+    .Module .Control {
+        width: 100%;
+        padding-bottom: 5px;
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: 20px repeat(auto-fill, 25px);
+        grid-row-gap: 5px;
+        border-right: 1px solid dimgray;
+    }
+
+        .Module .Control center {
+            width: calc(100% - 2px);
+            margin-left: 1px;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+
+    .Module.NOTREADY .Control center.Status {
+        color: gray;
+        background-color: rgba(0, 0, 0, 0.2);
+    }
+
+        .Module.NOTREADY .Control center.Status::after {
+            content: 'not ready';
+        }
+
+    .Module.DISABLED .Control center.Status {
+        color: red;
+        background-color: rgba(255, 0, 0, 0.2);
+    }
+
+        .Module.DISABLED .Control center.Status::after {
+            content: 'Disabled';
+        }
+
+    .Module.ENABLED .Control center.Status {
+        color: green;
+        background-color: rgba(0, 155, 0, 0.5)
+    }
+
+        .Module.ENABLED .Control center.Status::after {
+            content: 'Enabled';
+        }
+
+    .Module .Control button {
+        width: calc(100% - 10px);
+        margin: 0 5px;
+        padding: 5px;
+        background-color: #028deb;
+        color: white;
+        font-weight: bold;
+        border: none;
+        outline: none;
+        cursor: pointer;
+    }
+
+
+#content.HALT .Module .Control button {
+    pointer-events: none;
+    cursor: default;
+    filter: grayscale(1);
+}
+
+        .Module .Control button:not([disabled]):hover {
+            filter: brightness(0.9);
+        }
+
+        .Module .Control button[disabled] {
+            color: gray;
+            background-color: lightgray !important;
+            cursor: default;
+        }
+
+    .Module.DISABLED .Control button.ENABLE::after {
+        content: 'ENABLE';
+    }
+
+    .Module.ENABLED .Control button.ENABLE::after {
+        content: 'DISABLE';
+    }
+
+    .Module.NOTREADY .Control button::after {
+        content: 'START';
+    }
+
+    .Module .Control button.REMOVE {
+        background-color: #e04a4a;
+    }
+
+    .Module:not(.ENABLED) .Control a {
+        pointer-events: none;
+        cursor: default;
+        filter: grayscale(1);
+    }
+
+    /* MISC */
+    .Module .Misc {
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: auto auto auto;
+    }
+
+        .Module .Misc .Desc {
+            padding: 5px;
+            overflow-y: scroll;
+        }
+
+        /* MODULE Chapters */
+
+        .Module .Misc .Chapter {
+            padding: 5px;
+            display: grid;
+            grid-template-columns: auto;
+            grid-template-rows: auto;
+        }
+
+            .Module .Misc .Chapter p {
+                margin-top: 0;
+                margin-bottom: 5px;
+            }
+
+                .Module .Misc .Chapter p.header {
+                    font-size: 20px;
+                    border-bottom: 1px solid gray;
+                    font-weight: bold;
+                    position: relative;
+                }
+
+        .Module .Misc .Stat {
+            margin-top: 2px;
+            display: grid;
+            grid-template-columns: auto auto;
+            grid-template-rows: auto;
+        }
+
+            .Module .Misc .Stat span {
+                text-align: right;
+            }
+
+            .Module .Misc .Stat > div {
+                position: relative;
+            }
+
+            .Module .Misc .Stat .STAT_ARRAY {
+                position: absolute;
+                right: 0;
+            }
+
+        .Module .Misc .Buttons .ButtonWrapper {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-rows: auto;
+            grid-row-gap: 5px;
+            grid-column-gap: 5px;
+        }
+
+        .Module .Misc .Buttons .ButtonWrapper button {
+            cursor: pointer;
+        }
+
+            .Module .Misc .Buttons .ButtonWrapper button {
+                width: 100%;
+                padding: 5px;
+                background-color: #028deb;
+                color: white;
+                font-weight: bold;
+                border: none;
+                outline: none;
+                cursor: pointer;
+            }
+                .Module .Misc .Buttons .ButtonWrapper button:hover {
+                    filter: brightness(0.9);
+                }
+
+/* UNKNOWN MODULES */
+#UNKNOWN_MODULES {
+    display: grid;
+    grid-template-columns: auto;
+}
+
+    #UNKNOWN_MODULES > span {
+        margin: 0 auto;
+        padding: 5px 30px;
+        position: relative;
+    }
+
+    #UNKNOWN_MODULES > span img{
+        height: 1em;
+        padding: 5px;
+        position: absolute;
+        top: 1px;
+        right: 0;
+    }
+
+        #UNKNOWN_MODULES > span[onclick] img {
+            cursor: pointer;
+            display: none;
+        }
+
+        #UNKNOWN_MODULES > span[onclick]:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+            #UNKNOWN_MODULES > span[onclick]:hover img {
+                display: block;
+            }
+
+        #UNKNOWN_MODULES > span[onclick] img:hover {
+            background-color: rgba(255, 0, 0, 0.3);
+        }

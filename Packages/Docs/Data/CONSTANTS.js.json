@@ -2,33 +2,17 @@
   "CONSTANTS": {
     "description": "Constats Collection used in everywhere from Website to 3rd Party Libraries.",
     "variables": {
-      "DEFAULT_CONFIG_FILE_PATH": {
-        "type": "String",
-        "description": "Value: \"config.json\""
+      "MODULE_BOOT_ORDER": {
+        "type": "Array",
+        "description": "Modules that have to be loaded in a particular Order."
       },
-      "PACKAGES_INSTALL_ROOT": {
-        "type": "String",
-        "description": "Value: \"Packages/\""
-      },
-      "STATUS_SUCCESS": {
-        "type": "String",
-        "description": "Value: \"SUCCESS\""
-      },
-      "STATUS_FAILED": {
-        "type": "String",
-        "description": "Value: \"FAILED\""
+      "FILESTRUCTURE": {
+        "type": "Object",
+        "description": "Object Containing the Main Folderstrucure of the Bot. Read the Guide for more Info."
       },
       "Package_Status": {
         "type": "Array",
         "description": "Values: \"Operational\", \"Outages\", \"Fatal\""
-      },
-      "TTV_API_ROOT_URL": {
-        "type": "String",
-        "description": "Value: \"https://api.twitch.tv/helix\""
-      },
-      "TTV_API_ACCESS_TOKEN_TYPES": {
-        "type": "Object",
-        "description": "Value: \"{ ANY_TOKEN: 0, APP_ACCESS: 1, USER_ACCESS: 2 }\""
       },
       "UserLevel": {
         "type": "Object",

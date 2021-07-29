@@ -9,9 +9,8 @@ const FETCH = require('node-fetch');
 //  Global Emotes: https://api.betterttv.net/3/cached/emotes/global
 //  Channel Emotes: https://api.betterttv.net/3/cached/users/twitch/:channel_id
 //  Single Emote: https://api.betterttv.net/3/emotes/:emote_id
-//  Emote Image: https://cdn.betterttv.net/emote/:emote_id/1x
 
-const ROOT = "https://api.betterttv.net/3/";
+//  Emote Image: https://cdn.betterttv.net/emote/:emote_id/1x
 
 async function GetGlobalEmotes() {
     return FETCH(ROOT + "cached/emotes/global")
@@ -35,6 +34,23 @@ async function GetTwitchUser(userID) {
 
             return Promise.resolve(json);
         })
+        .catch(err => Promise.reject(err));
+}
+async function GetEmote(emote_id) {
+    return FETCH(ROOT + "emotes/" + emote_id)
+        .then(data => data.json())
+        .then(json => {
+            if (json.message) {
+                return Promise.reject(new Error(json.message));
+            }
+
+            return Promise.resolve(json);
+        })
+        .catch(err => Promise.reject(err));
+}
+async function GetEmoteImage(emote_id, size = 1) {
+    return FETCH('https://cdn.betterttv.net/emote/' + emote_id + '/' + (size < 1 ? 1 : (size > 3 ? 3 : size)) + 'x')
+        .then(data => data.text())
         .catch(err => Promise.reject(err));
 }
 
@@ -68,5 +84,7 @@ async function GetChannelEmotes(channelID, includeGlobalEmotes = false) {
 
 module.exports.GetGlobalEmotes = GetGlobalEmotes;
 module.exports.GetTwitchUser = GetTwitchUser;
+module.exports.GetEmote = GetEmote;
+module.exports.GetEmoteImage = GetEmoteImage;
 
 module.exports.GetChannelEmotes = GetChannelEmotes;

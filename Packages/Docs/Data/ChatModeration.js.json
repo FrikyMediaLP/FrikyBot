@@ -2,15 +2,16 @@
   "ChatModeration": {
     "description": "ChatModeration Module managing Filters and Timers.",
     "modules": {
+      "express": "npm",
+      "nedb": "npm",
+      "fs": "NodeJS Module",
+      "path": "NodeJS Module",
       "CONSTANTS": "FrikyBot Module",
+      "CONFIGHANDLER": "FrikyBot Module",
       "TwitchIRC": "FrikyBot Module",
-      "CommandHandler": "FrikyBot Module",
       "BTTV": "FrikyBot Module",
       "FFZ": "FrikyBot Module",
-      "path": "NodeJS Module",
-      "fs": "NodeJS Module",
-      "express": "npm",
-      "nedb": "npm"
+      "CommandHandler": "FrikyBot Module (Used for Package Interconnect)"
     },
     "variables": {
       "CONSTANTS": {
@@ -51,9 +52,13 @@
         "npm": "https://www.npmjs.com/package/nedb",
         "description": "Database Module for ... maintaining Databases."
       },
-      "SETTINGS_REQUIERED": {
+      "CONFIGHANDLER": {
         "type": "Object",
-        "description": "Requiered Config Settings + Default Values."
+        "description": "CONFIGHANDLER Module."
+      },
+      "PACKAGE_DETAILS": {
+        "type": "Object",
+        "description": "Object containing the Package Detail Informations."
       },
       "PUNISHMENT": {
         "type": "Object",
@@ -73,28 +78,20 @@
         "constructor": {
           "params": [
             {
-              "name": "expressapp",
-              "type": "Express.js:Express"
+              "name": "webappinteractor",
+              "type": "WebApp.js::WebAppInteractor"
             },
             {
               "name": "twitchirc",
-              "opt": true,
               "type": "TwitchIRC.js:TwitchIRC"
             },
             {
               "name": "twitchapi",
-              "opt": true,
               "type": "TwitchAPI.js:TwitchAPI"
             },
             {
               "name": "datacollection",
-              "opt": true,
               "type": "DataCollection.js:DataCollection"
-            },
-            {
-              "name": "startparameters",
-              "opt": true,
-              "type": "Object"
             },
             {
               "name": "logger",
@@ -105,46 +102,34 @@
           "description": "Calls the Parent PackageBase class constructor."
         },
         "variables": {
-          "UserArchive": {
-            "type": "Datastore",
-            "description": "NEDB Database collecting all User Punishments."
-          },
-          "DebugDataBase": {
-            "type": "Datastore",
-            "description": "NEDB Database collecting all RAW Alerts."
+          "RESTRICTED_HTML_HOSTING": {
+            "type": "String",
+            "description": "Min. Userlevel to Access Restricted Features."
           },
           "Permitted": {
             "type": "Object",
             "description": "All Users that are currently Permitted to Post ANYTHING!"
           },
           "Filters": {
-            "type": "Object",
+            "type": "Array",
             "description": "All currently installed Chat Moderation Filters."
-          },
-          "Timers": {
-            "type": "Object",
-            "description": "All currently installed Timers."
           }
         },
         "functions": {
           "Init": {
-            "params": null,
+            "params": [
+              {
+                "name": "WebInter",
+                "type": "WebApp::WebInteractor"
+              }
+            ],
             "is-async": true,
-            "description": "Sets up all Databases and Twitch Chat Messagehandlers. Also requests a Package Interconnect to set some Chat Commands."
+            "description": "Sets up all Filters and Twitch Chat Messagehandlers. Also requests a Package Interconnect to set some Chat Commands."
           },
           "reload": {
             "params": null,
             "is-async": true,
             "description": "Reloads the Filters."
-          },
-          "CheckSettings": {
-            "params": [
-              {
-                "name": "settings",
-                "type": "Object"
-              }
-            ],
-            "description": "Checks the Settings for any missing Keys."
           },
           "MessageEventHandler": {
             "params": [
@@ -165,7 +150,36 @@
                 "type": "Boolean"
               }
             ],
+            "is-async": true,
             "description": "Checks the Message sent in the Chat for any violations by the Filters and punishes that."
+          },
+          "executePunishment": {
+            "params": [
+              {
+                "name": "msgObj",
+                "type": "TwitchIRC.js::Message"
+              },
+              {
+                "name": "issue",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Timeouts/Bans/etc. a User based on the given Issue. This also rends a Chat response when given."
+          },
+          "sendResponse": {
+            "params": [
+              {
+                "name": "codedString",
+                "type": "String"
+              },
+              {
+                "name": "msgObj",
+                "type": "TwitchIRC.js::Message"
+              }
+            ],
+            "is-async": true,
+            "description": "Send a Chat Response and replace the coded String with Variable Contents."
           },
           "permitUser": {
             "params": [
@@ -175,90 +189,6 @@
               }
             ],
             "description": "Permits a User to write ANYTHING for a minute!"
-          },
-          "insertUser": {
-            "params": [
-              {
-                "name": "channel",
-                "type": "String"
-              },
-              {
-                "name": "userstate",
-                "type": "Object"
-              },
-              {
-                "name": "message",
-                "type": "String"
-              },
-              {
-                "name": "filterObj",
-                "type": "Object"
-              },
-              {
-                "name": "filterOutput",
-                "type": "String"
-              },
-              {
-                "name": "streamData",
-                "type": "Object"
-              }
-            ],
-            "description": "Inserts Userdata into the Users Database."
-          },
-          "insertDebug": {
-            "params": [
-              {
-                "name": "channel",
-                "type": "String"
-              },
-              {
-                "name": "userstate",
-                "type": "Object"
-              },
-              {
-                "name": "message",
-                "type": "String"
-              },
-              {
-                "name": "filterObj",
-                "type": "Object"
-              },
-              {
-                "name": "filterOutput",
-                "type": "String"
-              },
-              {
-                "name": "streamData",
-                "type": "Object"
-              }
-            ],
-            "description": "Inserts RAW Data into the Debug Database."
-          },
-          "addTimer": {
-            "params": [
-              {
-                "name": "name",
-                "type": "String"
-              },
-              {
-                "name": "exec",
-                "type": "Function"
-              },
-              {
-                "name": "interval",
-                "type": "Number"
-              }
-            ],
-            "description": "Adds a Timer."
-          },
-          "removeTimer": {
-            "params": [
-              {
-                "name": "name",
-                "type": "String"
-              }
-            ],
-            "description": "Removes a Timer."
           },
           "Chat_Command_ChatModeration": {
             "params": [
@@ -296,31 +226,61 @@
           }
         },
         "API": {
-          "ROOT": "frikybot.de/ChatModeration/api/",
           "Endpoints": [
             {
-              "name": "Overview",
-              "endpoint": "/Overview",
-              "description": "Returns the current Filter Setup.",
+              "name": "Get Filter Settings",
+              "endpoint": "/api/ChatModeration/filters/settings",
+              "description": "Returns the current Filter Settings.",
+              "restriction": "full",
               "request": null,
               "response": {
-                "enabled": {
-                  "type": "Boolean",
-                  "description": "Current Chat Moderation State."
-                },
-                "Filter": {
+                "[Filter Name]": {
                   "type": "Object",
-                  "description": "Collection of all currently installed Chat Moderation Filters."
+                  "description": "Containing the Filter_s Settings."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error Text, if something broke or no Data was found."
+                }
+              }
+            },
+            {
+              "name": "Update Filter Settings",
+              "endpoint": "/api/ChatModeration/filters/settings",
+              "description": "Returns the current Filter Settings.",
+              "restriction": "full",
+              "request": {
+                "method": "PUT",
+                "body": {
+                  "name": {
+                    "type": "String",
+                    "description": "Filter Name to update."
+                  },
+                  "[Filter Settings]": {
+                    "type": "Any",
+                    "description": "Every Filter can have its own Body Parameters. Check the Guide for more Info."
+                  }
+                }
+              },
+              "response": {
+                "updated_settings": {
+                  "type": "Object",
+                  "description": "Containing the new Filter_s Settings."
+                },
+                "err": {
+                  "type": "String",
+                  "description": "Error Text, if something broke or no Data was found."
                 }
               }
             }
           ]
         },
         "FileHosting": {
-          "ROOT": "frikybot.de/ChatModeration/",
+          "ROOT": "ChatModeration/",
           "Routes": {
-            "TBD": {
-              "description": "TBD"
+            "/": {
+              "type": "normal",
+              "description": "Moderator Restricted Webinterface to Change Filter Settings."
             }
           }
         }
@@ -346,10 +306,6 @@
               "type": "TwitchAPI.js:TwitchAPI"
             },
             {
-              "name": "settings",
-              "type": "Object"
-            },
-            {
               "name": "Logger",
               "type": "Any Logger Object"
             }
@@ -365,8 +321,8 @@
             "type": "ChatModeration",
             "description": "ChatModeration Manager Class."
           },
-          "Settings": {
-            "type": "Object",
+          "Config": {
+            "type": "ConfigHandler.js::Config",
             "description": "Settings of the current Filter."
           },
           "TwitchIRC": {
@@ -380,6 +336,10 @@
           "Logger": {
             "type": "Any Logger Object",
             "description": "Console Logger."
+          },
+          "READY_REQUIREMENTS": {
+            "type": "Array",
+            "description": "Collection of Ready Requierement Function."
           }
         },
         "functions": {
@@ -388,94 +348,24 @@
               {
                 "name": "msgObj",
                 "type": "Object"
+              },
+              {
+                "name": "streamData",
+                "type": "Object"
               }
             ],
             "is-async": true,
             "description": "Checks the given Message for any violations by the Filter."
           },
+          "Init": {
+            "params": null,
+            "is-async": true,
+            "description": "Inits the Filter."
+          },
           "reload": {
             "params": null,
             "is-async": true,
             "description": "Reloads the Filter."
-          },
-          "Issue": {
-            "params": [
-              {
-                "name": "msgObj",
-                "type": "Object"
-              },
-              {
-                "name": "punishment",
-                "type": "Punishment"
-              },
-              {
-                "name": "reason",
-                "type": "String"
-              },
-              {
-                "name": "specificIssue",
-                "type": "String"
-              },
-              {
-                "name": "punishment_length",
-                "type": "String"
-              }
-            ],
-            "description": "Returns the information given in a JSON format."
-          },
-          "sendResponse": {
-            "params": [
-              {
-                "name": "codedString",
-                "type": "String"
-              },
-              {
-                "name": "msgObj",
-                "type": "Object"
-              }
-            ],
-            "is-async": true,
-            "description": "Sends the given CodedString replaced with the msgObj Data in the Twitch Chat."
-          },
-          "getUserRecord": {
-            "params": [
-              {
-                "name": "user_id",
-                "type": "Number"
-              },
-              {
-                "name": "stream_id",
-                "type": "Number"
-              }
-            ],
-            "is-async": true,
-            "description": "Returns the past Punishments of the User in the given Stream by the the current Filter."
-          },
-          "executePunishment": {
-            "params": [
-              {
-                "name": "msgObj",
-                "type": "Object"
-              },
-              {
-                "name": "chat_response",
-                "type": "String"
-              },
-              {
-                "name": "punishment",
-                "type": "Punishment"
-              },
-              {
-                "name": "punishment_length",
-                "type": "Any"
-              },
-              {
-                "name": "reason",
-                "type": "String"
-              }
-            ],
-            "is-async": true,
-            "description": "Checks the given Punishment and executes the Punishment."
           },
           "GetName": {
             "params": null,
@@ -483,11 +373,22 @@
           },
           "GetSettings": {
             "params": null,
+            "is-async": true,
             "description": "Returns the Filter Settings."
           },
-          "GetPublicSettings": {
-            "params": null,
-            "description": "Returns the limited \"Public Friendly\" / intern Filter Settings."
+          "ChangeSetting": {
+            "params": [
+              {
+                "name": "req",
+                "type": "express.js::Request"
+              },
+              {
+                "name": "res",
+                "type": "express.js::Response"
+              }
+            ],
+            "is-async": true,
+            "description": "Change Filter Config Settings."
           },
           "enable": {
             "params": null,
@@ -497,96 +398,65 @@
             "params": null,
             "description": "Disables the Filter."
           },
-          "isEnabled": {
-            "params": null,
-            "description": "Returns the current Enable State."
-          }
-        }
-      },
-      "Timer": {
-        "description": "Timer Class sending automatic Messages in the Chat.",
-        "constructor": {
-          "params": [
-            {
-              "name": "name",
-              "type": "String"
-            },
-            {
-              "name": "ChatModeration",
-              "type": "ChatModeration"
-            },
-            {
-              "name": "exec",
-              "type": "Function"
-            },
-            {
-              "name": "interval",
-              "type": "Number"
-            },
-            {
-              "name": "settings",
-              "type": "Object"
-            }
-          ],
-          "description": "Sets up all given Parameters."
-        },
-        "variables": {
-          "name": {
-            "type": "String",
-            "description": "Timers name"
-          },
-          "ChatModeration": {
-            "type": "ChatModeration",
-            "description": "ChatModeration Manager Class."
-          },
-          "Settings": {
-            "type": "Object",
-            "description": "Settings of the current Filter."
-          },
-          "error": {
-            "type": "String",
-            "description": "Error Text, if something went wrong."
-          },
-          "exec": {
-            "type": "Function",
-            "description": "Executed Function on every Timer Interval."
-          }
-        },
-        "functions": {
-          "start": {
-            "params": null,
-            "description": "Starts the Timer."
-          },
-          "stop": {
-            "params": null,
-            "description": "Stops the Timer."
-          },
-          "GetName": {
-            "params": null,
-            "description": "Returns the Timers name."
-          },
-          "test": {
-            "params": null,
-            "description": "Tests the TImer Configuration without Printing."
-          },
-          "enable": {
-            "params": null,
-            "description": "Enables the Timer. Does not start the Timer tho."
-          },
-          "disable": {
-            "params": null,
-            "description": "Disables and Stops the Timer."
+          "setEnabled": {
+            "params": [
+              {
+                "name": "state",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Set the Enable state of the Filter."
           },
           "isEnabled": {
             "params": null,
             "description": "Returns the current Enable State."
+          },
+          "CheckOneDBSearch": {
+            "params": [
+              {
+                "name": "db",
+                "type": "nedb::Datastore"
+              },
+              {
+                "name": "querry",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Access a NEDB Database asynchronosly."
+          },
+          "addReadyRequirement": {
+            "params": [
+              {
+                "name": "func",
+                "type": "Function"
+              }
+            ],
+            "description": "Add a Ready Requierement Function."
+          },
+          "removeReadyRequirement": {
+            "params": [
+              {
+                "name": "index",
+                "type": "Number"
+              }
+            ],
+            "description": "Remove a Ready Requierement Function at the given Index."
+          },
+          "isReady": {
+            "params": null,
+            "description": "Checks all Ready Requierements and returns true when none return false."
           }
         }
       },
       "WordFilter": {
         "description": "Word Filter checking for specific Words on a Blacklist.",
-        "modules": {
-          "Filter": "ChatModeration::Filter"
+        "parent": {
+          "name": "Filter",
+          "from": {
+            "name": "ChatModeration",
+            "type": "FrikyBot Module"
+          }
         },
         "constructor": {
           "params": [
@@ -609,19 +479,41 @@
           ],
           "description": "Just calles the Parent constructor and loads the Blacklist Database."
         },
+        "variables": {
+          "Blacklist": {
+            "type": "nedb::Datastore",
+            "description": "Blacklist containing the Word Data."
+          }
+        },
         "functions": {
-          "CheckSetupAndEnviroument": {
+          "Init": {
             "params": null,
-            "description": "Just Checks the Settings."
+            "is-async": true,
+            "description": "Create File Structure."
           },
           "reload": {
             "params": null,
             "is-async": true,
             "description": "Reloads the Blacklist Database."
           },
-          "GetPublicSettings": {
+          "GetSettings": {
             "params": null,
-            "description": "Returns the Public Friendly Settings."
+            "is-async": true,
+            "description": "Returns the Filter Config and Ready state."
+          },
+          "ChangeSetting": {
+            "params": [
+              {
+                "name": "req",
+                "type": "express.js::Request"
+              },
+              {
+                "name": "res",
+                "type": "express.js::Response"
+              }
+            ],
+            "is-async": true,
+            "description": "Change Filter Config Settings."
           },
           "CheckMessage": {
             "params": [
@@ -633,24 +525,6 @@
             "is-async": true,
             "description": "Checks the given Message for any violations by the Filter."
           },
-          "loadDefaultBlacklist": {
-            "params": null,
-            "description": "Loads the Default Data for the Blacklist."
-          },
-          "CheckOneDBSearch": {
-            "params": [
-              {
-                "name": "db",
-                "type": "NEDB Datastore"
-              },
-              {
-                "name": "querry",
-                "type": "Object"
-              }
-            ],
-            "is-async": true,
-            "description": "Checks the given Databse with a querry."
-          },
           "addWord": {
             "params": [
               {
@@ -658,11 +532,47 @@
                 "type": "String"
               },
               {
+                "name": "casesensitive",
+                "default": true,
+                "type": "Boolean"
+              },
+              {
+                "name": "in_word_use",
+                "default": true,
+                "type": "Boolean"
+              },
+              {
+                "name": "block_patterns",
+                "default": true,
+                "type": "Boolean"
+              },
+              {
+                "name": "ignore_emotes",
+                "default": true,
+                "type": "Boolean"
+              },
+              {
+                "name": "emote_only",
+                "default": false,
+                "type": "Boolean"
+              },
+              {
+                "name": "include_BTTV",
+                "default": false,
+                "type": "Boolean"
+              },
+              {
+                "name": "include_FFZ",
+                "default": false,
+                "type": "Boolean"
+              },
+              {
                 "name": "username",
                 "type": "String"
               }
             ],
-            "description": "Adds a Word from the Blacklist."
+            "is-async": true,
+            "description": "Adds a Word with the given Restrictions to the Blacklist."
           },
           "removeWord": {
             "params": [
@@ -671,7 +581,13 @@
                 "type": "String"
               }
             ],
+            "is-async": true,
             "description": "Removes a Word from the Blacklist."
+          },
+          "clearBlacklist": {
+            "params": null,
+            "is-async": true,
+            "description": "Removes all Words from the Blacklist."
           }
         }
       },
@@ -699,6 +615,22 @@
           "description": "Calles the Parent Constructor and collects the BTTV and FFZ Emotes of the current Channel."
         },
         "variables": {
+          "Caps_Config": {
+            "type": "ConfigHandler.js::Config",
+            "description": "Settings of Caps Filtering."
+          },
+          "Emotes_Config": {
+            "type": "ConfigHandler.js::Config",
+            "description": "Settings of Emote Filtering."
+          },
+          "Patterns_Config": {
+            "type": "ConfigHandler.js::Config",
+            "description": "Settings of Pattern Filtering."
+          },
+          "Messages_Config": {
+            "type": "ConfigHandler.js::Config",
+            "description": "Settings of Message Filtering."
+          },
           "BTTV_Emotes": {
             "type": "Array",
             "description": "Collection of all BTTV Emotes."
@@ -709,15 +641,45 @@
           }
         },
         "functions": {
-          "CheckSetupAndEnviroument": {
+          "reload": {
             "params": null,
-            "description": "Just Checks the Settings."
+            "is-async": true,
+            "description": "Reloads the BTTV/FFZ Emote Lists."
           },
-          "GetPublicSettings": {
+          "GetSettings": {
             "params": null,
-            "description": "Returns the Public Friendly Settings."
+            "is-async": true,
+            "description": "Returns the Filter Config and Ready state."
+          },
+          "ChangeSetting": {
+            "params": [
+              {
+                "name": "req",
+                "type": "express.js::Request"
+              },
+              {
+                "name": "res",
+                "type": "express.js::Response"
+              }
+            ],
+            "is-async": true,
+            "description": "Change Filter Config Settings."
           },
           "CheckMessage": {
+            "params": [
+              {
+                "name": "msgObj",
+                "type": "Object"
+              },
+              {
+                "name": "streamData",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Checks the given Message for any violations by the Filter."
+          },
+          "Check_Symbols_Caps": {
             "params": [
               {
                 "name": "msgObj",
@@ -725,7 +687,37 @@
               }
             ],
             "is-async": true,
-            "description": "Checks the given Message for any violations by the Filter."
+            "description": "Checks the given Message for any Caps Violations."
+          },
+          "Check_Symbols_Patterns": {
+            "params": [
+              {
+                "name": "msgObj",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Checks the given Message for any Pattern Violations."
+          },
+          "Check_Symbols_Emotes": {
+            "params": [
+              {
+                "name": "msgObj",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Checks the given Message for any Emote Violations."
+          },
+          "Check_Message_Length": {
+            "params": [
+              {
+                "name": "msgObj",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Checks the given Message for Length Violations."
           }
         }
       },
@@ -763,13 +755,34 @@
           }
         },
         "functions": {
-          "CheckSetupAndEnviroument": {
+          "Init": {
             "params": null,
-            "description": "Just Checks the Settings."
+            "is-async": true,
+            "description": "Create File Structure."
           },
-          "GetPublicSettings": {
+          "reload": {
             "params": null,
-            "description": "Returns the Public Friendly Settings."
+            "is-async": true,
+            "description": "Reloads the Whitelist and Blacklist Databases."
+          },
+          "GetSettings": {
+            "params": null,
+            "is-async": true,
+            "description": "Returns the Filter Config and Ready state."
+          },
+          "ChangeSetting": {
+            "params": [
+              {
+                "name": "req",
+                "type": "express.js::Request"
+              },
+              {
+                "name": "res",
+                "type": "express.js::Response"
+              }
+            ],
+            "is-async": true,
+            "description": "Change Filter Config Settings."
           },
           "CheckMessage": {
             "params": [
@@ -780,20 +793,6 @@
             ],
             "is-async": true,
             "description": "Checks the given Message for any violations by the Filter."
-          },
-          "CheckOneDBSearch": {
-            "params": [
-              {
-                "name": "db",
-                "type": "NEDB Datastore"
-              },
-              {
-                "name": "querry",
-                "type": "Object"
-              }
-            ],
-            "is-async": true,
-            "description": "Checks the given Databse with a querry."
           },
           "findLinks": {
             "params": [
@@ -822,59 +821,71 @@
             ],
             "description": "Returns the SubDomain Name of the given URL."
           },
-          "blockDomain": {
-            "params": [
-              {
-                "name": "domain",
-                "type": "String"
-              }
-            ],
-            "description": "Sets the Domain on the Blacklist and removes it from the Whitelist."
-          },
-          "permitDomain": {
-            "params": [
-              {
-                "name": "domain",
-                "type": "String"
-              }
-            ],
-            "description": "Removes the Domain from the Blacklist and sets it on the Whitelist."
-          },
-          "blockSubDomain": {
-            "params": [
-              {
-                "name": "subdomain",
-                "type": "String"
-              }
-            ],
-            "description": "Sets the SubDomain on the Blacklist and removes it on the Whitelist."
-          },
-          "permitSubDomain": {
-            "params": [
-              {
-                "name": "subdomain",
-                "type": "String"
-              }
-            ],
-            "description": "Removes the SubDomain from the Blacklist and sets it on the Whitelist."
-          },
           "blockURL": {
             "params": [
               {
-                "name": "URL",
+                "name": "url_data",
+                "type": "Object"
+              },
+              {
+                "name": "by",
                 "type": "String"
+              },
+              {
+                "name": "at",
+                "type": "Number"
               }
             ],
-            "description": "Sets the URL on the Blacklist and removes it on the Whitelist."
+            "is-async": true,
+            "description": "Blocks the given URL Data. This can be just a specific URL, only a subdomain or a whole Domain."
           },
-          "permitURL": {
+          "unblockURL": {
             "params": [
               {
-                "name": "URL",
-                "type": "String"
+                "name": "url_data",
+                "type": "Object"
               }
             ],
-            "description": "Removes the URL from the Blacklist and sets it on the Whitelist."
+            "is-async": true,
+            "description": "UnBlocks the given URL Data. This can be just a specific URL, only a subdomain or a whole Domain."
+          },
+          "clearBlacklist": {
+            "params": null,
+            "is-async": true,
+            "description": "Removes all entries in the Blacklist."
+          },
+          "allowURL": {
+            "params": [
+              {
+                "name": "url_data",
+                "type": "Object"
+              },
+              {
+                "name": "by",
+                "type": "String"
+              },
+              {
+                "name": "at",
+                "type": "Number"
+              }
+            ],
+            "is-async": true,
+            "description": "Allows the given URL Data. This can be just a specific URL, only a subdomain or a whole Domain."
+          },
+          "unallowURL": {
+            "params": [
+              {
+                "name": "url_data",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "UnAllows the given URL Data. This can be just a specific URL, only a subdomain or a whole Domain."
+          },
+          "clearWhitelist": {
+            "params": null,
+            "is-async": true,
+            "description": "Removes all entries in the Whitelist."
           }
         }
       }

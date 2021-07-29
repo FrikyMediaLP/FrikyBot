@@ -1,43 +1,82 @@
 #SECTION_PACKAGES {
+    margin-bottom: 20px;
     display: none;
+    position: relative;
+}
+
+#header {
+    font-size: 60px;
+}
+
+/* UI */
+#UI {
+    position: absolute;
+    top: 90px;
+    right: 0;
+}
+
+#UI button {
+    cursor: pointer;
+}
+
+#UI button, #UI select, #UI input {
+    outline: none;
+}
+
+    #UI.DISABLED button, #UI.DISABLED select, #UI.DISABLED input {
+        pointer-events: none;
+        cursor: default;
+        filter: grayscale(1);
+    }
+
+/* PACKAGES */
+#PACKAGES {
+    padding-top: 50px;
 }
 
 .Package {
+    height: auto;
     margin-top: 10px;
     display: grid;
-    grid-template-columns: 120px auto;
+    grid-template-columns: 90px auto;
     grid-template-rows: auto auto;
     background-color: rgba(255,255,255,0.2);
     border: 1px black solid;
     border-radius: 5px;
+    font-family: 'Roboto', sans-serif;
 }
 
     .Package .IMG {
         width: 100%;
+        padding-top: 100% !important;
         background-color: orange;
         border-bottom: 1px solid dimgray;
         border-right: 1px solid dimgray;
+        position: relative;
     }
+
         .Package .IMG img {
-            padding: 0px 10px;
-            width: 100px;
-            height: 100px;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
-        .Package .IMG img[src*="svg"] {
-            filter: invert(100%);
-        }
+
+            .Package .IMG img[src*="svg"] {
+                padding: 5px 10px;
+                width: calc(100% - 20px);
+                height: calc(100% - 10px);
+                filter: invert(100%);
+            }
 
     .Package .Name {
-        height: calc(100% - 1px);
         border-bottom: 1px solid dimgray;
+        padding-left: 10px;
+        padding-top: 7px;
+        font-size: 4em;
     }
-        .Package .Name span {
-            display: block;
-            margin-top: 20px;
-            margin-left: 10px;
-            font-size: 50px;
-        }
 
+    /* CONTROL */
     .Package .Control {
         width: 100%;
         padding-bottom: 5px;
@@ -54,31 +93,39 @@
             border-bottom-left-radius: 5px;
             border-bottom-right-radius: 5px;
         }
-            .Package .Control center.NOTREADY {
-                color: gray;
-                background-color: rgba(0, 0, 0, 0.2);
-            }
-                .Package .Control center.NOTREADY::after {
-                    content: 'not ready';
-                }
 
-            .Package .Control center.DISABLED {
-                color: red;
-                background-color: rgba(255, 0, 0, 0.2);
-            }
+    .Package.NOTREADY .Control center.Status {
+        color: gray;
+        background-color: rgba(0, 0, 0, 0.2);
+    }
 
-                .Package .Control center.DISABLED::after {
-                    content: 'Disabled';
-                }
+        .Package.NOTREADY .Control center.Status::after {
+            content: 'not ready';
+        }
 
-            .Package .Control center.ENABLED {
-                color: green;
-                background-color: rgba(0, 155, 0, 0.5)
-            }
+    .Package.DISABLED .Control center.Status {
+        color: red;
+        background-color: rgba(255, 0, 0, 0.2);
+    }
+.darkmode .Package.DISABLED .Control center.Status {
+    color: white;
+}
 
-                .Package .Control center.ENABLED::after {
-                    content: 'Enabled';
-                }
+        .Package.DISABLED .Control center.Status::after {
+            content: 'Disabled';
+        }
+
+    .Package.ENABLED .Control center.Status {
+        color: green;
+        background-color: rgba(0, 155, 0, 0.5)
+    }
+    .darkmode .Package.ENABLED .Control center.Status {
+        color: white;
+    }
+
+        .Package.ENABLED .Control center.Status::after {
+            content: 'Enabled';
+        }
 
         .Package .Control button {
             width: calc(100% - 10px);
@@ -102,31 +149,41 @@
                 cursor: default;
             }
 
-            .Package .Control button.ENABLE::after {
-                content: 'ENABLE';
-            }
+    .Package.DISABLED .Control button.ENABLE::after {
+        content: 'ENABLE';
+    }
 
-            .Package .Control button.DISABLE::after {
-                content: 'DISABLE';
-            }
+    .Package.ENABLED .Control button.ENABLE::after {
+        content: 'DISABLE';
+    }
 
-            .Package .Control button.NOTREADY::after {
-                content: 'START';
-            }
+    .Package.NOTREADY .Control button::after {
+        content: 'START';
+    }
 
             .Package .Control button.REMOVE {
                 background-color: #e04a4a;
             }
 
+    .Package:not(.ENABLED) .Control a {
+        pointer-events: none;
+        cursor: default;
+        filter: grayscale(1);
+    }
+
+    /* MISC */
     .Package .Misc {
         display: grid;
         grid-template-columns: auto;
-        grid-template-rows: auto auto;
+        grid-template-rows: auto auto auto;
     }
+
         .Package .Misc .Desc {
             padding: 5px;
-            border-bottom: 1px solid dimgray;
+            overflow-y: scroll;
         }
+
+        /* PACKAGE SETTINGS */
 
         .Package .Misc .Settings {
             padding: 5px;
@@ -138,40 +195,118 @@
             .Package .Misc .Settings p {
                 margin-top: 0;
                 margin-bottom: 5px;
-                font-weight: bold;
             }
 
-            .Package .Misc .Settings .Setting input, .Package .Misc .Settings .Setting select {
-                outline: none;
-            }
+                .Package .Misc .Settings p.header {
+                    font-size: 20px;
+                    border-bottom: 1px solid gray;
+                    font-weight: bold;
+                    position: relative;
+                }
 
-            .Package .Misc .Settings .Setting.SWITCH {
-                display: grid;
-                grid-template-columns: auto 52px;
+                    .Package .Misc .Settings p.header button {
+                        font-size: 17px;
+                        border: none;
+                        padding: 1px 10px;
+                        outline: none;
+                        cursor: pointer;
+                        font-family: 'Roboto', sans-serif;
+                    }
+
+                        .Package .Misc .Settings p.header button[disabled] {
+                            filter: grayscale(1);
+                            cursor: default;
+                        }
+
+                        .Package .Misc .Settings p.header button:not([disabled]):hover {
+                            filter: brightness(0.9);
+                        }
+
+                    .Package .Misc .Settings p.header .show {
+                        background-color: #dedede;
+                        position: absolute;
+                        top: 0;
+                        right: 75px;
+                    }
+
+                    .Package .Misc .Settings p.header .save {
+                        background-color: #11d455;
+                        position: absolute;
+                        top: 0;
+                        right: 5px;
+                    }
+
+            .Package .Misc .Settings .Setting {
+                margin-top: 2px;
+                display: none;
+                grid-template-columns: auto 0px;
                 grid-template-rows: auto;
             }
 
-            .Package .Misc .Settings .Setting.SELECT {
+            .Package .Misc .Settings.show .Setting {
                 display: grid;
-                grid-template-columns: auto 200px;
-                grid-template-rows: auto;
             }
 
-            .Package .Misc .Settings .Setting.INPUT {
-                display: grid;
-                grid-template-columns: auto 200px;
-                grid-template-rows: auto;
-            }
+                .Package .Misc .Settings .Setting input, .Package .Misc .Settings .Setting select {
+                    outline: none !important;
+                    border: none;
+                    border-bottom: 1px solid black;
+                    text-align: right;
+                }
+
+                .Package .Misc .Settings .Setting.SWITCH {
+                    grid-template-columns: auto 52px;
+                }
+
+                .Package .Misc .Settings .Setting.SELECT {
+                    grid-template-columns: auto 200px;
+                }
+
+                /* PACKAGE INTERCONNECT */
 
         .Package .Misc .Interconnect {
             padding: 5px;
-            border-top: 1px solid dimgray;
         }
 
             .Package .Misc .Interconnect p {
                 margin-top: 0;
                 margin-bottom: 5px;
-                font-weight: bold;
+            }
+
+                .Package .Misc .Interconnect p.header {
+                    font-size: 20px;
+                    border-bottom: 1px solid gray;
+                    font-weight: bold;
+                    position: relative;
+                }
+
+                    .Package .Misc .Interconnect p.header button {
+                        font-size: 17px;
+                        border: none;
+                        padding: 1px 10px;
+                        outline: none;
+                        cursor: pointer;
+                        font-family: 'Roboto', sans-serif;
+                    }
+
+                        .Package .Misc .Interconnect p.header button[disabled] {
+                            filter: grayscale(1);
+                            cursor: default;
+                        }
+
+                        .Package .Misc .Interconnect p.header button:not([disabled]):hover {
+                            filter: brightness(0.9);
+                        }
+
+                    .Package .Misc .Interconnect p.header .show {
+                        background-color: #dedede;
+                        position: absolute;
+                        top: 0;
+                        right: 5px;
+                    }
+
+            .Package .Misc .Interconnect:not(.show) p:not(.header), .Package .Misc .Interconnect:not(.show) li {
+                display: none;
             }
 
             .Package .Misc .Interconnect ul {
