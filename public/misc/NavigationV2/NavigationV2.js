@@ -87,7 +87,7 @@ function NAVIGATIONV2_createIconStyleContent(name, href, icon, parentName) {
     let s = '';
     s += '<a ' + (href ? 'href="' + NAVIGATIONV2_REMOVE_DOUBLE_SLASH(ROOT + href) + '" ' : '');
     s += 'class="NAVIGATIONV2_Section_Icon_Content' + (NAVIGATIONV2_URL_HL_CHECK(href) ? ' NAVIGATIONV2_URL_HIGHLIGHTED" title="Current Page"' : '"') + '">';
-    s += '<img src="' + ROOT + icon + '" data-type="' + getFileTypeByURL(icon) + '"/>';
+    s += '<img src="' + NAVIGATIONV2_REMOVE_DOUBLE_SLASH(ROOT + icon) + '" data-type="' + getFileTypeByURL(icon) + '"/>';
     s += '<span id="' + parentName + "_" + name + '">' + name + '</span>';
     s += '</a>';
 
@@ -172,9 +172,10 @@ function NAVIGATIONV2_SCROLL_HL_CHECK(now = false) {
     }
 }
 function NAVIGATIONV2_REMOVE_DOUBLE_SLASH(url) {
+    
     while (url.indexOf('//') > -1) {
         url = url.split('//')[0] + '/' + url.split('//')[1];
     }
-
+    
     return url;
 }

@@ -1,0 +1,109 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>TEST DATA COLLECTION OVERLAY - FrikyBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- GENERAL CSS -->
+    <link href="/styles/standard.css" rel="stylesheet">
+
+    <!-- PAGE CSS-->
+    <style>
+        body {
+            background-color: #ff00ff;
+            overflow: hidden;
+            font-family: Roboto;
+            font-weight: bold;
+        }
+
+        ul li {
+            list-style-type: none;
+        }
+
+        ul span {
+            display: inline-block;
+            font-size: 40px;
+            text-shadow: 0 1px 0 black;
+            color: white;
+        }
+
+        input[type=checkbox] {
+            transform: translate(0, 2px);
+            zoom: 2;
+            margin-right: 15px;
+        }
+    </style>
+
+    <!-- GENERAL JS-->
+    <script src="/scripts/standard.js"></script>
+
+    <!-- PAGE JS-->
+    <script>
+        const register_info = {
+            origin: "/Stats/Overlay",
+            topic: "Stats",
+            misc: "all"
+        };
+        let CONFIG = {};
+        let socket = {};
+
+        const COLLECTING = [
+            'anongiftpaidupgrade',
+            'giftpaidupgrade',
+            'subscription',
+            'resub',
+            'subgift',
+            'submysterygift',
+            'cheer',
+            'hosted',
+            'raided'
+        ];
+        function init() {
+            socket = StartWebsocket(register_info);
+
+            socket.addEventListener('message', function (event) {
+                let type = event.data.toString().split(":")[0];
+                if (type === 'register' || type === 'Error') return;
+                let data = JSON.parse(event.data.toString().split(":").slice(1).join(":"));
+
+                if (type === 'settings') {
+                    CONFIG = data;
+
+                    //CHECK COLLECTED
+                    checkCollected();
+                } else {
+                    //CHECK COLLECTED
+                    CONFIG.collected.push(type);
+                    checkCollected();
+                }
+
+                //Echo back (Ping-Pong alternative)
+                socket.send(event.data.toString());
+            });
+        }
+
+        function checkCollected() {
+            let s = '';
+
+            for (let col of COLLECTING) {
+                s += '<li><input type="checkbox" ' + (CONFIG.collected.find(elt => elt === col) ? 'checked' : '') + ' /><span>' + col + '</span></li>';
+            }
+
+            document.getElementById('LIST').innerHTML = s;
+        }
+    </script>
+
+    <!-- MISC -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+</head>
+<body onload="init();">
+    <!-- MAIN GRID -->
+    <div id="COLLETING">
+        <ul id="LIST">
+            <li></li>
+        </ul>
+    </div>
+</body>
+</html>

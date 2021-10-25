@@ -9,6 +9,7 @@ const FETCH = require('node-fetch');
 
 
 const ROOT = "http://api.frankerfacez.com/v1/";
+//  Emote Image: https://cdn.frankerfacez.com/emote/{emote_id}/{version}
 
 /////////////////////////////////////////////////////////////////////////
 //             Endoints with Parameter Support

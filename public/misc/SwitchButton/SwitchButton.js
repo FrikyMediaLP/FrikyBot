@@ -463,8 +463,8 @@ function MISC_SELECT_SelectItem(misc_select, eventORtext, value) {
     }
 
     if (eventORtext instanceof Event) {
-        value = eventORtext.toElement.getAttribute('value');
-        eventORtext = eventORtext.toElement.innerHTML;
+        value = eventORtext.target.getAttribute('value');
+        eventORtext = eventORtext.target.innerHTML;
     }
 
     for (let child of misc_select.childNodes) {
@@ -558,33 +558,69 @@ async function MISC_USERCONFIRM_ANSWER(elt) {
 
 function MISC_createTable(array = [], options = {}) {
     let s = '';
-    let cols = '';
 
-    if (options.headers === undefined) options.headers = [];
-    if (options.header_translation === undefined) options.header_translation = {};
-    if (options.content_translation === undefined) options.content_translation = {};
-    if (options.content_join === undefined) options.content_join = {};
-    if (options.timestamps === undefined) options.timestamps = {};
-    if (options.column_addition === undefined) options.column_addition = {};
-    if (options.skip_headers === undefined) options.skip_headers = [];
-    if (options.sort === undefined) options.sort = [];
+    MISC_createTable_fillOptions(options);
     
+    //Wrapper
+    s = '<customtable ';
+    s += 'class="' + (options.vertical ? 'vertical ' : '') + (options.disable_caps_headers ? 'blocked_caps_headers ' : '') + '" ';
+    if (options.custom_data) {
+        for (let key in options.custom_data) s += ' data-' + key + '="' + options.custom_data[key] + '"';
+    }
+    s += ' >';
+
+    //Content
+    //Auto Generatre Headers
+    if (options.headers.length === 0) MISC_createTable_generateHeaders(array, options);
+    //Create CSS for Grid
+    let cols = '';
+    for (let header of options.headers) cols += 'auto ';
+    //Create HTML
+    s += '<tablegrid style="grid-template-' + (options.vertical ? 'rows' : 'columns') + ':' + cols + ';">';
+    s += MISC_createTableContent(array, options);
+    s += '</tablegrid>';
+    
+    //UI
+    if (options.pagination && options.ui_change_func) {
+        s += '<tableinterface>';
+        s += MISC_createTableInterface(array, options);
+        s += '</tableinterface>';
+    }
+
+   return s + '</customtable>';
+}
+function MISC_createTable_update(elt, array = [], options = {}) {
+    let content = null;
+    let ui = null;
+    for (let child of elt.childNodes) {
+        if (child.tagName === 'TABLEGRID') content = child;
+        else if (child.tagName === 'TABLEINTERFACE') ui = child;
+    }
+    if (!ui || !content) return false;
+
+    content.innerHTML = MISC_createTableContent(array, options);
+    ui.innerHTML = MISC_createTableInterface(array, options);
+    return true;
+}
+
+function MISC_createTableContent(array = [], options = {}) {
+    let s = '';
+    MISC_createTable_fillOptions(options);
+
     let option_copy = cloneJSON(options);
+    delete option_copy.headers;                 //WiP: Use this to change Child Headers!!
+    delete option_copy.pagination;
     if (options.vertical === 'first') {
         options.vertical = true;
         delete option_copy.vertical;
     }
 
-    //Headers
+    //Auto Generatre Headers
     if (options.headers.length === 0) {
-        for (let element of array) {
-            for (let hdr in element) {
-                if (options.skip_headers.find(elt => elt === hdr)) continue;
-                if (!options.headers.find(e => e === hdr)) options.headers.push(hdr);
-            }
-        }
+        MISC_createTable_generateHeaders(array, options);
     }
 
+    //Headers
     let header_str_arr = [];
     for (let hdr of options.headers) {
         let hdr_content = '<tableheader>';
@@ -594,9 +630,7 @@ function MISC_createTable(array = [], options = {}) {
         else hdr_content += hdr;
         hdr_content += '</tableheader>';
         header_str_arr.push(hdr_content);
-        cols += ' auto';
     }
-    s = '<customtable style="grid-template-columns:' + cols + ';" class="' + (options.vertical ? 'vertical ' : '') + (options.disable_caps_headers ? 'blocked_caps_headers ' : '') + '">';
 
     if (!options.vertical) s += header_str_arr.join("");
 
@@ -607,7 +641,7 @@ function MISC_createTable(array = [], options = {}) {
         let translated = options.header_translation[sort] || sort;
         MISC_createTable_sort(array, translated, options.sort[sort]);
     }
-    
+
     //Content Rows
     for (let i = 0; i < array.length; i++) {
         for (let j = 0; j < options.headers.length; j++) {
@@ -616,7 +650,7 @@ function MISC_createTable(array = [], options = {}) {
             if (j == 0) s += ' left';
             if (j == options.headers.length - 1) s += ' right';
             if (i == array.length - 1) s += ' bottom';
-            if (options.add_dataset) s += ' data-custom="' + options.add_dataset(array[i], options.headers[j])  + '"';
+            if (options.add_dataset) s += ' data-custom="' + options.add_dataset(array[i], options.headers[j]) + '"';
             if (options.add_event) {
                 for (let event in options.add_event) {
                     s += ' ' + event + '="' + options.add_event[event] + '"';
@@ -627,7 +661,7 @@ function MISC_createTable(array = [], options = {}) {
             //Translate Header Name
             let translated = options.header_translation[options.headers[j]] || options.headers[j];
             if (!(translated instanceof Array)) translated = [translated];
-            
+
             //Create Cell Content
             let content = "";
 
@@ -669,9 +703,45 @@ function MISC_createTable(array = [], options = {}) {
             s += '</tablecontent>';
         }
     }
-    
-   return s + '</customtable>';
+
+    return s;
 }
+function MISC_createTableInterface(array = [], options = {}) {
+    let s = '';
+
+    let pages = GetPaginationValues(options.pagination);
+    const PER_PAGE = [5, 10, 20, 50, 100];
+
+    let per_idx = 1;
+    PER_PAGE.find((elt, index) => {
+        if (elt === pages[0]) {
+            per_idx = index;
+            return true;
+        }
+        return false;
+    });
+
+    //LEFT
+    s += '<tableinterfaceleft>';
+    s += '<span>Per Page: </span>';
+    s += MISC_SELECT_create(PER_PAGE, per_idx, null, options.ui_change_func + "(this, event, '" + options.pagination + "');");
+    s += '</tableinterfaceleft>';
+
+    //RIGHT
+    s += '<tableinterfaceright>';
+    
+    s += '<button onclick="' + options.ui_change_func + "(this, event, '" + options.pagination + "');" + '">first</button>';
+    s += '<button onclick="' + options.ui_change_func + "(this, event, '" + options.pagination + "');" + '">prev</button>';
+    s += '<input value="' + pages[1] + '" step="1" min="1" ' + (pages[2].pagecount !== undefined ? 'max="' + pages[2].pagecount + '"' : '') + ' onchange="' + options.ui_change_func + "(this, event, '" + options.pagination + "');" + '"/>';
+    s += '<span>/' + pages[2].pagecount + '</span>';
+    s += '<button onclick="' + options.ui_change_func + "(this, event, '" + options.pagination + "');" + '">next</button>';
+    s += '<button onclick="' + options.ui_change_func + "(this, event, '" + options.pagination + "');" + '">last</button>';
+
+    s += '</tableinterfaceright>';
+    
+    return s;
+}
+
 function MISC_createTable_timestamps(t_ms, mode) {
     if (t_ms === undefined) return '-';
     if (t_ms < Date.now() / 10) t_ms *= 1000;
@@ -687,6 +757,7 @@ function MISC_createTable_timestamps(t_ms, mode) {
         } else {
             rel = -1 * rel;
             if (rel < 60 * 1000) return 'in ' + Math.floor(rel / 1000) + ' seconds';
+            else if (rel < 2 * 60 * 1000) return 'in a minute';
             else if (rel < 60 * 60 * 1000) return 'in ' + Math.floor(rel / (60 * 1000)) + ' minutes';
             else if (rel < 2 * 60 * 60 * 1000) return 'in an hour';
             else if (rel < 24 * 60 * 60 * 1000) return 'in ' + Math.floor(rel / (60 * 60 * 1000)) + ' hours';
@@ -701,4 +772,416 @@ function MISC_createTable_sort(array, header, dir = true) {
     else dir = -1;
 
     array.sort((a, b) => dir * (a[header] - b[header]));
+}
+function MISC_createTable_disableUI(interface_elt, enable = false) {
+    for (let child of interface_elt.childNodes) {
+        for (let childer of child.childNodes) {
+            if (enable) childer.removeAttribute('disabled');
+            else childer.setAttribute('disabled', true);
+        }
+    }
+}
+
+function MISC_createTable_generateHeaders(array = [], options = {}) {
+    for (let element of array) {
+        for (let hdr in element) {
+            if (options.skip_headers.find(elt => elt === hdr)) continue;
+            if (!options.headers.find(e => e === hdr)) options.headers.push(hdr);
+        }
+    }
+}
+function MISC_createTable_fillOptions(options = {}) {
+    if (options.headers === undefined) options.headers = [];
+    if (options.header_translation === undefined) options.header_translation = {};
+    if (options.content_translation === undefined) options.content_translation = {};
+    if (options.content_join === undefined) options.content_join = {};
+    if (options.timestamps === undefined) options.timestamps = {};
+    if (options.column_addition === undefined) options.column_addition = {};
+    if (options.skip_headers === undefined) options.skip_headers = [];
+    if (options.sort === undefined) options.sort = [];
+}
+
+/* 
+ * -------------------------------------
+ *                TIMER
+ * -------------------------------------
+ */
+
+async function MISC_createTimer(seconds, parent) {
+    if (seconds < 1) return Promise.resolve(); 
+
+    let past_seconds = 0;
+
+    let html = '';
+    html += '<div class="MISC_TIMER">';
+    html += '<div class="MISC_TIMER_SPINNER"></div>';
+    html += '<div class="MISC_TIMER_TEXT">' + seconds + '</div>';
+    html += '</div>';
+
+    parent.innerHTML = html;
+
+    return new Promise((resolve, reject) => {
+        let intv = setInterval(() => {
+            //Increment Timer
+            past_seconds++;
+
+            //Update HTML
+            for (let child of parent.childNodes) {
+                if (child instanceof Element && child.classList.contains('MISC_TIMER')) {
+                    for (let childer of child.childNodes) {
+                        if (childer instanceof Element && childer.classList.contains('MISC_TIMER_TEXT')) {
+                            childer.innerHTML = seconds - past_seconds;
+                        }
+                    }
+                }
+            }
+
+            //Clear Timer
+            if (past_seconds >= seconds) {
+                clearInterval(intv);
+                parent.innerHTML = "";
+                resolve();
+            }
+        }, 1000);
+    });
+}
+
+/*
+ * -------------------------------------
+ *                FILE LIBRARY
+ * -------------------------------------
+ */
+const SUPPORTED_IMG_FILES = ['png', 'jpg', 'jpeg', 'gif', 'mp4'];
+const SUPPORTED_VIDEO_FILES = ['mp4'];
+const SUPPORTED_SOUND_FILES = ['ogg', 'mp3', 'wav'];
+const SUPPORTED_FILES = SUPPORTED_IMG_FILES.concat(SUPPORTED_SOUND_FILES);
+function MISC_createFileLibrary(files, title = "", types = 'all', selected, custom_class = "", custom_attribute = "", api_url = "") {
+    let s = '<div class="MISC_FILE_LIBRARY ' + custom_class + '" ' + custom_attribute + ' >';
+
+    //HEADER
+    s += '<div class="MISC_FILE_LIB_HEADER">';
+
+    //TITLE
+    s += '<div class="FILE_LIB_HEADER_TITLE">' + title + '</div>';
+
+    //REFRESH
+    if (api_url) s += '<img src="/images/icons/refresh.svg" onclick="MISC_FileLibrary_Refresh(this, ' + "'" + api_url + "'" + ', ' + "'" + types + "'" + ', ' + "'" + selected + "'" + ')"/>';
+
+    //UPLOAD
+    if (api_url) {
+        s += '<div class="FILE_LIB_HEADER_UPLOAD">';
+        s += '<button onclick="this.parentElement.classList.toggle(' + "'expanded'" + ')">UPLOAD FILE</button>';
+        s += '<input type="file" id="input" onchange="MISC_FileLibrary_UploadPreview(this)" />';
+
+        //IMG
+        s += '<img src="/images/icons/plus.png" draggable="false" onclick="MISC_FileLibrary_addFile(this)"/>';
+
+        //Video
+        s += '<video muted onmouseenter="this.play();" onmouseleave="this.pause(); this.currentTime = 0;" loop onclick="MISC_FileLibrary_addFile(this)"></video>';
+
+        //Audio
+        s += '<audio onclick="MISC_FileLibrary_addFile(this)"></audio>';
+
+        //SIZE INFO
+        s += '<span></span>';
+
+        //UPLOAD
+        s += '<button disabled onclick="MISC_FileLibrary_Upload(this, ' + "'" + api_url  + "'" + ')">UPLOAD</button>';
+
+        s += '</div>';
+    }
+    
+    s += '</div>';
+
+    //LIST
+    s += '<div class="FILE_LIST ' + (types === 'images' ? 'IMAGES_LIST' : 'IMAGES_LIST') + '">';
+    for (let file of files) {
+        let extension = file.split('.').pop().toLowerCase();
+
+        if (SUPPORTED_IMG_FILES.find(elt => elt === extension) && (types == 'all' || types == 'images'))
+            s += MISC_FileLibrary_addImageElement(file, file === selected, api_url);
+        else if (SUPPORTED_SOUND_FILES.find(elt => elt === extension) && (types == 'all' || types == 'sounds'))
+            s += MISC_FileLibrary_addSoundElement(file, file === selected, api_url);
+    }
+    s += '</div>';
+
+    //HIDDEN AUDIO CLUB
+    s += '<div class="HIDDEN_AUDIO_CLUB"></div>';
+
+    s += '</div>';
+    return s;
+}
+function MISC_FileLibrary_addImageElement(file_name, selected = false, api_url = "") {
+    let s = '';
+    let extension = file_name.split('.').pop().toLowerCase();
+
+    s += '<div class="IMAGE_ELT ' + extension.toUpperCase() + '" onclick="Main_selectFile(this)" data-file="' + file_name + '" ' + (selected ? 'selected' : '') + '>';
+
+    s += '<span title="' + file_name + '">' + file_name + '</span>';
+    if (extension === 'mp4') {
+        s += '<video muted onmouseenter="this.play() "onmouseleave="this.pause(); this.currentTime = 0;" loop>';
+        s += '<source src="/Alerts/Custom/' + file_name + '" type="video/mp4">';
+        s += '<img src="/images/icons/mp4.png" />';
+        s += '</video>';
+    }
+    else s += '<img src="/Alerts/Custom/' + file_name + '" />';
+
+    s += '<div class="HOVER_ELT SINGLE">';
+    s += '<img src="/images/icons/trash-alt-solid.svg" onclick="MISC_FileLibrary_deleteFile(event, this, ' + "'" + file_name + "'" + ', ' + "'" + api_url + "'" + ')"/>';
+    s += '</div>';
+
+    s += '</div>';
+
+    return s;
+}
+function MISC_FileLibrary_addSoundElement(file_name, selected = false) {
+    let s = '';
+
+    let extension = file_name.split('.').pop().toLowerCase();
+    s += '<div class="IMAGE_ELT BIGGER ' + extension + '"  onclick="MISC_FileLibrary_selectFile(this)" data-file="' + file_name + '" ' + (selected ? 'selected' : '') + '>';
+    s += '<span title="' + file_name + '">' + file_name + '</span>';
+    s += '<img src="/images/icons/' + extension + '.png" />';
+
+    s += '<div class="HOVER_ELT">';
+    s += '<img src="/images/icons/trash-alt-solid.svg" onclick="MISC_FileLibrary_deleteFile(event, this, ' + "'" + file_name + "'" + ')"/>';
+    s += '<img src="/images/icons/play-solid.svg" onclick="MISC_FileLibrary_playSound(this, event, ' + "'" + file_name + "'" + ')"/>';
+    s += '</div>';
+    s += '</div>';
+
+    return s;
+}
+
+function MISC_FileLibrary_Refresh(elt, url, types = 'all', selected) {
+    let LIST = elt;
+
+    while (LIST.tagName !== 'body' && !LIST.classList.contains('MISC_FILE_LIBRARY')) {
+        LIST = LIST.parentElement;
+    }
+
+    if (LIST.tagName === 'body') LIST = null;
+    else for (let child of LIST.childNodes) if (child.classList.contains('FILE_LIST')) LIST = child;
+
+    elt.setAttribute('disabled', 'true');
+    
+    fetch(url, getAuthHeader())
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            elt.removeAttribute('disabled');
+
+            let s = '';
+            for (let file of json.files) {
+                let extension = file.split('.').pop().toLowerCase();
+                
+                if ((types === 'all' || types === 'images') && SUPPORTED_IMG_FILES.find(elt => elt === extension)) s += MISC_FileLibrary_addImageElement(file, file === selected, url);
+                else if ((types === 'all' || types === 'sounds') && SUPPORTED_SOUND_FILES.find(elt => elt === extension)) s += MISC_FileLibrary_addSoundElement(file, file === selected, url);
+            }
+            LIST.innerHTML = s;
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+            console.log(err.message);
+            elt.removeAttribute('disabled');
+        });
+}
+
+function MISC_FileLibrary_addFile(elt) {
+    let input = null;
+    for (let child of elt.parentElement.childNodes) if (child.tagName === 'INPUT') input = child;
+    if (!input) return elt.value = "";
+
+    input.click();
+}
+function MISC_FileLibrary_UploadPreview(elt) {
+    let IMG_PREVIEW = null;
+    let VIDEO_PREVIEW = null;
+    let SOUND_PREVIEW = null;
+    let UPLOAD = null;
+    let SIZE = null;
+    for (let child of elt.parentElement.childNodes) if (child.tagName === 'IMG') IMG_PREVIEW = child;
+    for (let child of elt.parentElement.childNodes) if (child.tagName === 'VIDEO') VIDEO_PREVIEW = child;
+    for (let child of elt.parentElement.childNodes) if (child.tagName === 'AUDIO') SOUND_PREVIEW = child;
+    for (let child of elt.parentElement.childNodes) if (child.tagName === 'SPAN') SIZE = child;
+    for (let child of elt.parentElement.childNodes) if (child.tagName === 'BUTTON' && child.innerHTML === 'UPLOAD') UPLOAD = child;
+
+    let FILE = elt.files[0];
+
+    const reader = new FileReader();
+    reader.onload = (img) => {
+        IMG_PREVIEW.src = "";
+        IMG_PREVIEW.style.borderColor = 'gray';
+        VIDEO_PREVIEW.src = "";
+        VIDEO_PREVIEW.classList.remove('show');
+        SOUND_PREVIEW.src = "";
+        SIZE.innerHTML = "";
+        
+        let type = img.target.result.substring(img.target.result.indexOf(':') + 1, img.target.result.indexOf('/'));
+        let extension = elt.value.split('.').pop().toLowerCase();
+
+        //CHECK EXTENSION
+        if (!SUPPORTED_VIDEO_FILES.find(elt => elt === extension)) {
+            OUTPUT_showError('Video File sadly cant be Uploaded right now!');
+            IMG_PREVIEW.src = '/images/icons/plus.png';
+            IMG_PREVIEW.style.borderColor = 'red';
+            return;
+        }
+        if (!SUPPORTED_FILES.find(elt => elt === extension)) {
+            OUTPUT_showError('.' + extension + ' Files are not supported!');
+            IMG_PREVIEW.src = '/images/icons/plus.png';
+            IMG_PREVIEW.style.borderColor = 'red';
+            return;
+        }
+
+        //CHECK SIZE
+        if (FILE.size > Math.pow(1024, 2) * 2) {
+            SIZE.classList.add('big');
+        } else {
+            SIZE.classList.remove('big');
+            UPLOAD.removeAttribute('disabled');
+        }
+        
+        if (type === 'image') IMG_PREVIEW.src = img.target.result;
+        else if (type === 'audio') {
+            SOUND_PREVIEW.src = img.target.result;
+            IMG_PREVIEW.src = '/images/icons/' + extension + '.png';
+        }
+        else if (type === 'video') {
+            VIDEO_PREVIEW.classList.add('show');
+            VIDEO_PREVIEW.src = img.target.result;
+        } else {
+            return;
+        }
+
+        SIZE.innerHTML = byteToString(FILE.size) + " / 2MB";
+    };
+    reader.readAsDataURL(FILE);
+}
+function MISC_FileLibrary_Upload(elt, url) {
+    let IMG_PREVIEW = null;
+    let VIDEO_PREVIEW = null;
+    let SOUND_PREVIEW = null;
+    let INPUT = null;
+    let LIST = elt;
+    for (let child of elt.parentElement.childNodes) if (child.tagName === 'INPUT') INPUT = child;
+    for (let child of elt.parentElement.childNodes) if (child.tagName === 'IMG') IMG_PREVIEW = child;
+    for (let child of elt.parentElement.childNodes) if (child.tagName === 'VIDEO') VIDEO_PREVIEW = child;
+    for (let child of elt.parentElement.childNodes) if (child.tagName === 'AUDIO') SOUND_PREVIEW = child;
+
+    while (LIST.tagName !== 'body' && !LIST.classList.contains('MISC_FILE_LIBRARY')) {
+        LIST = LIST.parentElement;
+    }
+    
+    if (LIST.tagName === 'body') LIST = null;
+    else for (let child of LIST.childNodes) if (child.classList.contains('FILE_LIST')) LIST = child;
+    
+    let file_data = IMG_PREVIEW.src || VIDEO_PREVIEW.src || SOUND_PREVIEW.src;
+
+    elt.setAttribute('disabled', 'true');
+
+    let opt = getAuthHeader();
+    opt['method'] = 'POST';
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify({ file_name: INPUT.files[0].name, file_data: file_data });
+
+    fetch(url, opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(response => {
+            OUTPUT_showInfo("File added!");
+            elt.removeAttribute('disabled');
+
+            let extension = INPUT.files[0].name.split('.').pop().toLowerCase();
+            if (SUPPORTED_IMG_FILES.find(elt => elt === extension)) LIST.innerHTML += MISC_FileLibrary_addImageElement(INPUT.files[0].name, false, url);
+            else if (SUPPORTED_SOUND_FILES.find(elt => elt === extension)) LIST.innerHTML += MISC_FileLibrary_addSoundElement(INPUT.files[0].name, false, url);
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+            console.log(err.message);
+            elt.removeAttribute('disabled');
+        });
+}
+
+function MISC_FileLibrary_playSound(elt, e, file) {
+    e.stopPropagation();
+
+    let s = '';
+    s += '<audio autoplay>';
+    s += '<source src="/Alerts/Custom/' + file + '" type="audio/' + file.split('.').pop() + '">';
+    s += '</audio>';
+
+    let LIB = elt;
+    while (LIB.tagName !== 'body' && !LIB.classList.contains('MISC_FILE_LIBRARY')) {
+        LIB = LIB.parentElement;
+    }
+    
+    if (LIB.tagName === 'body') return;
+    else for (let child of LIB.childNodes) if (child.classList.contains('HIDDEN_AUDIO_CLUB')) LIB = child;
+    LIB.innerHTML = s;
+}
+async function MISC_FileLibrary_deleteFile(e, elt, file, url) {
+    e.stopPropagation();
+    let answer = 'NO';
+
+    let alerts = [];
+    for (let alert in CONFIGS) {
+        if (CONFIGS[alert].image === file || CONFIGS[alert].sound === file) alerts.push(alert);
+    }
+
+    try {
+        answer = await MISC_USERCONFIRM("YOU SURE YOU WANT THIS?", "Do you really want to delete this File? The following Alerts use this File and will be changed: " + (alerts.length > 0 ? alerts.join(', ') : 'NONE'));
+    } catch (err) {
+
+    }
+
+    if (answer !== 'YES') return Promise.resolve();
+
+    let opt = getAuthHeader();
+    opt['method'] = 'DELETE';
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify({ file });
+
+    fetch(url, opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(response => {
+            OUTPUT_showInfo("File removed!");
+            elt.parentElement.parentElement.remove();
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+            console.log(err.message);
+        });
+}
+async function MISC_FileLibrary_selectFile(elt) {
+    if (elt.hasAttribute('selected')) return elt.removeAttribute('selected');
+
+    for (let child of elt.parentElement.childNodes) {
+        if (child instanceof Element) child.removeAttribute('selected');
+    }
+
+    elt.setAttribute('selected', 'true');
+}
+
+function MISC_FileLibrary_getSelectedFile(elt){
+    let LIST = elt;
+    while (LIST.tagName !== 'body' && !LIST.classList.contains('MISC_FILE_LIBRARY')) {
+        LIST = LIST.parentElement;
+    }
+
+    if (LIST.tagName === 'body') return;
+    else for (let child of LIST.childNodes) if (child.classList.contains('FILE_LIST')) LIST = child;
+
+    for (let child of LIST.childNodes) {
+        if (child.hasAttribute('selected')) return child.dataset.file;
+    }
+
+    return null;
+}
+
+function byteToString(num) {
+    const letters = ['', 'K', 'M', 'G', 'T'];
+
+    let cur = 1;
+    while (Math.pow(1024, cur) < num) {
+        cur++;
+    }
+
+    return (num / Math.pow(1024, cur-1)).toFixed(2) + letters[cur - 1] + 'B';
 }

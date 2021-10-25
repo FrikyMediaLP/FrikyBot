@@ -262,12 +262,15 @@ __pycache__/
 *.pyc
 
 # OWN STUFF
-DATA/
+/DATA/
 TOKENS/
 Logs/
 config.json
 
 # Package Specific
-
 Packages/ChatModeration/Link Filter/
 Packages/ChatModeration/Word Filter/
+
+Packages/Stats/data/
+
+Packages/CommandHandler/Data/

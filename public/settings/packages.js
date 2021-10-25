@@ -270,7 +270,7 @@ function saveSettings(name) {
 
             for (let elt of document.getElementsByClassName('Settings')) {
                 if (elt.dataset.package === name) {
-                    elt.childNodes[0].childNodes[2].setAttribute('disabled');
+                    elt.childNodes[0].childNodes[2].setAttribute('disabled', 'true');
                 }
             }
         })

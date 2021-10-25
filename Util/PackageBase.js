@@ -4,7 +4,7 @@ const CONSTANTS = require('./../Util/CONSTANTS.js');
 const CONFIGHANDLER = require('./../Util/ConfigHandler.js');
 
 class PackageBase {
-    constructor(package_details = {}, webappinteractor, twitchirc, twitchapi, datacollection, logger) {
+    constructor(package_details = {}, webappinteractor, twitchirc, twitchapi, logger) {
         //PRE-INIT
         this.Package_Details = {
             name: package_details.name || "UNKNOWN",
@@ -44,7 +44,6 @@ class PackageBase {
         this.WebAppInteractor = webappinteractor;
         this.TwitchIRC = twitchirc;
         this.TwitchAPI = twitchapi;
-        this.Datacollection = datacollection;
 
         this.USE_HTML_HOSTING = false;
         this.USE_API_HOSTING = false;
@@ -198,7 +197,7 @@ class PackageBase {
         this.USE_HTML_HOSTING = true;
         if (!this.WebAppInteractor) throw new Error("WebApp-Reference is not set!");
         
-        this.WebAppInteractor.addFileRoute("/" + this.getHTMLROOT(), (req, res, next) => { if (this.isEnabled()) next(); else res.sendFile(path.resolve("DATA/PAGES/PackageDisabled.html")); }, router);
+        this.WebAppInteractor.addFileRoute("/" + this.getHTMLROOT(), (req, res, next) => { if (this.isEnabled()) next(); else res.sendFile(path.resolve("public/NotFound.html")); }, router);
     }
     setAPIRouter(router) {
         this.USE_API_HOSTING = true;
@@ -271,6 +270,9 @@ class PackageBase {
     getWebCookies() {
         return this.WEB_COOKIES;
     }
+    getWebSockets() {
+        return this.WebAppInteractor.GetWebSockets("/" + this.getHTMLROOT());
+    }
 
     /*
      * /////////////////////////////////////////////////
@@ -307,7 +309,7 @@ class PackageBase {
             else out.push({ name: dis.name, value: dis.value });
         }
 
-        return [];
+        return out;
     }
 
     addLog(name, database, query) {
@@ -326,16 +328,24 @@ class PackageBase {
             this.LOGS.splice(index, 1);
         }
     }
-    async GetLogs() {
+    async GetLogs(pagination) {
+        if (!pagination) pagination = this.GetPaginationString(10, 0, { timesorted: true });
+
         let out = {};
         for (let log of this.LOGS) {
             try {
-                out[log.name] = await this.AccessNeDB(log.database, log.query || {});
+                out[log.name] = await this.AccessNeDB(log.database, log.query || {}, pagination);
             } catch (err) {
 
             }
         }
         return Promise.resolve(out);
+    }
+    async GetLog(name, pagination) {
+        let log = this.LOGS.find(elt => elt.name === name);
+        if (!log) return Promise.reject(new Error('Log not found.'));
+        if (!pagination) pagination = this.GetPaginationString(10, 0, { timesorted: true });
+        return this.AccessNeDB(log.database, log.query || {}, pagination);
     }
 
     /*
@@ -359,7 +369,8 @@ class PackageBase {
             html: (this.USE_HTML_HOSTING ? this.getHTMLROOT() : undefined),
             html_navi: (this.isNaviEnabled ? this.isNaviEnabled() : undefined),
             api: (this.USE_API_HOSTING ? this.getAPIROOT() : undefined),
-            restricted: this.RESTRICTED_HTML_HOSTING
+            restricted: this.RESTRICTED_HTML_HOSTING,
+            displayables: this.GetDisplayables()
         }
     }
 
@@ -434,7 +445,7 @@ class PackageBase {
         return "";
     }
 
-    async AccessNeDB(datastore, query = {}) {
+    async AccessNeDB(datastore, query = {}, pagination) {
         if (!datastore) return Promise.resolve([]);
 
         return new Promise((resolve, reject) => {
@@ -442,10 +453,68 @@ class PackageBase {
                 if (err) {
                     reject(err);
                 } else {
-                    resolve(docs);
+                    if (pagination) {
+                        let pages = this.GetPaginationValues(pagination);
+                        let first = 10;
+                        let cursor = 0;
+                        let opts = {};
+                        
+                        if (pages) {
+                            first = pages[0] || 10;
+                            cursor = pages[1] || 0;
+                            opts = pages[2] || {};
+                        }
+
+                        if (first > 0) opts.pagecount = Math.ceil(docs.length / first);
+
+                        if (opts.timesorted) docs.sort((a, b) => {
+                            if (a.time) return (-1) * (a.time - b.time);
+                            else if (a.iat) return (-1) * (a.iat - b.iat);
+                            else return 0;
+                        });
+                        
+                        if (opts.customsort) docs.sort((a, b) => {
+                            return (-1) * (a[opts.customsort] - b[opts.customsort]);
+                        });
+
+                        resolve({
+                            data: docs.slice(first * cursor, first * (cursor + 1)),
+                            pagination: this.GetPaginationString(first, Math.min(first * (cursor + 1), opts.pagecount), opts)
+                        });
+                    } else {
+                        resolve(docs);
+                    }
                 }
             });
         });
+    }
+    GetPaginationValues(pagination = "") {
+        if (!pagination) return null;
+        let out = [10, 0, {}];
+
+        try {
+            if (pagination.indexOf('A') >= 0 && pagination.indexOf('B') >= 0 && pagination.indexOf('C') >= 0) {
+                out[0] = parseInt(pagination.substring(1, pagination.indexOf('B')));
+                out[1] = parseInt(pagination.substring(pagination.indexOf('B') + 1, pagination.indexOf('C')));
+            }
+
+            if (pagination.indexOf('T') >= 0) out[2].timesorted = true;
+            if (pagination.indexOf('CSS') >= 0 && pagination.indexOf('CSE') >= 0) {
+                out[2].customsort = pagination.substring(pagination.indexOf('CSS') + 3, pagination.indexOf('CSE'));
+            }
+            if (pagination.indexOf('PS') >= 0 && pagination.indexOf('PE') >= 0) out[2].pagecount = parseInt(pagination.substring(pagination.indexOf('PS') + 2, pagination.indexOf('PE')));
+        } catch (err) {
+            return null;
+        }
+
+        return out;
+    }
+    GetPaginationString(first = 10, cursor = 0, options = {}) {
+        let s = "A" + first + "B" + cursor + "C";
+        if (options.timesorted) s += "T";
+        if (options.customsort) s += "CSS" + options.customsort + "CSE";
+        if (options.pagecount !== undefined) s += "PS" + options.pagecount + "PE";
+        return s;
     }
 
     //Object/Array/... UTIL

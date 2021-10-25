@@ -44,6 +44,12 @@
         "enabled": true,
         "state": false
     },
+    "channel:read:goals": {
+        "desc": "View Creator Goals for a channel.",
+        "enabled": true,
+        "state": false,
+        "beta": true
+    },
     "channel:read:hype_train": {
         "desc": "View Hype Train information for a channel.",
         "enabled": true,
@@ -71,11 +77,6 @@
     },
     "user:edit": {
         "desc": "Manage a user object.",
-        "enabled": true,
-        "state": false
-    },
-    "user:edit:follows": {
-        "desc": "Edit your follows.",
         "enabled": true,
         "state": false
     },
@@ -145,7 +146,6 @@
         "state": false
     }
 };
-
 const SETTINGTYPES = [
     {
         name: 'number', options: [
@@ -204,6 +204,7 @@ let CUR_CONFIG = {};
 
 let TTV_API_AUTH_USERS = [];
 let TTV_API_AUTH_USERLEVELS = [];
+let TTV_API_ACTIVE_SCOPES = [];
 
 window.onhashchange = WIZARD_go2Hash;
 
@@ -229,21 +230,24 @@ async function Setup_init() {
 
         //Create
         WIZARD_create(data.tmpl, data.cfg, data.auths);
+        CUR_CONFIG = data.cfg;
+
         if (data.ttv_irc) TwitchIRC_USER_SET_INFO(data.ttv_irc.user);
         if (data.ttv_api) {
+            TwitchAPI_Application_setURL();
             TwitchAPI_USER_SET_INFO(data.ttv_api.user);
             TwitchAPI_UserLogin_createScopes(data.ttv_api.user.scopes);
-
+            
             TTV_API_AUTH_USERS = data.ttv_api.authenticator_users;
             TTV_API_AUTH_USERLEVELS = data.ttv_api.authenticator_userlevels;
             TwitchAPI_Auth_DB_create();
             TwitchAPI_Auth_Interface();
 
+            TTV_API_ACTIVE_SCOPES = data.ttv_api.user.scopes;
             TwitchAPI_API_create(data.ttv_api.endpoints);
+            TwitchAPI_EventSub_create(data.ttv_api.eventsubs);
         }
         
-        CUR_CONFIG = data.cfg;
-
         //Seperate Groups
         for (let module of data.tmpl) {
             let grps = [];
@@ -557,6 +561,35 @@ function port_change(value) {
     document.getElementById('WIZ_UI_NEXT').setAttribute('hidden', '');
     document.getElementById('WIZ_UI_RESTART').removeAttribute('hidden');
 }
+function hostname_change(value) {
+    if (value == CUR_CONFIG.WebApp.Hostname) {
+        document.getElementById('SETTING_WebApp_Hostname_Hint').setAttribute('hidden', '');
+        document.getElementById('WEBAPP_HOSTNAME_VERIFY').setAttribute('hidden', '');
+        return;
+    }
+
+    document.getElementById('WebApp_Hostname_Save').disabled = false;
+    document.getElementById('SETTING_WebApp_Hostname_Hint').removeAttribute('hidden');
+}
+function hostname_save() {
+    let opt = getAuthHeader();
+    opt.method = 'POST';
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify({ hostname: document.getElementById('SETTING_WebApp_Hostname').value });
+
+    fetch('/api/settings/webapp/hostname', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            OUTPUT_showInfo("Hostname changed!");
+            CUR_CONFIG['WebApp']['Hostname'] = document.getElementById('SETTING_WebApp_Hostname').value;
+            hostname_change();
+            TwitchAPI_Application_setURL(CUR_CONFIG['WebApp']['Hostname']);
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+            console.log(err);
+        });
+}
 
 async function FrikyBot_Auth_switch(elt) {
     const auth_name = elt.value;
@@ -642,6 +675,7 @@ function FrikyBot_Auth_regen() {
 }
 
 //TTV IRC
+const TWITCHIRC_SCOPE_SUBSCRIPTION = 'user:read:subscriptions';
 const TWITCHIRC_USER_SCOPES = ['channel:moderate', 'chat:read', 'chat:edit', 'whispers:read', 'whispers:edit'];
 let TwitchIRC_FETCHING = false;
 function TwitchIRC_User_Mode(elt) {
@@ -654,6 +688,12 @@ function TwitchIRC_User_Mode(elt) {
         document.getElementById('TwitchIRC_Custom_User').style.display = 'none';
         document.getElementById('TwitchIRC_User').style.display = 'grid';
     }
+}
+function TwitchIRC_User_Subscription_toggle(elt) {
+    if (TWITCHIRC_USER_SCOPES.find(el => el === TWITCHIRC_SCOPE_SUBSCRIPTION)) TWITCHIRC_USER_SCOPES.pop();
+    else TWITCHIRC_USER_SCOPES.push(TWITCHIRC_SCOPE_SUBSCRIPTION);
+
+    elt.checked = TWITCHIRC_USER_SCOPES.find(elt => elt === TWITCHIRC_SCOPE_SUBSCRIPTION) !== undefined;
 }
 
 function TwitchIRC_User_change() {
@@ -825,6 +865,12 @@ function TwitchIRC_MISC_Switch(elt) {
 
 //TTV API
 let TwitchAPI_FETCHING = false;
+function TwitchAPI_Application_setURL(hostname, port) {
+    if (!hostname) hostname = CUR_CONFIG['WebApp'].Hostname;
+    if (!port) port = CUR_CONFIG['WebApp'].Port;
+
+    document.getElementById("TwitchAPI_Redirect_URL").value = "http://" + hostname + ":" + port + "/Twitch-Redirect";
+}
 function TwitchAPI_Secret_change(btn) {
     if (btn.innerHTML === 'SHOW SECRET') {
         btn.innerHTML = 'HIDE SECRET';
@@ -1449,6 +1495,140 @@ function TwitchAPI_Endpoint_Log(elt) {
         })
         .catch(err => {
             elt.checked = elt.checked === false;
+            console.log(err);
+            OUTPUT_showError(err.message);
+        });
+}
+
+function TwitchAPI_EventSub_create(topics = {}) {
+    let cats = [];
+
+    //Create Categories
+    for (let topic in topics) {
+        let data = { name: topics[topic].name, enabled: topics[topic].enabled, value: topic, scope: topics[topic].scope };
+
+        if (topics[topic].version === "beta") {
+            let cat = cats.find(elt => elt.name === "Beta");
+            if (cat) cat.eventsubs.push(data);
+            else cats.push({ name: "Beta", eventsubs: [data] });
+            continue;
+        }
+
+        let cat = cats.find(elt => elt.name === topics[topic].resource);
+        if (cat) cat.eventsubs.push(data);
+        else cats.push({ name: topics[topic].resource, eventsubs: [data] });
+    }
+
+    //Sort Categories
+    cats.sort((a, b) => b.name === "Beta" ? -1 : a.name === "Beta" ? 1 : sortAlphabetical(a.name, b.name));
+
+    //Set
+    let s = '';
+    for (let cat of cats) {
+        s += TwitchAPI_EventSub_createCategorie(cat);
+    }
+    document.getElementById('TWITCHAPI_EVENTSUB_ENABLES').innerHTML = s;
+
+    //Legend
+    s = '';
+    for (let scope in TTV_API_SCOPES) {
+        let found = cats.find(elt => elt.eventsubs.find(topic => topic.scope ? (topic.scope === scope || (topic.scope instanceof Array && topic.scope.find(scope_elt => scope_elt === scope))) : null));
+
+        if (found) {
+            s += '<p title="' + scope + '"><span class="EVENTSUB_LEGEND_IDX ' + (!TwitchAPI_hasScope(scope) ? 'missing ' : '') + (TwitchAPI_isBetaScope(scope) ? 'beta ' : '') + '">' + TwitchAPI_EventSub_GetScopeIdx(scope) + '</span> ' + TTV_API_SCOPES[scope].desc + '</p>';
+        }
+    }
+    document.getElementById('TWITCHAPI_EVENTSUB_LEGEND').innerHTML = s;
+
+    for (let elt of document.getElementsByClassName('TTV_API_EVENTSUB_ENABLE')) {
+        if (elt instanceof Element && elt.tagName === 'SWITCHBUTTON') SWITCHBUTTON_AUTOFILL(elt);
+    }
+}
+function TwitchAPI_EventSub_createCategorie(cat) {
+    let s = '';
+    s += '<p ' + (cat.name === "Beta" ? 'class="beta"' : "") + '>' + cat.name + '</p>';
+    s += '<div class="EVENTSUB_CAT">';
+
+    for (let topic of cat.eventsubs) {
+        let missing = !TwitchAPI_hasScope(topic.scope);
+        let beta = TwitchAPI_isBetaScope(topic.scope);
+        s += '<span>' + topic.name + '<span title="Requieres ' + (missing ? 'missing ' : '') + 'Scopes: ' + (topic.scope instanceof Array ? topic.scope.join(' or ') : topic.scope) + ' " class="EVENTSUB_LEGEND_IDX ' + (missing ? 'missing ' : '') + (beta ? 'beta ' : '') +'">' + TwitchAPI_EventSub_GetScopeIdx(topic.scope) + '</span></span>' + SWITCHBUTTON_CREATE(topic.enabled === true, false, 'TwitchAPI_EventSub_Control(this); ', null, 'data-topic="' + topic.value + '" class="TTV_API_EVENTSUB_ENABLE"');
+    }
+
+    s += '</div>';
+    return s;
+}
+function TwitchAPI_EventSub_GetScopeIdx(scopes) {
+    let idxs = [];
+
+    if (!scopes) return "";
+    if (!(scopes instanceof Array)) scopes = [scopes];
+
+
+    for(let scope of scopes) {
+        Object.getOwnPropertyNames(TTV_API_SCOPES)
+            .find((elt, index) => {
+                if (elt === scope) {
+                    idxs.push(index);
+                    return true;
+                }
+                return false;
+            });
+    }
+    
+    return idxs.join(',');
+}
+function TwitchAPI_hasScope(scopes) {
+    if (!scopes) return true;
+    if (!(scopes instanceof Array)) scopes = [scopes];
+
+    for (let scope of scopes) {
+        let found = (TTV_API_ACTIVE_SCOPES || []).find(elt => elt === scope);
+        if (found) return true;
+    }
+
+    return false;
+}
+function TwitchAPI_isBetaScope(scope) {
+    return (TTV_API_SCOPES[scope] || {}).beta === true;
+}
+
+async function TwitchAPI_EventSub_Control(elt) {
+    //Toggle
+    let opt = getAuthHeader();
+
+    opt['method'] = 'PUT';
+    opt['headers']['Content-Type'] = 'application/json';
+
+    fetch("/api/settings/TwitchAPI/EventSub/" + elt.dataset.topic + '?mode=toggle', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            SWITCHBUTTON_TOGGLE(elt, json.state);
+            OUTPUT_showInfo('EventSub toggled!');
+        })
+        .catch(err => {
+            SWITCHBUTTON_TOGGLE(elt, elt.value === false);
+            console.log(err);
+            OUTPUT_showError(err.message);
+        });
+
+    return Promise.resolve();
+}
+async function TwitchAPI_EventSub_Control_All(mode) {
+    let opt = getAuthHeader();
+
+    opt['method'] = 'PUT';
+    opt['headers']['Content-Type'] = 'application/json';
+
+    fetch('/api/settings/TwitchAPI/EventSub/all?mode=' + mode, opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            for (let elt of document.getElementsByClassName('TTV_API_EVENTSUB_ENABLE')) {
+                SWITCHBUTTON_TOGGLE(elt, json.state);
+            }
+            OUTPUT_showInfo('EventSubs toggled!');
+        })
+        .catch(err => {
             console.log(err);
             OUTPUT_showError(err.message);
         });

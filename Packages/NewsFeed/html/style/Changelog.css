@@ -111,12 +111,13 @@
 
 
     /*PLAIN*/
-    .CHANGELOG p {
-        font-weight: 400 !important;
-        font-size: 18px;
-        margin-top: 5px;
-        margin-left: 5px;
-    }
+.CHANGELOG p {
+    font-weight: 400 !important;
+    font-size: 18px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-left: 5px;
+}
 
     /*LIST*/
     .CHANGELOG ul {
@@ -258,41 +259,33 @@
             }
 
         .CHANGELOG .CHANGES .PACKAGE {
-            background-color: #e6e6e6;
-            color: darkorange;
+            background-color: orange;
+            color: white;
         }
 
-        .CHANGELOG .CHANGES .COMMANDHANDLER .IMG img {
-            height: 60px;
-            width: 60px;
-            padding: 5px;
-            padding-left: 6px;
-            border-color: white;
-        }
+            .CHANGELOG .CHANGES .PACKAGE .IMG img {
+                background-color: rgb(0, 85, 255);
+                height: 60px;
+                width: 60px;
+                padding: 5px;
+                padding-left: 6px;
+                filter: invert(1);
+                border-color: black;
+            }
 
-        .CHANGELOG .CHANGES .NEWSFEED .IMG img {
-            height: 60px;
-            width: 60px;
-            padding: 5px;
-            padding-left: 6px;
-            border-color: white;
+        .CHANGELOG .CHANGES .UTIL {
+            background-color: #32a852;
+            color: white;
         }
-
-        .CHANGELOG .CHANGES .DOCS .IMG img {
-            height: 60px;
-            width: 60px;
-            padding: 5px;
-            padding-left: 6px;
-            border-color: white;
-        }
-
-        .CHANGELOG .CHANGES .CHATMODERATION .IMG img {
-            height: 60px;
-            width: 60px;
-            padding: 5px;
-            padding-left: 6px;
-            border-color: white;
-        }
+            .CHANGELOG .CHANGES .UTIL .IMG img {
+                background-color: #cd57ad;
+                height: 60px;
+                width: 60px;
+                padding: 5px;
+                padding-left: 6px;
+                filter: invert(1);
+                border-color: black;
+            }
 
         .CHANGELOG .CHANGES .ThirdParty {
             background-color: #5d6afc;

@@ -26,6 +26,7 @@ const COMMAND_TEMPLATE_REQUIRED = {
 };
 const TIMER_TEMPLATE = {
     interval: "string",
+    lines: "number",
     output: "string",
     description: "string",
     enabled: "boolean",
@@ -46,15 +47,29 @@ const PACKAGE_DETAILS = {
 };
 
 class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase {
-    constructor(webappinteractor, twitchirc, twitchapi, datacollection, logger) {
-        super(PACKAGE_DETAILS, webappinteractor, twitchirc, twitchapi, datacollection, logger);
+    constructor(webappinteractor, twitchirc, twitchapi, logger) {
+        super(PACKAGE_DETAILS, webappinteractor, twitchirc, twitchapi, logger);
 
         //Change Config Defaults
         this.Config.EditSettingTemplate('HTML_ROOT_NAME', { default: 'Commands' });
         this.Config.EditSettingTemplate('API_ROOT_NAME', { default: 'Commands' });
 
         this.Config.AddSettingTemplates([
-            { name: 'data_dir', type: 'string', default: CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + "CommandHandler/data/" }
+            { name: 'data_dir', type: 'string', default: CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + "CommandHandler/data/" },
+            { name: 'command_timer_reset', type: 'boolean', default: true },
+            { name: '!clip_userlevel', type: 'string', default: 'regular' },
+            { name: '!clip_delay', type: 'boolean', default: false },
+            { name: 'poll_title', type: 'string', default: 'Please vote now!' },
+            { name: 'poll_duration', type: 'number', default: 60 },
+            { name: 'poll_choice_1', type: 'string', default: 'A' },
+            { name: 'poll_choice_2', type: 'string', default: 'B' },
+            { name: 'poll_choice_3', type: 'string', default: 'C' },
+            { name: 'poll_choice_4', type: 'string', default: 'D' },
+            { name: 'poll_choice_5', type: 'string', default: 'E' },
+            { name: 'pred_title', type: 'string', default: 'Can I win this Challenge!' },
+            { name: 'pred_duration', type: 'number', default: 60 },
+            { name: 'pred_outcome_blue', type: 'string', default: 'YES' },
+            { name: 'pred_outcome_pink', type: 'string', default: 'NO' }
         ]);
         this.Config.Load();
         this.Config.FillConfig();
@@ -70,6 +85,8 @@ class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase 
         this.HardcodedCommands = {};
         this.Timers = [];
         this.ActiveTimers = [];
+        this.CURRENT_POLL_ID = null;
+        this.CURRENT_PRED_DATA = null;
         
         this.setWebNavigation({
             name: "Commands",
@@ -152,6 +169,298 @@ class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase 
             },
                 {
                     description: 'Prints the current Title to the User. Mods can @ a User like this: "!title @USERNAME", or set the Title like this: "!title TITLE TEXT HERE", the Bot wont @ Mods when they just call "!title".'
+                }),
+            "!clip": new HCCommand("!clip", async (userMessageObj, parameters) => {
+                let cfg = this.GetConfig();
+                let created_clip = null;
+
+                if (userMessageObj.matchUserlevel(cfg['!clip_userlevel'])) {
+                    //Create Clip
+                    try {
+                        created_clip = await this.TwitchAPI.CreateClip({ broadcaster_id: userMessageObj.getRoomID() });
+                        created_clip = created_clip.data[0];
+                    } catch (err) {
+                        this.TwitchIRC.say("Clip couldnt be created! (Creation)").catch(this.Logger.error(err.message));
+                        return Promise.reject(err);
+                    }
+
+                    //Confirm created
+                    return new Promise((resolve, reject) => {
+                        setTimeout(async () => {
+                            try {
+                                let requested_clips = await this.TwitchAPI.GetClips({ id: created_clip['id'] });
+                                if (requested_clips.data[0].id === created_clip['id']) {
+                                    this.TwitchIRC.say("Clip created! " + requested_clips.data[0].url).catch(this.Logger.error(err.message));
+                                    resolve();
+                                }
+                                else {
+                                    this.TwitchIRC.say("Clip couldnt be created! (Confirmation)").catch(this.Logger.error(err.message));
+                                    reject(new Error("Clip not found!"));
+                                }
+                            } catch (err) {
+                                this.TwitchIRC.say("Clip couldnt be created! (Confirmation)").catch(this.Logger.error(err.message));
+                                reject(err);
+                            }
+                        }, 15 * 1000);
+                    });
+                }
+            },
+                {
+                    description: '<p>Creates a Clip of the past 30 Seconds. This can take a minute or two!</p><p>Delay and min. Userlevel can be changed in the Package Settings!</p>'
+                }),
+            "!startpoll": new HCCommand("!startpoll", async (userMessageObj, parameters) => {
+                let cfg = this.GetConfig();
+                if (this.CURRENT_POLL_ID !== null) {
+                    this.TwitchIRC.say("Another Poll is still running!").catch(this.Logger.error(err.message));
+                    return Promise.resolve();
+                }
+                
+                if (userMessageObj.matchUserlevel('moderator')) {
+                    //Create Poll data
+                    let poll_request = {
+                        broadcaster_id: userMessageObj.getRoomID(),
+                        title: cfg['poll_title'],
+                        choices: [],
+                        duration: cfg['poll_duration']
+                    };
+                    
+                    if (parameters.length > 1) {
+                        //Extract "" from Parameters
+                        let better_params = [];
+
+                        for (let i = 0; i < parameters.length; i++) {
+                            if (parameters[i].startsWith('"')) {
+                                let new_param = [];
+                                let j = i;
+                                for (j; j < parameters.length; j++) {
+                                    new_param.push(parameters[j]);
+                                    if (parameters[j].endsWith('"')) break;
+                                }
+                                better_params.push(new_param.join(" "));
+                                i = j;
+                            }
+                            else better_params.push(parameters[i]);
+                        }
+
+                        //Apply Parameters
+                        for (let i = 0; i < better_params.length; i++) {
+                            let param = better_params[i];
+
+                            //Option?
+                            if (param.startsWith('-')) {
+                                let option = param.substring(1, param.indexOf('='));
+                                let value = param.substring(param.indexOf('=') + 1);
+
+                                try {
+                                    if (option === 'd') poll_request.duration = parseInt(value);
+                                    else if (option === 'bv') poll_request.bits_voting_enabled = value === 'true';
+                                    else if (option === 'bmin') poll_request.bits_per_vote = parseInt(value);
+                                    else if (option === 'cpv') poll_request.channel_points_voting_enabled = value === 'true';
+                                    else if (option === 'cpmin') poll_request.channel_points_per_vote = parseInt(value);
+                                } catch (err) {
+                                    this.TwitchIRC.say("Poll couldnt be created! Error: '" + option + "'").catch(this.Logger.error(err.message));
+                                    return Promise.reject(err);
+                                }
+                            } else if (param.startsWith('"')) {
+                                if (i === 1) poll_request.title = param.split('"')[1];
+                                else if (i > 1 && i < 7) poll_request.choices.push({ title: param.split('"')[1] });
+                            }
+                        }
+                    } 
+                    
+                    //Add Default Choices
+                    if (poll_request.choices.length === 0) {
+                        for (let i = 1; i <= 5; i++)
+                            if (cfg['poll_choice_' + i] !== '' && cfg['poll_choice_' + i] !== undefined)
+                                poll_request['choices'].push({ title: cfg['poll_choice_' + i] });
+                    }
+                    
+                    //Create Poll
+                    try {
+                        let poll = await this.TwitchAPI.CreatePoll({}, poll_request);
+                        if (poll.data.length > 0) {
+                            this.CURRENT_POLL_ID = poll.data[0].id;
+                            return Promise.resolve();
+                        }
+                        
+                        this.TwitchIRC.say("Poll couldnt be created!").catch(this.Logger.error(err.message));
+                        return Promise.reject(new Error('Poll couldnt be created!'));
+                    } catch (err) {
+                        this.TwitchIRC.say("Poll couldnt be created!").catch(this.Logger.error(err.message));
+                        return Promise.reject(err);
+                    }
+                }
+            },
+                {
+                    description: '<p>Creates a Twitch Poll!</p><p>Default Title, Duration, Choices and other Poll Options can be changed in the Package Settings! Or use the Syntax below!</p><h3>Syntax:</h3><b>!startpoll</span> <span>"[title]"</span> <span>"[choice1]"</span> ... <span>"[choice5]"</span> <span>(option1)</span> <span>(option2)</span> ... <span>(optionN)</span><p><b>title</b> - Poll Title Text (max. 60 characters, dont forget the "")</p><p><b>choiceN</b> - 1 of max. 5 Choice Titles (max. 25 characters, dont forget the "")</p><p><b>options</b> - Options start with a "-" followed by one of the following identifiers and end with an "=" followed by the value.</b></p><p><b>options identifiers</b>: <ul><li><b>d</b> - duration in seconds (min. 15, max. 1800)</li><li><b>bv</b> - Enable Bits Voting (true or false)</li><li><b>bmin</b> - Minimum amount of Bits to vote (min. 0, max. 10.000)</li><li><b>cpv</b> - Enable Channel Points Voting (true or false)</li><li><b>cpmin</b> - Minimum amount of Channel Points to vote (min. 0, max. 10.000)</li></ul></p><p>Note: Only Title and Choices are restricted to be set in order, options can have any order AFTER title and choices(if present)!</p><p>e.g. !startpoll "What should I play today?" "Minecraft" "LoL" "Fortnite" -d=100</p>'
+                }),
+            "!stoppoll": new HCCommand("!stoppoll", async (userMessageObj, parameters) => {
+                console.log(this.CURRENT_POLL_ID );
+                if (this.CURRENT_POLL_ID === null) return Promise.resolve();
+
+                if (userMessageObj.matchUserlevel('moderator')) {
+                    //Create Poll data
+                    let poll_request = {
+                        broadcaster_id: userMessageObj.getRoomID(),
+                        id: this.CURRENT_POLL_ID,
+                        status: 'TERMINATED'
+                    };
+                    
+                    //Stop Poll
+                    try {
+                        await this.TwitchAPI.EndPoll({}, poll_request);
+                    } catch (err) {
+
+                    }
+
+                    return Promise.resolve();
+                }
+            },
+                {
+                    description: '<p>Tops a currently runnning Twitch Poll!</p>'
+                }),
+            "!startpred": new HCCommand("!startpred", async (userMessageObj, parameters) => {
+                let cfg = this.GetConfig();
+                if (this.CURRENT_PRED_DATA !== null) {
+                    this.TwitchIRC.say("Another Prediction is still running!").catch(this.Logger.error(err.message));
+                    return Promise.resolve();
+                }
+                
+                if (userMessageObj.matchUserlevel('moderator')) {
+                    //Create Prediction data
+                    let pred_request = {
+                        broadcaster_id: userMessageObj.getRoomID(),
+                        title: cfg['pred_title'],
+                        outcomes: [{ title: cfg['pred_outcome_blue'] }, { title: cfg['pred_outcome_pink'] }],
+                        prediction_window: cfg['pred_duration']
+                    };
+
+                    if (parameters.length > 1) {
+                        //Extract "" from Parameters
+                        let better_params = [];
+
+                        for (let i = 0; i < parameters.length; i++) {
+                            if (parameters[i].startsWith('"')) {
+                                let new_param = [];
+                                let j = i;
+                                for (j; j < parameters.length; j++) {
+                                    new_param.push(parameters[j]);
+                                    if (parameters[j].endsWith('"')) break;
+                                }
+                                better_params.push(new_param.join(" "));
+                                i = j;
+                            }
+                            else better_params.push(parameters[i]);
+                        }
+
+                        try {
+                            //Apply Parameters
+                            pred_request.title = better_params[1];
+                            if (better_params.length > 3) pred_request.outcomes = [{ title: better_params[2] }, { title: better_params[3] }];
+                            if (better_params.length > 4) pred_request.prediction_window = parseInt(better_params[4]);
+                        } catch (err) {
+                            this.TwitchIRC.say("Prediction couldnt be created! ").catch(this.Logger.error(err.message));
+                            return Promise.reject(err);
+                        }
+                    } 
+                    
+                    //Create Prediction
+                    try {
+                        let pred = await this.TwitchAPI.CreatePrediction({}, pred_request);
+                        if (pred.data.length > 0) {
+                            this.CURRENT_PRED_DATA = pred.data[0];
+                            return Promise.resolve();
+                        }
+                        
+                        this.TwitchIRC.say("Prediction couldnt be created!").catch(this.Logger.error(err.message));
+                        return Promise.reject(new Error('Prediction couldnt be created!'));
+                    } catch (err) {
+                        this.TwitchIRC.say("Prediction couldnt be created!").catch(this.Logger.error(err.message));
+                        return Promise.reject(err);
+                    }
+                }
+            },
+                {
+                    description: '<p>Creates a Twitch Prediction!</p><p>Default Title, Duration and Outcomes can be changed in the Package Settings! Or use the Syntax below!</p><h3>Syntax:</h3><b>!startpred</span> <span>"[title]"</span> <span>"[outcome blue]"</span> <span>"[outcome pink]"</span> <span>duration</span></b><p><b>title</b> - Prediction Title Text (max. 45 characters, dont forget the "")</p><p><b>outcome blue/pink</b> - 2 Outcomes Titles (max. 25 characters, dont forget the "")</p><p><b>duration</b> - Prediction voting Window in Seconds (min. 1, max. 1800)</p><p>e.g. !startpred "Will I win this match?" "YEP" "N OMEGALUL" 100</p>'
+                }),
+            "!lockpred": new HCCommand("!lockpred", async (userMessageObj, parameters) => {
+                if (this.CURRENT_PRED_DATA === null) return Promise.resolve();
+
+                if (userMessageObj.matchUserlevel('moderator')) {
+                    //Create Prediction data
+                    let pred_request = {
+                        broadcaster_id: userMessageObj.getRoomID(),
+                        id: this.CURRENT_PRED_DATA.id,
+                        status: 'LOCKED'
+                    };
+                    
+                    //Lock Prediction
+                    try {
+                        await this.TwitchAPI.EndPrediction({}, pred_request);
+                    } catch (err) {
+
+                    }
+
+                    return Promise.resolve();
+                }
+            },
+                {
+                    description: '<p>Locks a currently runnning Twitch Prediction from further voting!</p>'
+                }),
+            "!cancelpred": new HCCommand("!cancelpred", async (userMessageObj, parameters) => {
+                if (this.CURRENT_PRED_DATA === null) return Promise.resolve();
+
+                if (userMessageObj.matchUserlevel('moderator')) {
+                    //Create Prediction data
+                    let pred_request = {
+                        broadcaster_id: userMessageObj.getRoomID(),
+                        id: this.CURRENT_PRED_DATA.id,
+                        status: 'CANCELED'
+                    };
+                    
+                    //Cancel Prediction
+                    try {
+                        await this.TwitchAPI.EndPrediction({}, pred_request);
+                        this.CURRENT_PRED_DATA == null;
+                    } catch (err) {
+
+                    }
+
+                    return Promise.resolve();
+                }
+            },
+                {
+                    description: '<p>Cancels a currently runnning Twitch Prediction and refunds all points!</p>'
+                }),
+            "!resolvepred": new HCCommand("!resolvepred", async (userMessageObj, parameters) => {
+                if (this.CURRENT_PRED_DATA === null) return Promise.resolve();
+                if (!this.CURRENT_PRED_DATA.outcomes.find(elt => elt.color.toLowerCase() === parameters[1].toLowerCase())) {
+                    this.TwitchIRC.say("Not a valid Outcome! Use Blue or Pink!").catch(this.Logger.error(err.message));
+                    return Promise.reject();
+                }
+
+                if (userMessageObj.matchUserlevel('moderator')) {
+                    //Create Prediction data
+                    let pred_request = {
+                        broadcaster_id: userMessageObj.getRoomID(),
+                        id: this.CURRENT_PRED_DATA.id,
+                        status: 'RESOLVED',
+                        winning_outcome_id: this.CURRENT_PRED_DATA.outcomes.find(elt => elt.color.toLowerCase() === parameters[1].toLowerCase()).id
+                    };
+                    
+                    //Resolve Prediction
+                    try {
+                        let result = await this.TwitchAPI.EndPrediction({}, pred_request);
+                        if (result.data[0].id === this.CURRENT_PRED_DATA.id) this.CURRENT_PRED_DATA = null;
+                    } catch (err) {
+
+                    }
+
+                    return Promise.resolve();
+                }
+            },
+                {
+                    description: '<p>Resolves a currently runnning Twitch Prediction and hands out rewards! Use "!resolvepred blue" or "!resolvepred pink" to select an outcome!</p>'
                 }),
             "!commands": new HCCommand("!commands", async (userMessageObj, parameters) => {
                 if (!userMessageObj.matchUserlevel('moderator')) {
@@ -424,7 +733,7 @@ class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase 
                 return Promise.resolve();
             },
                 {
-                    description: '<p>Used to add/remove/edit/start/stop Timers. </p><h3>Syntax:</h3><b>!timers <span>action</span> <span>interval</span> <span>(option1)</span> <span>(option2)</span> ... <span>(optionN)</span> <span>[output]</span></b><p><b>action</b> - edit or remove</p><b>interval</b> - string code containing the interval time e.g. 1m , 50s or 1h2m10s</p><b>options</b> - Options start with a "-" followed by one of the following identifiers and end with an "=" followed by the value.</b></p><p><b>options identifiers</b>: <ul><li><b>en</b> - enabled (true (default) or false)</li><li><li><b>dc</b> - description</li><li><b>a</b> - Alias can trigger other Commands. Alias Text must be contained in "s. e.g. using alias like : -a="!game Apex Legends" will set the game to Apex Legends without the User having to call !game. Userlevels only apply on the command with the alias! Using the same example: any user can set the game to Apex Legends if no userlevel was set.</li></ul></p><p><b>output</b> - Text to be sent when interval is over. Is not needed/overwritten when using an alias!</p>'
+                    description: '<p>Used to add/remove/edit/start/stop Timers. </p><h3>Syntax:</h3><b>!timers <span>action</span> <span>interval</span> <span>(option1)</span> <span>(option2)</span> ... <span>(optionN)</span> <span>[output]</span></b><p><b>action</b> - edit or remove</p><b>interval</b> - string code containing the interval time e.g. 1m , 50s or 1h2m10s</p><b>options</b> - Options start with a "-" followed by one of the following identifiers and end with an "=" followed by the value.</b></p><p><b>options identifiers</b>: <ul><li><b>en</b> - enabled (true (default) or false)</li><li><b>dc</b> - description</li><li><b>a</b> - Alias can trigger other Commands. Alias Text must be contained in "s. e.g. using alias like : -a="!game Apex Legends" will set the game to Apex Legends without the User having to call !game. Userlevels only apply on the command with the alias! Using the same example: any user can set the game to Apex Legends if no userlevel was set.</li></ul></p><p><b>output</b> - Text to be sent when interval is over. Is not needed/overwritten when using an alias!</p>'
                 })
         };
 
@@ -856,25 +1165,54 @@ class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase 
 
         //TwitchIRC Capability
         if (this.TwitchIRC) this.TwitchIRC.on('chat', async (channel, userstate, message, self) => {
-                
-                try {
-                    if (!this.isEnabled()) return Promise.resolve();
+            if (!this.isEnabled()) return Promise.resolve();
 
-                    let messageObj = new TWITCHIRC.Message(channel, userstate, message);
+            let messageObj = new TWITCHIRC.Message(channel, userstate, message);
+            let cfg = this.GetConfig();
 
-                    if (!self) {
-                        //Check Follow UserLevel
-                        if (!messageObj.matchUserlevel(CONSTANTS.UserLevel["follower"] + 1)) {
-                            await messageObj.checkFollow(this.TwitchAPI);
-                        }
+            //Update Timers
+            for (let timer of this.ActiveTimers) {
+                //Update Lines for Timers
+                timer.lines++;
+            }
 
-                        await this.CommandHandler(messageObj);
+            //Find Commands
+            try {
+                if (!self) {
+                    //Check Follow UserLevel
+                    if (!messageObj.matchUserlevel(CONSTANTS.UserLevel["follower"] + 1)) {
+                        await messageObj.checkFollow(this.TwitchAPI);
                     }
-                } catch (err) {
-                    this.TwitchIRC.Logger.error(err.message);
+
+                    let succesfull = await this.CommandHandler(messageObj);
+
+                    if (cfg['command_timer_reset'] !== true) return Promise.resolve();
+
+                    //Update Timers
+                    for (let timer of this.ActiveTimers) {
+                        let obj_timer = this.Timers.find(elt => elt.name === timer.name);
+                        let alias = (obj_timer.alias || '').split(" ")[0];
+                        
+                        //Reset Timers when command called
+                        if (succesfull.find(elt => elt.name === alias)) {
+                            this.resetTimer(timer.name);
+                        }
+                    }
                 }
-            });
-        
+            } catch (err) {
+                this.TwitchIRC.Logger.error(err.message);
+            }
+        });
+
+        //TwitchAPI EventSubs
+        this.TwitchAPI.AddEventSubCallback('channel.poll.begin', this.getName(), (body) => { if (this.CURRENT_POLL_ID === null) this.CURRENT_POLL_ID = body.event.id; });
+        this.TwitchAPI.AddEventSubCallback('channel.poll.progress', this.getName(), (body) => { if (this.CURRENT_POLL_ID === null) this.CURRENT_POLL_ID = body.event.id; });
+        this.TwitchAPI.AddEventSubCallback('channel.poll.end', this.getName(), (body) => { if (this.CURRENT_POLL_ID === body.event.id) this.CURRENT_POLL_ID = null; });
+
+        this.TwitchAPI.AddEventSubCallback('channel.prediction.begin', this.getName(), (body) => { if (this.CURRENT_PRED_DATA === null) this.CURRENT_PRED_DATA = body.event; });
+        this.TwitchAPI.AddEventSubCallback('channel.prediction.progress', this.getName(), (body) => { if (this.CURRENT_PRED_DATA === null) this.CURRENT_PRED_DATA = body.event; });
+        this.TwitchAPI.AddEventSubCallback('channel.prediction.end', this.getName(), (body) => { if ((this.CURRENT_PRED_DATA || {}).id === body.event.id) this.CURRENT_PRED_DATA = null; });
+
         //STATIC FILE ROUTING
         let StaticRouter = express.Router();
         StaticRouter.use((req, res, next) => {
@@ -1010,12 +1348,12 @@ class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase 
                 else res.json({ err: s });
             })
             .lock((req, res, next) => {
-                let s = this.stopTimer(req.body.name, (res.locals.user || {}).preferred_username);
+                let s = this.stopTimer(req.body.name);
                 if (s === true) res.sendStatus(200);
                 else res.json({ err: s });
             })
             .unlock((req, res, next) => {
-                let s = this.startTimer(req.body.name, (res.locals.user || {}).preferred_username);
+                let s = this.startTimer(req.body.name);
                 if (s === true) res.sendStatus(200);
                 else res.json({ err: s });
             })
@@ -1130,7 +1468,7 @@ class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase 
                             await this.executeCuCommand(commandObj, messageObj, parameters, detectedCmds[i].index);
                             success = true;
                         } catch (err) {
-
+                            console.log(err);
                         }
                     }
                 }
@@ -1151,7 +1489,7 @@ class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase 
                 }
             }
             
-            resolve();
+            resolve(successfullCommands);
         }).catch(err => {
             console.log(err);
             return Promise.reject(err);
@@ -1216,10 +1554,12 @@ class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase 
                 let checked_msg = this.checkMessage(commandObj.alias);
                 let new_parameters = commandObj.alias.split(" ");
 
-                if (checked_msg[0].type === 'HARDCODED') {
-                    await checked_msg[0].ClassObject.execute(messageObj, new_parameters);
-                } else {
-                    return this.executeCuCommand(checked_msg[0].command, messageObj, new_parameters, start);
+                for (let i = 0; i < checked_msg.length && i < 1; i++) {
+                    if (checked_msg[i].type === 'HARDCODED') {
+                        await checked_msg[i].ClassObject.execute(messageObj, new_parameters);
+                    } else {
+                        return this.executeCuCommand(checked_msg[i].command, messageObj, new_parameters, start);
+                    }
                 }
             } else {
                 out = await this.fillCommandVariables(commandObj, messageObj, parameters, start);
@@ -1392,47 +1732,25 @@ class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase 
     }
 
     //Timers
-    startTimer(name) {
+    startTimer(name, init_offset = 0, dir = -1) {
         let timer = this.Timers.find(elt => elt.name === name);
-        if (this.ActiveTimers.find(elt => elt.name === name)) return "Timer already active.";
         if (!timer) return "Timer not found.";
-
-        this.Logger.info("Timer " + name + " started!");
+        if (this.ActiveTimers.find(elt => elt.name === name)) return "Timer already active.";
+        
+        //Timer Interval Management
+        let time = this.parseCooldownString(timer.interval) + Math.abs(init_offset) * dir;
+        let boosted_time = time < 1000 ? 1000 : time;
 
         this.ActiveTimers.push({
-            name, started_at: Date.now() + this.parseCooldownString(timer.interval), interval: setInterval(async () => {
-                let messageObj = new TWITCHIRC.Message(this.TwitchIRC.getChannel(), { username: this.TwitchIRC.getUsername(), badges: { moderator: '1' } }, timer.alias || timer.output);
-
-                let timer_obj = this.ActiveTimers.find(elt => elt.name === name);
-                if (timer_obj) timer_obj.started_at = Date.now() + this.parseCooldownString(timer.interval);
-
-                try {
-                    let out = null;
-
-                    if (timer.alias !== undefined && timer.alias !== "") {
-                        //Use Alias
-                        let checked_msg = this.checkMessage(timer.alias);
-                        let new_parameters = timer.alias.split(" ");
-
-                        if (checked_msg[0].type === 'HARDCODED') {
-                            await checked_msg[0].ClassObject.execute(messageObj, new_parameters, this.onCooldown);
-                        } else {
-                            return this.executeCuCommand(checked_msg[0].command, messageObj, new_parameters, 0);
-                        }
-                    } else {
-                        //Use Output
-                        out = await this.fillCommandVariables(timer, messageObj, timer.output.split(" "), 0);
-                    }
-
-                    if (typeof out == "string" && out.trim() !== "") return this.TwitchIRC.say(out);
-                } catch (err) {
-
-                }
-            }, this.parseCooldownString(timer.interval))
+            name, started_at: Date.now() + boosted_time, time: boosted_time, lines: 0,
+            interval: setInterval(() => this.GENERAL_TIMER_INTERVAL(name), boosted_time)
         });
-        
+
+        //Logging
         timer.enabled = true;
         this.saveTimers();
+
+        this.Logger.info("Timer " + name + " started!");
 
         return true;
     }
@@ -1459,6 +1777,79 @@ class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase 
         this.ActiveTimers.splice(idx, 1);
 
         return true;
+    }
+    resetTimer(name) {
+        let timer = this.Timers.find(elt => elt.name === name);
+        let act_timer = this.ActiveTimers.find(elt => elt.name === name);
+        if (!timer) return "Timer not found.";
+        if (!act_timer) return "Timer not active.";
+        
+        //Reset Interval Information
+        act_timer.started_at = Date.now() + this.parseCooldownString(timer.interval);
+        clearInterval(act_timer.interval);
+        act_timer.lines = 0;
+        act_timer.time = this.parseCooldownString(timer.interval);
+        act_timer.interval = setInterval(() => this.GENERAL_TIMER_INTERVAL(name), this.parseCooldownString(timer.interval));
+        return true;
+    }
+
+    async GENERAL_TIMER_INTERVAL(name) {
+        //Debug Check (hopefully never seen)
+        let timer_obj = this.ActiveTimers.find(elt => elt.name === name);
+        let timer = this.Timers.find(elt => elt.name === name);
+
+        if (!timer_obj) {
+            this.Logger.error("TIMER MEMORY LEAK!! Interval still active, without active Timer! (" + name + ")");
+            return Promise.resolve();
+        }
+        if (!timer) {
+            this.Logger.warn("Timer got deleted! Removing Interval!");
+            this.stopTimer(name);
+            return Promise.resolve();
+        }
+
+        let messageObj = new TWITCHIRC.Message(this.TwitchIRC.getChannel(), { username: this.TwitchIRC.getUsername(), badges: { moderator: '1' } }, timer.alias || timer.output);
+
+        //Remanage Interval when offset was used
+        if (timer_obj.time !== this.parseCooldownString(timer.interval)) {
+            clearInterval(timer_obj.interval);
+            timer_obj.time = this.parseCooldownString(timer.interval);
+            timer_obj.interval = setInterval(() => this.GENERAL_TIMER_INTERVAL(), this.parseCooldownString(timer.interval));
+        }
+
+        //Reset Interval Information
+        timer_obj.started_at = Date.now() + this.parseCooldownString(timer.interval);
+
+        //Only Execute when min. Messages between Timers
+        if (timer_obj.lines < timer.lines) return Promise.resolve();
+        timer_obj.lines = 0;
+
+        //Execute Command
+        try {
+            let out = null;
+
+            if (timer.alias !== undefined && timer.alias !== "") {
+                //Use Alias
+                let checked_msg = this.checkMessage(timer.alias);
+                let new_parameters = timer.alias.split(" ");
+
+                if (checked_msg[0].type === 'HARDCODED') {
+                    await checked_msg[0].ClassObject.execute(messageObj, new_parameters, this.onCooldown);
+                } else {
+                    await this.executeCuCommand(checked_msg[0].command, messageObj, new_parameters, 0);
+                    return Promise.resolve();
+                }
+            } else {
+                //Use Output
+                out = await this.fillCommandVariables(timer, messageObj, timer.output.split(" "), 0);
+            }
+
+            if (typeof out == "string" && out.trim() !== "") await this.TwitchIRC.say(out);
+        } catch (err) {
+
+        }
+
+        return Promise.resolve();
     }
 
     //////////////////////////////////////////////
@@ -1651,25 +2042,34 @@ class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase 
 
     loadTimers() {
         let cfg = this.Config.GetConfig();
+        let json = "";
 
         try {
             let s = super.readFile(cfg['data_dir'] + "Timers.json");
-
+            
             //read File and convert to JSON (errors if errored before)
-            let json = JSON.parse(s);
-
-            //add Timers
-            for (let tmr of json.Timers || []) {
-                let s = this.validateTimer(tmr);
-                if (s === true) {
-                    this.Timers.push(tmr);
-                    if (tmr.enabled === true) this.startTimer(tmr.name);
-                }
-                else this.Logger.error("Timer " + tmr.name + " Error: " + s);
-            }
+            json = JSON.parse(s);
         } catch (err) {
             if (err.message === '404: File doesnt Exist!') this.saveTimers();
             else this.Logger.error(err.message);
+            return;
+        }
+        
+        //Init Timers
+        for (let tmr of json.Timers || []) {
+            let s = this.validateTimer(tmr);
+            if (s === true) {
+                this.Timers.push(tmr);
+
+                //Start Timer
+                try {
+                    if (tmr.enabled === true) this.startTimer(tmr.name, Math.floor(Math.random() * this.parseCooldownString(tmr.interval)));
+                } catch (err) {
+
+                } 
+
+            }
+            else this.Logger.error("Timer " + tmr.name + " Error: " + s);
         }
     }
     saveTimers() {
@@ -1705,6 +2105,7 @@ class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase 
     editTimer(timer, user = "UNKNOWN") {
         if (!timer) return "No Data supplied!";
 
+        //Find Timer
         let tmr_idx = -1;
         this.Timers.find((elt, idx) => {
             if (timer.name === elt.name) {
@@ -1715,14 +2116,27 @@ class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase 
         });
         if (tmr_idx < 0) return "Timer doesnt exists!";
 
-        timer.added_by = user;
-
+        //Check new Data
         let s = this.validateTimer(timer);
         if (typeof (s) == "string") return s;
 
+        //Update Timer Data
+        timer.added_by = user;
         this.Timers.splice(tmr_idx, 1, timer);
 
-        if (timer.enabled === true) this.startTimer(timer.name);
+        //Re/Start/Stop Timer given the current Runtime / Enable State
+        if (timer.enabled === true) {
+            let offset = 0;
+            let act_timer = this.ActiveTimers.find(elt => elt.name === timer.name);
+            if (act_timer) {
+                let temp = act_timer.started_at - Date.now();
+                offset = act_timer.time - temp;
+            }
+
+            this.startTimer(timer.name, offset);
+        } else {
+            this.stopTimer(timer.name);
+        }
 
         this.Logger.info("Timer: " + timer.name + " UPDATED by " + user + "!");
         return this.saveTimers();
@@ -1765,13 +2179,23 @@ class CommandHandler extends require('./../../Util/PackageBase.js').PackageBase 
 
         let s = this.validateName(newName);
         if (s !== true) return s;
-
-        this.stopTimer(oldName);
-
+        
         this.Timers[old_tmr_idx].name = newName;
         this.Timers[old_tmr_idx].added_by = user;
 
-        if (this.Timers[old_tmr_idx].enabled) this.startTimer(oldName);
+        //ReStart Timer given the current Runtime / Enable State
+        if (this.Timers[old_tmr_idx].enabled === true) {
+            let offset = 0;
+            let act_timer = this.ActiveTimers.find(elt => elt.name === oldName);
+            if (act_timer) {
+                let temp = act_timer.started_at - Date.now();
+                offset = act_timer.time - temp;
+            }
+            
+            this.startTimer(newName, offset);
+        }
+
+        this.stopTimer(oldName);
         
         this.Logger.info("Timer: " + oldName + " RENAMED to " + newName + " by " + user + "!");
         return this.saveTimers();

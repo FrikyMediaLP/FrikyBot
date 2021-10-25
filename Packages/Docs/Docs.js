@@ -14,8 +14,8 @@ const COOKIES = {
 };
 
 class Docs extends require('./../../Util/PackageBase.js').PackageBase {
-    constructor(webappinteractor, twitchirc, twitchapi, datacollection, logger) {
-        super(PACKAGE_DETAILS, webappinteractor, twitchirc, twitchapi, datacollection, logger);
+    constructor(webappinteractor, twitchirc, twitchapi, logger) {
+        super(PACKAGE_DETAILS, webappinteractor, twitchirc, twitchapi, logger);
         
         this.Config.AddSettingTemplates([
             { name: 'Data_Dir', type: 'string', default: this.getMainPackageRoot() + 'Docs/Data/' },

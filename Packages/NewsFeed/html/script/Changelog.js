@@ -15,7 +15,6 @@ const CHANGELOG_CUSTOMS = {
     MODULE: {
         MODULE: ["MODULE", "images/icons/hdd-regular.svg"],
         MODULEBASE: ["MODULE BASE", "images/icons/hdd-regular.svg"],
-        LOGGER: ["LOGGER", "images/icons/pen-solid.svg"],
         SERVER: ["SERVER.js", "images/icons/server-solid.svg"],
         TWITCHAPI: ["TWITCH API", "images/icons/twitch_colored.png"],
         TWITCHIRC: ["TWITCH IRC", "images/icons/twitch_colored_alt.png"],
@@ -23,12 +22,19 @@ const CHANGELOG_CUSTOMS = {
         DATACOLLECTION: ["DATACOLLECTION", "images/icons/chart-bar.svg"]
     },
     PACKAGE: {
-        PACKAGE: ["UNKOWN PACKAGE", "images/Profiles/orange_transparent.png"],
-        PACKAGEBASE: ["PACKAGE BASE", "images/Profiles/orange_transparent.png"],
+        PACKAGE: ["UNKOWN PACKAGE", "images/icons/FrikyBot.png"],
+        PACKAGEBASE: ["PACKAGE BASE", "images/icons/FrikyBot.png"],
         COMMANDHANDLER: ["CommandHandler", "images/icons/command.svg"],
         NEWSFEED: ["NewsFeed", "images/icons/newspaper-solid.svg"],
         DOCS: ["Docs", "images/icons/pencil-ruler-solid.svg"],
-        CHATMODERATION: ["ChatModeration", "images/icons/user-secret-solid.svg"]
+        CHATMODERATION: ["ChatModeration", "images/icons/user-secret-solid.svg"],
+        STATS: ["Stats", "images/icons/chart-bar.svg"],
+        ALERTS: ["Alerts", "images/icons/bell-solid.svg"]
+    },
+    UTIL: {
+        CONSTANTS: ["CONSTANTS", "images/icons/address-card-regular.svg"],
+        CONFIGHANDLER: ["CONFIGHANDLER", "images/icons/clipboard-list-solid.svg"],
+        LOGGER: ["LOGGER", "images/icons/pen-solid.svg"]
     },
     "ThirdParty": {
         "3rdParty": ["UNKOWN 3rdParty", "images/icons/external-link-alt-solid.svg"],

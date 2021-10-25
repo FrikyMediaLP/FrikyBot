@@ -29,6 +29,7 @@ const API_ENDPOINT_PARAMETERS = {
     },
     changelogs: {
         id: 'query',
+        page: 'query',
         changelog: 'query',
         title: 'query',
         day: 'query',
@@ -40,8 +41,8 @@ const API_ENDPOINT_PARAMETERS = {
 };
 
 class NewsFeed extends require('./../../Util/PackageBase.js').PackageBase {
-    constructor(webappinteractor, twitchirc, twitchapi, datacollection, logger) {
-        super(PACKAGE_DETAILS, webappinteractor, twitchirc, twitchapi, datacollection, logger);
+    constructor(webappinteractor, twitchirc, twitchapi, logger) {
+        super(PACKAGE_DETAILS, webappinteractor, twitchirc, twitchapi, logger);
 
         //Change Config Defaults
         this.Config.EditSettingTemplate('HTML_ROOT_NAME', { default: 'News' });
@@ -535,7 +536,7 @@ class NewsFeed extends require('./../../Util/PackageBase.js').PackageBase {
         let Changelogs = [];
         let pagination;
         let cfg = this.Config.GetConfig();
-
+        
         //Scheduled
         if (include_scheduled == false) {
             try {
@@ -544,10 +545,13 @@ class NewsFeed extends require('./../../Util/PackageBase.js').PackageBase {
                 params.end = Date.now() + "";
             }
         }
+        let query = this.createNEDBQuery('changelogs', params);
+
+        if (!query) return Promise.reject(new Error("Internal Error."));
 
         //Fetch
         try {
-            Changelogs = await this.AccessNeDB(this.CHANGELOG_DATABASE, this.createNEDBQuery('changelogs', params));
+            Changelogs = await this.AccessNeDB(this.CHANGELOG_DATABASE, query);
         } catch (err) {
             return Promise.reject(err);
         }

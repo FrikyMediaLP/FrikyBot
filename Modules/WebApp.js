@@ -7,8 +7,13 @@ const Datastore = require('nedb');
 const express = require('express');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const bodyParser = require('body-parser');
+
+const HTTP = require('http');
+const Websocket = require('ws');
 
 const API_TREE_DEPTH = 12;
+const WS_REGISTER_TEMPLATE = "{origin}{topic}{misc}";
 
 const MODULE_DETAILS = {
     name: 'WebApp',
@@ -21,11 +26,13 @@ class WebApp extends require('./../Util/ModuleBase.js') {
         super(MODULE_DETAILS, configJSON, logger);
 
         this.Config.AddSettingTemplates([
+            { name: 'Hostname', type: 'string', default: 'localhost', group: 0 },
             { name: 'Port', type: 'number', range: '0:99999', default: 8080, group: 0 },
             { name: 'selected_Authenticator', type: 'string' },
             { name: 'enable_api', type: 'boolean', default: true },
             { name: 'Authenticator', type: 'config', requiered: true, group: 1 },
-            { name: 'Log_Dir', type: 'string', default: 'Logs/' + MODULE_DETAILS.name + '/' }
+            { name: 'Log_Dir', type: 'string', default: 'Logs/' + MODULE_DETAILS.name + '/' },
+            { name: 'use_legacy_server', type: 'boolean', default: false }
         ]);
         this.Config.options = {
             groups: [{ name: 'WebApp' }, { name: 'Authenticator' }]
@@ -38,34 +45,60 @@ class WebApp extends require('./../Util/ModuleBase.js') {
         this.Installed_Authenticators = [];
         this.Authenticator;
         if (WebAppInteractor) this.WebAppInteractor = WebAppInteractor;
-        
+
+        //TCP Server
+        this.server;
+
         //logging
         this.AUTH_LOG;
         this.Settings_LOG;
         
         //Displayables
         this.addDisplayables([
-            { name: 'API Status', value: () => { this.Config.GetConfig()['enable_api'] !== false ? 'ONLINE' : 'OFFLINE' } },
-            { name: 'Authenticator', value: () => { this.Authenticator ? this.Authenticator.GetName() : 'NONE' } },
-            { name: 'Authenticator Status', value: () => { this.Authenticator && this.Authenticator.isReady() ? 'ONLINE' : 'OFFLINE' } },
-            { name: 'Total Main Route Calls', value: () => { this.WebAppInteractor.STAT_MAIN_CALLS } },
-            { name: 'Main Route Calls per 10 Min', value: () => { this.WebAppInteractor.STAT_MAIN_CALLS_PER_10 } },
-            { name: 'Total File Route Calls', value: () => { this.WebAppInteractor.STAT_FILE_CALLS } },
-            { name: 'File Route Calls per 10 Min', value: () => { this.WebAppInteractor.STAT_FILE_CALLS_PER_10 } },
-            { name: 'Total API Route Calls', value: () => { this.WebAppInteractor.STAT_API_CALLS } },
-            { name: 'API Route Calls per 10 Min', value: () => { this.WebAppInteractor.STAT_API_CALLS_PER_10 } },
-            { name: 'Total Authentications', value: () => { this.WebAppInteractor.STAT_API_CALLS } },
-            { name: 'Authentications per 10 Min', value: () => { this.WebAppInteractor.STAT_API_CALLS_PER_10 } }
+            { name: 'API Status', value: () => this.Config.GetConfig()['enable_api'] !== false ? 'ONLINE' : 'OFFLINE' },
+            { name: 'Authenticator', value: () => this.Authenticator ? this.Authenticator.GetName() : 'NONE' },
+            { name: 'Authenticator Status', value: () => this.Authenticator && this.Authenticator.isReady() ? 'ONLINE' : 'OFFLINE' },
+            { name: 'Total Main Route Calls', value: () => this.WebAppInteractor.STAT_MAIN_CALLS },
+            { name: 'Main Route Calls per 10 Min', value: () => this.WebAppInteractor.STAT_MAIN_CALLS_PER_10 },
+            { name: 'Total File Route Calls', value: () => this.WebAppInteractor.STAT_FILE_CALLS },
+            { name: 'File Route Calls per 10 Min', value: () => this.WebAppInteractor.STAT_FILE_CALLS_PER_10 },
+            { name: 'Total API Route Calls', value: () => this.WebAppInteractor.STAT_API_CALLS },
+            { name: 'API Route Calls per 10 Min', value: () => this.WebAppInteractor.STAT_API_CALLS_PER_10 },
+            { name: 'Total Authentications', value: () => this.WebAppInteractor.STAT_API_CALLS },
+            { name: 'Authentications per 10 Min', value: () => this.WebAppInteractor.STAT_API_CALLS_PER_10 }
         ]);
     }
 
     async Init() {
+        let cfg = this.Config.GetConfig();
+
         //Express App Setup
         this.app = express();
-        this.app.use(express.json({ limit: "1mb" }));
+        this.app.use(bodyParser.json({
+            verify: (req, res, buf) => {
+                req.rawBody = buf;
+            },
+            limit: '3mb'
+        }));
 
+        //WebSocketServer Stuff
+        this.server;
+        this.WSServer;
+
+        if (!cfg['use_legacy_server']) {
+            this.server = HTTP.createServer(this.app);
+            this.WSServer = new Websocket.Server({ server: this.server });
+            this.WSServer.on('connection', (ws, request) => {
+                ws.send("register:" + WS_REGISTER_TEMPLATE);
+                ws.on('message', message => this.WebAppInteractor.SendTCPMessage(ws, message));
+            });
+
+            this.Logger.info("Using WebSocket Server.");
+        } else {
+            this.Logger.info("Using Legacy Server.");
+        }
+        
         //File Structure Check
-        let cfg = this.Config.GetConfig();
         const DIRS = [cfg.Log_Dir];
         for (let dir of DIRS) {
             if (!fs.existsSync(path.resolve(dir))) {
@@ -86,7 +119,7 @@ class WebApp extends require('./../Util/ModuleBase.js') {
 
         //WebAppInteractor
         if (!this.WebAppInteractor) this.setupWAI();
-        
+
         return Promise.resolve();
     }
     setupWAI() {
@@ -127,26 +160,62 @@ class WebApp extends require('./../Util/ModuleBase.js') {
                 Logger.server.error(err.message);
             }
         });
+        this.WebAppInteractor.addAPIEndpoint('/identify', 'GET', (req, res) => {
+            return res.json({ identity: this.GetName() });
+        });
         this.WebAppInteractor.addAPIEndpoint('/login/user', 'GET', (req, res) => {
             return res.json({ user: res.locals.user });
         });
         
         //WebApp Settings API
+        this.WebAppInteractor.addAuthAPIEndpoint('/settings/webapp/hostname', { user_level: 'admin' }, 'POST', async (req, res) => {
+            try {
+                if (!req.body.hostname) {
+                    res.json({ err: 'Hostname nof valid' });
+                    return Promise.resolve();
+                }
+
+                let errors = this.Config.UpdateSetting('Hostname', req.body.hostname);
+
+                if (errors !== true) {
+                    res.json({ err: 'Changing Hostname failed: ' + errors[0] });
+                    return Promise.resolve();
+                }
+
+                this.WebAppInteractor.SetHostname(req.body.hostname);
+
+                res.json({ msg: '200', port: req.body.hostname });
+            } catch (err) {
+                res.json({ err: 'restart failed' });
+            }
+
+            //Logging
+            if (this.Settings_LOG) {
+                this.Settings_LOG.insert({
+                    endpoint: '/api/settings/webapp/hostname',
+                    method: 'POST',
+                    body: req.body,
+                    time: Date.now()
+                });
+            }
+
+            return Promise.resolve();
+        });
         this.WebAppInteractor.addAuthAPIEndpoint('/settings/webapp/port', { user_level: 'admin' }, 'POST', async (req, res) => {
             try {
-                if (req.body.port) {
-                    if (isNaN(req.body.port) || req.body.port < 0 || req.body.port > 9999) {
-                        res.json({ err: 'Port is not a valid number' });
-                        return Promise.resolve();
-                    }
-
-                    let errors = this.Config.UpdateSetting('Port', req.body.port);
-
-                    if (errors !== true) {
-                        res.json({ err: 'Changing Port failed: ' + errors[0] });
-                        return Promise.resolve();
-                    }
+                if (!req.body.port || isNaN(req.body.port) || req.body.port < 0 || req.body.port > 9999) {
+                    res.json({ err: 'Port is not a valid number' });
+                    return Promise.resolve();
                 }
+
+                let errors = this.Config.UpdateSetting('Port', req.body.port);
+
+                if (errors !== true) {
+                    res.json({ err: 'Changing Port failed: ' + errors[0] });
+                    return Promise.resolve();
+                }
+
+                this.WebAppInteractor.SetPort(req.body.port);
 
                 res.json({ msg: '200', port: req.body.port });
                 await this.Restart();
@@ -204,14 +273,71 @@ class WebApp extends require('./../Util/ModuleBase.js') {
             if (errors !== true) return res.json({ err: 'API Enable Toggle failed.' });
             else return res.json({ new_displayables: this.GetDisplayables() });
         });
+
+        //WebApp Control API
+        this.WebAppInteractor.addAuthAPIEndpoint('/webapp/control/stop', { user_level: 'admin' }, 'GET', async (req, res) => {
+            try {
+                res.sendStatus(200);
+                await this.StopServer();
+            } catch (err) {
+                return Promise.resolve();
+            }
+
+            //Logging
+            if (this.Settings_LOG) {
+                this.Settings_LOG.insert({
+                    endpoint: '/api/settings/webapp/stop',
+                    method: 'GET',
+                    body: req.body,
+                    time: Date.now()
+                });
+            }
+        });
+        this.WebAppInteractor.addAuthAPIEndpoint('/webapp/control/restart', { user_level: 'admin' }, 'GET', async (req, res) => {
+            try {
+                res.sendStatus(200);
+                await this.Restart();
+            } catch (err) {
+                return Promise.resolve();
+            }
+
+            //Logging
+            if (this.Settings_LOG) {
+                this.Settings_LOG.insert({
+                    endpoint: '/api/settings/webapp/restart',
+                    method: 'GET',
+                    body: req.body,
+                    time: Date.now()
+                });
+            }
+        });
         
         //NO ENDPOINT FOUND
         this.app.all('/api/*', (req, res, next) => res.json({ err: "404 - API Endpoint not found" }));
         //NO FILE FOUND
         this.app.use((req, res, next) => res.status(404).sendFile(path.resolve('public/NotFound.html')));
-    }
 
+        //UTIL
+        let cfg = this.Config.GetConfig();
+        this.WebAppInteractor.SetHostname(cfg.Hostname);
+        this.WebAppInteractor.SetPort(cfg.Port);
+    }
     async StartServer() {
+        let cfg = this.Config.GetConfig();
+
+        if (cfg['use_legacy_server']) return this.StartServerLEGACY();
+
+        this.Logger.warn('Server starting ...');
+
+        return new Promise((resolve, reject) => {
+            this.server.listen(cfg.Port, () => {
+                let address = this.server.address();
+                this.Logger.info("FrikyBot Website online at " + (address.address === '::' ? 'localhost' : address.address) + ":" + address.port + " ...");
+                return resolve();
+            });
+        });
+    }
+    async StartServerLEGACY() {
         let cfg = this.Config.GetConfig();
         this.Logger.warn('Server starting ...');
 
@@ -505,7 +631,7 @@ class WebApp extends require('./../Util/ModuleBase.js') {
 
         return tree_Obj;
     }
-
+    
     //UTIL
     GetAuthenticatorDetails() {
         let data = [];
@@ -524,7 +650,59 @@ class WebApp extends require('./../Util/ModuleBase.js') {
     GetInteractor() {
         return this.WebAppInteractor;
     }
-    
+    GetHostname() {
+        let cfg = this.Config.GetConfig();
+        return cfg.Hostname;
+    }
+    GetPort() {
+        let cfg = this.Config.GetConfig();
+        return cfg.Port;
+    }
+    GetHostnameAndPort() {
+        let cfg = this.Config.GetConfig();
+        return cfg.Hostname + ':' + cfg.Port;
+    }
+
+    GetFormattedStringContent(formatted_string, template) {
+        let obj = {};
+        let arr = [];
+
+        let start = null;
+        let skip = 0;
+
+        //Template Order
+        for (let i = 0; i < template.length; i++) {
+            let char = template.charAt(i);
+            if (start === null && char === "{") start = i;
+            else if (start !== null && char === "{") skip++;
+            else if (start !== null && char === "}" && skip > 0) skip--;
+            else if (start !== null && char === "}") {
+                arr.push(template.substring(start + 1, i));
+                start = null;
+            }
+        }
+
+        arr = arr.reverse();
+
+        start = null;
+        skip = 0;
+        //Get Content
+        for (let i = 0; i < formatted_string.length; i++) {
+            if (arr.lengt === 0) break; 
+
+            let char = formatted_string.charAt(i);
+            if (start === null && char === "{") start = i;
+            else if (start !== null && char === "{") skip++;
+            else if (start !== null && char === "}" && skip > 0) skip--;
+            else if (start !== null && char === "}") {
+                obj[arr.pop()] = formatted_string.substring(start + 1, i);
+                start = null;
+            }
+        }
+
+        return obj;
+    }
+
     BetterFileFinder(folder, extensions, req, res, next, steps) {
         if (!folder || !extensions) return next();
         
@@ -576,6 +754,8 @@ class WebAppInteractor {
 
         this.Logger = Logger;
         this.Auth_Log = Auth_Log;
+
+        this.TCP_Login_callbacks = [];
 
         //STATS
         this.STAT_MAIN_CALLS = 0;
@@ -767,6 +947,49 @@ class WebAppInteractor {
 
             return Promise.reject(err);
         }
+    }
+    
+    //TCP
+    AddTCPCallback(topic, callback) {
+        if (!callback || !topic) return false;
+        this.TCP_Login_callbacks.push({ topic, callback });
+        return true;
+    }
+    SendTCPMessage(ws, message) {
+        //Extract WS Data
+        try {
+            let type = message.toString().split(":")[0];
+            let data = JSON.parse(message.toString().split(":").slice(1).join(":"));
+
+            //Send to Packages
+            for (let info of this.TCP_Login_callbacks) {
+                try {
+                    info.callback(ws, type, data);
+                } catch (err) {
+
+                }
+            }
+        } catch (err) {
+            ws.send("Error");
+        }
+    }
+
+    //UTIL
+    SetHostname(hostname) {
+        this.Hostname = hostname;
+    }
+    SetPort(port) {
+        this.Port = port;
+    }
+
+    GetHostname() {
+        return this.Hostname;
+    }
+    GetPort() {
+        return this.Port;
+    }
+    GetHostnameAndPort() {
+        return this.Hostname + ':' + this.Port;
     }
 }
 

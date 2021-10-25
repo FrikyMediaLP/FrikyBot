@@ -13,7 +13,7 @@ const FETCH = require('node-fetch');
 //  Emote Image: https://cdn.betterttv.net/emote/:emote_id/1x
 
 async function GetGlobalEmotes() {
-    return FETCH(ROOT + "cached/emotes/global")
+    return FETCH("https://api.betterttv.net/3/cached/emotes/global")
         .then(data => data.json())
         .then(json => {
             if (json.error) {
@@ -25,7 +25,7 @@ async function GetGlobalEmotes() {
         .catch(err => Promise.reject(err));
 }
 async function GetTwitchUser(userID) {
-    return FETCH(ROOT + "cached/users/twitch/" + userID)
+    return FETCH("https://api.betterttv.net/3/cached/users/twitch/" + userID)
         .then(data => data.json())
         .then(json => {
             if (json.message) {
@@ -37,7 +37,7 @@ async function GetTwitchUser(userID) {
         .catch(err => Promise.reject(err));
 }
 async function GetEmote(emote_id) {
-    return FETCH(ROOT + "emotes/" + emote_id)
+    return FETCH("https://api.betterttv.net/3/emotes/" + emote_id)
         .then(data => data.json())
         .then(json => {
             if (json.message) {
@@ -61,7 +61,7 @@ async function GetChannelEmotes(channelID, includeGlobalEmotes = false) {
         try {
             output = await GetGlobalEmotes();
         } catch (err) {
-            console.log(err);
+
         }
     }
 
@@ -76,7 +76,7 @@ async function GetChannelEmotes(channelID, includeGlobalEmotes = false) {
             output.push(emote);
         }
     } catch (err) {
-        console.log(err);
+
     }
 
     return Promise.resolve(output);

@@ -47,6 +47,10 @@
             grid-template-rows: 25px auto;
             grid-template-areas: "header header" "control misc";
         }
+
+.darkmode #DASHBOARD #Modules .Module {
+    background-color: #2e2e2e;
+}
             #DASHBOARD #Modules .Module:not([installed]) .hdr, #DASHBOARD #Modules .Module:not([installed]) .misc {
                 filter: grayscale(1);
             }
@@ -132,6 +136,10 @@
             grid-template-areas: "header header" "control misc";
             overflow: hidden;
         }
+.darkmode #DASHBOARD #Packages .Package {
+    background-color: #2e2e2e;
+}
+
 
             #DASHBOARD #Packages .Package .hdr {
                 grid-area: header;
@@ -156,9 +164,31 @@
                     max-height: 20px !important;
                 }
 
-            #DASHBOARD #Packages .Package .misc {
-                grid-area: misc;
-            }
+#DASHBOARD #Packages .Package .misc {
+    grid-area: misc;
+    padding: 5px;
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+}
+
+    #DASHBOARD #Packages .Package .misc green {
+        color: green;
+        font-weight: bold;
+    }
+
+    #DASHBOARD #Packages .Package .misc red {
+        color: red;
+        font-weight: bold;
+    }
+
+    #DASHBOARD #Packages .Package .misc yellow {
+        color: #fcc630;
+    }
+
+    #DASHBOARD #Packages .Package .misc blue {
+        color: #028deb;
+    }
 
             /*ADD*/
         #DASHBOARD #Packages #ADD_PACKAGE {
@@ -180,6 +210,10 @@
                 height: 100%;
                 padding-top: 10px;
             }
+.darkmode #DASHBOARD #Packages #ADD_PACKAGE div {
+    background-color: #2e2e2e;
+}
+
             #DASHBOARD #Packages #ADD_PACKAGE a {
                 margin-left: 18px;
             }

@@ -1,4 +1,5 @@
 const CONTROLABLES_INDEX = {
+    'WebApp': CONTROLS_WEBAPP,
     'TwitchIRC': CONTROLS_TWITCHIRC,
     'TwitchAPI': CONTROLS_TWITCHAPI
 };
@@ -294,6 +295,38 @@ function removeUnknown(e, name) {
 }
 
 //Custom Controls
+//WEBAPP
+function CONTROLS_WEBAPP(module) {
+    let s = '';
+
+    s += '<button onclick="CONTROLS_WEBAPP_STOP()">STOP</button>';
+    s += '<button onclick="CONTROLS_WEBAPP_RESTART()">RESTART</button>';
+
+    return s;
+}
+function CONTROLS_WEBAPP_STOP() {
+    fetch("/api/webapp/control/stop", getAuthHeader())
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            OUTPUT_showInfo('Web Server stopped!');
+        })
+        .catch(err => {
+            console.log(err);
+            OUTPUT_showError(err.message);
+        });
+}
+function CONTROLS_WEBAPP_RESTART() {
+    fetch("/api/webapp/control/restart", getAuthHeader())
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            OUTPUT_showInfo('Web Server restarting ... please wait!');
+        })
+        .catch(err => {
+            console.log(err);
+            OUTPUT_showError(err.message);
+        });
+}
+
 //TTV IRC
 function CONTROLS_TWITCHIRC(module) {
     let s = '';

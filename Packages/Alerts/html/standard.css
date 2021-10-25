@@ -1,0 +1,199 @@
+.ALERT {
+    color: white;
+    font-size: 20px;
+    font-family: 'Roboto';
+    opacity: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    height: 100%;
+    width: 100%;
+}
+    .ALERT audio {
+        display: none;
+    }
+
+    .ALERT text {
+        grid-area: text;
+        display: flex !important;
+        justify-content: center;
+        align-content: center;
+        flex-direction: column;
+        text-align: center;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        height: 100%;
+        width: 100%;
+    }
+
+    .ALERT video, .ALERT img {
+        grid-area: image;
+        height: 100%;
+        width: 100%;
+        display: block !important;
+        margin: 0 auto;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .ALERT .ALERT_GRID {
+        position: relative;
+        display: grid;
+        grid-row-gap: 10px;
+        grid-column-gap: 10px;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    /* LAYOUT 1 */
+    .ALERT[data-layout="1"] .ALERT_GRID {
+        grid-template-columns: 100%;
+        grid-template-rows: calc(66% - 5px) calc(33% - 5px);
+        grid-template-areas: 'image' 'text';
+        justify-content: center;
+    }
+
+    /* LAYOUT 2 */
+    .ALERT[data-layout="2"] .ALERT_GRID {
+        grid-template-columns: 100%;
+        grid-template-rows: calc(33% - 5px) calc(66% - 5px);
+        grid-template-areas: 'text' 'image';
+        justify-content: center;
+    }
+
+    /* LAYOUT 3 */
+    .ALERT[data-layout="3"] .ALERT_GRID {
+        grid-template-columns: calc(33% - 5px) calc(66% - 5px);
+        grid-template-rows: 100%;
+        grid-template-areas: 'image text';
+        justify-content: center;
+        position: relative;
+    }
+
+    /* LAYOUT 4 */
+    .ALERT[data-layout="4"] .ALERT_GRID {
+        grid-template-columns: 75% 25%;
+        grid-template-rows: 100%;
+        grid-template-areas: 'text image';
+        justify-content: center;
+        position: relative;
+    }
+
+    /* LAYOUT 5 */
+    .ALERT[data-layout="5"] .ALERT_GRID {
+        grid-template-areas: 'image';
+        justify-content: center;
+    }
+        .ALERT[data-layout="5"] text {
+            display: none;
+        }
+    .ALERT[data-layout="5"] img, .ALERT[data-layout="5"] video {
+        display: block !important;
+    }
+
+    /* LAYOUT 6 */
+    .ALERT[data-layout="6"] .ALERT_GRID {
+        grid-template-areas: 'text';
+    }
+    .ALERT[data-layout="6"] text {
+        display: block;
+    }
+    .ALERT[data-layout="6"] img, .ALERT[data-layout="6"] video {
+        display: none;
+    }
+
+        /* Effects */
+
+    .ALERT[data-effect="Fade"].show {
+        animation: fadeIn 1s forwards;
+    }
+
+    .ALERT[data-effect="Fade"].hide {
+        animation: fadeOut 1s forwards;
+    }
+
+    .ALERT[data-effect="Move"].show {
+        animation: moveIn 1s forwards;
+        opacity: 1;
+    }
+
+    .ALERT[data-effect="Move"].hide {
+        animation: moveOut 1s forwards;
+        opacity: 1;
+    }
+
+    .ALERT[data-effect="Move Inv"].show {
+        animation: moveInInv 1s forwards;
+        opacity: 1;
+    }
+
+    .ALERT[data-effect="Move Inv"].hide {
+        animation: moveOutInv 1s forwards;
+        opacity: 1;
+    }
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes moveIn {
+    0% {
+        transform: translate(-200%, -50%);
+    }
+
+    100% {
+        transform: translate(-50%, -50%);
+    }
+}
+
+@keyframes moveOut {
+    0% {
+        transform: translate(-50%, -50%);
+    }
+
+    100% {
+        transform: translate(-200%, -50%);
+    }
+}
+
+@keyframes moveInInv {
+    0% {
+        transform: translate(100%, -50%);
+    }
+
+    100% {
+        transform: translate(-50%, -50%);
+    }
+}
+
+@keyframes moveOutInv {
+    0% {
+        transform: translate(-50%, -50%);
+    }
+
+    100% {
+        transform: translate(100%, -50%);
+    }
+}

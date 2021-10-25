@@ -1,0 +1,408 @@
+{
+  "ConfigHandler": {
+    "description": "ConfigHandler Module provifing Configs for all Modules and Packages.",
+    "modules": {
+      "fs": "NodeJS Module",
+      "path": "NodeJS Module"
+    },
+    "variables": {
+      "SettingTypes": {
+        "type": "Array",
+        "description": "Settings Information on Type Matching, Defaults and Optional Parameter Checks."
+      }
+    },
+    "classes": {
+      "ConfigHandler": {
+        "description": "Config Handler managing Configs into one File.",
+        "constructor": {
+          "params": [
+            {
+              "name": "logger",
+              "opt": true,
+              "type": "Logger.js:Logger"
+            },
+            {
+              "name": "settings",
+              "opt": true,
+              "type": "Object"
+            }
+          ],
+          "description": "Setting up the Config Datastructure and Logging capability."
+        },
+        "functions": {
+          "AddConfig": {
+            "params": [
+              {
+                "name": "config",
+                "type": "ConfigHandler.js::Config"
+              }
+            ],
+            "description": "Add a Config to the Stack."
+          },
+          "RemoveConfig": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              }
+            ],
+            "description": "Remove a Config from the Stack."
+          },
+          "GetConfigs": {
+            "params": null,
+            "description": "Returns all Configs."
+          },
+          "GetTemplates": {
+            "params": null,
+            "description": "Returns all Config Templates."
+          },
+          "GetConfigJSON": {
+            "params": null,
+            "description": "Returns the Config Values as a JSON."
+          },
+          "GetConfigJSONWithoutDefaults": {
+            "params": null,
+            "description": "Returns the Config Values excluding values that are defaults as a JSON."
+          },
+          "GetConfigJSONREDACTED": {
+            "params": null,
+            "description": "Returns the Config Values (Values tagged as 'private' will be redacted) as a JSON."
+          },
+          "UpdateConfig": {
+            "params": [
+              {
+                "name": "cfgJSON",
+                "type": "Object"
+              }
+            ],
+            "description": "Updates all Configs based on the given JSON."
+          },
+          "Check": {
+            "params": null,
+            "description": "Checks all Configs."
+          },
+          "Fill": {
+            "params": null,
+            "description": "Fills all Configs."
+          },
+          "CheckErrors": {
+            "params": [
+              {
+                "name": "errors",
+                "type": "Object"
+              }
+            ],
+            "description": "Checks an Error Report for any Errors. Returns true when none were found."
+          },
+          "Save": {
+            "params": null,
+            "description": "Saves the current Config Values without their defaults into the given File."
+          },
+          "Load": {
+            "params": null,
+            "description": "Reads the Config File and Loads the Configs inside the File."
+          },
+          "setLogger": {
+            "params": [
+              {
+                "name": "loggerObject",
+                "type": "Logger.js::Logger"
+              }
+            ],
+            "description": "Sets the Logger Object or creates a custom one based on 'console.log'."
+          }
+        }
+      },
+      "Config": {
+        "description": "Config Handler managing Configs into one File.",
+        "constructor": {
+          "params": [
+            {
+              "name": "name",
+              "type": "String"
+            },
+            {
+              "name": "template",
+              "type": "Array"
+            },
+            {
+              "name": "options",
+              "opt": true,
+              "type": "Object"
+            },
+            {
+              "name": "settings",
+              "opt": true,
+              "type": "Object"
+            },
+            {
+              "name": "parentConfig",
+              "opt": true,
+              "type": "ConfigHandler.js::Config"
+            }
+          ],
+          "description": "Setting up the Config Datastructure and preload if used."
+        },
+        "variables": {
+          "name": {
+            "type": "String",
+            "description": "Name of the Config."
+          },
+          "Template": {
+            "type": "Array",
+            "description": "List of all Setting Templates."
+          },
+          "options": {
+            "type": "Object",
+            "description": "Config Options that impact the Setup."
+          },
+          "parentConfig": {
+            "type": "ConfigHandler.js::Config",
+            "description": "Config Parent Object."
+          },
+          "Settings": {
+            "type": "Object",
+            "description": "Config Settings that change the general behaviour of the Config.."
+          },
+          "Config": {
+            "type": "Object",
+            "description": "Preloaded / Blank JSON of the Config Values."
+          },
+          "parent": {
+            "type": "Boolean",
+            "description": "Flag telling the Config that it is a parent responsible for Child-Configs."
+          },
+          "children": {
+            "type": "Array",
+            "description": "All Child Configs of the Parent Config."
+          }
+        },
+        "functions": {
+          "AddSettingTemplates": {
+            "params": [
+              {
+                "name": "settings",
+                "type": "Array"
+              }
+            ],
+            "description": "Add the Templates to the Tempate Stack."
+          },
+          "EditSettingTemplate": {
+            "params": [
+              {
+                "name": "settingName",
+                "type": "String"
+              },
+              {
+                "name": "changes",
+                "type": "Object"
+              }
+            ],
+            "description": "Change a Template."
+          },
+          "RemoveSettingTemplate": {
+            "params": [
+              {
+                "name": "settingName",
+                "type": "String"
+              }
+            ],
+            "description": "Remove a Template."
+          },
+          "AddChildConfig": {
+            "params": [
+              {
+                "name": "cfgObj",
+                "type": "ConfigHandler.js::Config"
+              }
+            ],
+            "description": "Add a Child Config to the Stack and Change Load/Save Functions."
+          },
+          "RemoveChildConfig": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              }
+            ],
+            "description": "Remove a Config from the Stack and change Load/Save Functions back to default."
+          },
+          "UpdateConfig": {
+            "params": [
+              {
+                "name": "cfg",
+                "type": "Object"
+              },
+              {
+                "name": "skipOptions",
+                "type": "Boolean"
+              },
+              {
+                "name": "autoSave",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Updates the Config JSON based on the given JSON. Autosave is active on default."
+          },
+          "UpdateSetting": {
+            "params": [
+              {
+                "name": "stgName",
+                "type": "String"
+              },
+              {
+                "name": "updatedSetting",
+                "type": "Any"
+              },
+              {
+                "name": "autoSave",
+                "type": "Boolean"
+              },
+              {
+                "name": "skipOptions",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Updates a Config Setting. Autosave is active on default."
+          },
+          "ResetConfig": {
+            "params": [
+              {
+                "name": "include_opt",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Resets the Config to defaults or undefined."
+          },
+          "FillConfig": {
+            "params": null,
+            "description": "Fills the remaining Config Settings with defaults."
+          },
+          "CreateBlankConfig": {
+            "params": [
+              {
+                "name": "include_opt",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Creates a blank JSON with all defaults."
+          },
+          "GetSettingDefault": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              }
+            ],
+            "description": "Get the default Value of a Config Setting."
+          },
+          "Check": {
+            "params": [
+              {
+                "name": "cfg",
+                "type": "Object"
+              },
+              {
+                "name": "skipOptions",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Checks the current Config Values if they match the Template Settings."
+          },
+          "checkType": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              },
+              {
+                "name": "value",
+                "type": "Any"
+              },
+              {
+                "name": "options",
+                "type": "Object"
+              },
+              {
+                "name": "skipOptions",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Checks a given Settings Value if it matches its Template."
+          },
+          "ErrorCheck": {
+            "params": null,
+            "description": "Checks the current Config Values for any violations to their Templates and checks that Error report for Errors. Returns true, when no errors were found."
+          },
+          "CheckErrors": {
+            "params": [
+              {
+                "name": "errors",
+                "type": "Object"
+              }
+            ],
+            "description": "Checks an Error Report for any Errors. Returns true when none were found."
+          },
+          "GetConfig": {
+            "params": null,
+            "description": "Returns Configs JSON."
+          },
+          "GetConfigJSONWithoutDefaults": {
+            "params": null,
+            "description": "Returns the Config Values excluding values that are defaults as a JSON."
+          },
+          "GetConfigJSONREDACTED": {
+            "params": null,
+            "description": "Returns the Config Values (Values tagged as 'private' will be redacted) as a JSON."
+          },
+          "GetTemplate": {
+            "params": [
+              {
+                "name": "copy",
+                "type": "Boolean"
+              },
+              {
+                "name": "deep",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Returns the Config Templates. When 'deep' is true, Child Templates will also be returned."
+          },
+          "GetOptions": {
+            "params": [
+              {
+                "name": "copy",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Returns the Config Options."
+          },
+          "DefaultSave": {
+            "params": null,
+            "description": "Saves the current Config Values without their defaults into the given File."
+          },
+          "Save": {
+            "params": null,
+            "description": "Saves the current Config into its own or a Parents File."
+          },
+          "DefaultLoad": {
+            "params": null,
+            "description": "Reads the Config File and Loads the Settings Values."
+          },
+          "Load": {
+            "params": null,
+            "description": "Reads the own Config File or its Parent File."
+          },
+          "GetName": {
+            "params": null,
+            "description": "Returns the Configs name."
+          }
+        }
+      }
+    },
+    "exports": {
+      "Handler": "ConfigHandler",
+      "Config": "Config"
+    }
+  }
+}

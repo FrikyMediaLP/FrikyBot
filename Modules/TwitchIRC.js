@@ -73,12 +73,12 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
         //Displayables
         const date_options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
         this.addDisplayables([
-            { name: 'Chat Connection', value: () => { this.readyState() || 'CLOSED' } },
-            { name: 'Total Chat Messages Received', value: () => { this.STAT_MSGS_RECEIVED } },
-            { name: 'Chat Messages Received Per 10 Min', value: () => { this.STAT_MSGS_RECEIVED_PER_10 } },
-            { name: 'Total Connection Timeouts', value: () => { this.STAT_CONNECTION_TO } },
-            { name: 'Connection Timeouts Per 10 Min', value: () => { this.STAT_CONNECTION_TO_PER_10 } },
-            { name: 'Last Timeout at', value: () => { this.STAT_LAST_CONNECTION_TO == 0 ? 'NEVER' : (new Date(this.STAT_LAST_CONNECTION_TO)).toLocaleDateString('de-DE', date_options) } }
+            { name: 'Chat Connection', value: () => this.readyState() || 'CLOSED' },
+            { name: 'Total Chat Messages Received', value: () => this.STAT_MSGS_RECEIVED },
+            { name: 'Chat Messages Received Per 10 Min', value: () => this.STAT_MSGS_RECEIVED_PER_10 },
+            { name: 'Total Connection Timeouts', value: () => this.STAT_CONNECTION_TO },
+            { name: 'Connection Timeouts Per 10 Min', value: () => this.STAT_CONNECTION_TO_PER_10 },
+            { name: 'Last Timeout at', value: () => this.STAT_LAST_CONNECTION_TO == 0 ? 'NEVER' : (new Date(this.STAT_LAST_CONNECTION_TO)).toLocaleDateString('de-DE', date_options) }
         ]);
     }
 
@@ -445,7 +445,7 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
                 //
             });
     }
-
+    
     //CLIENT CONNECTION
     getUsername() {
         if (this.client)
@@ -459,10 +459,12 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
 
         return null;
     }
-    getChannel() {
-        if (this.client)
-            if (this.client.getChannels().length > 0)
-                return this.client.getChannels()[0];
+    getChannel(cut_hashtag = false) {
+        let channel = "";
+        if (this.client && this.client.getChannels().length > 0)
+            channel = this.client.getChannels()[0];
+
+        if (channel) return cut_hashtag ? channel.substring(1) : channel;
 
         return null;
     }
@@ -485,6 +487,7 @@ class Message {
         this.message = message;
         this.channel = channel;
         this.userstate = userstate;
+        this.is_Follower = false;
 
         //set Userlevel
         this.userLevel = "regular";
@@ -534,9 +537,11 @@ class Message {
             if (this.userLevel < CONSTANTS.UserLevel.Partner) {
                 this.userLevel = CONSTANTS.UserLevel.Follower;
             }
+            this.is_Follower = true;
             return Promise.resolve(true);
         }
 
+        this.is_Follower = false;
         return Promise.resolve(false);
     }
 
@@ -670,67 +675,130 @@ class Message {
     isEmoteOnly() {
         return this.userstate["emote-only"] == true;
     }
-    async getFFZEmotes() {
+    async getFFZEmotes(ffz_room) {
         let emotes = {};
 
-        try {
-            let ffz_room = await FFZ.GetRoomByName(this.getChannel().substring(1), true);
-            let start = 0;
+        //Fetch Room Data
+        if (!ffz_room) {
+            try {
+                ffz_room = await FFZ.GetRoomByName(this.getChannel().substring(1), true);
+            } catch (err) {
 
-            for (let word of this.getMessage().split(" ")) {
-                let found = false;
-                for (let set in ffz_room.sets) {
-                    for (let emote of ffz_room.sets[set].emoticons) {
-                        if (word == emote.name) {
-                            if (emotes[word] == undefined) {
-                                emotes[word] = [start + "-" + (start + word.length - 1)];
-                            } else {
-                                emotes[word].push(start + "-" + (start + word.length - 1));
-                            }
-                            found = true;
-                            break;
-                        }
+            }
+        }
 
-                        if (found) {
-                            break;
+        if (!ffz_room) return Promise.reject(new Error("FFZ Fetch Error"));
+
+        //Analyse Data
+        let start = 0;
+
+        for (let word of this.getMessage().split(" ")) {
+            let found = false;
+            for (let set in ffz_room.sets) {
+                for (let emote of ffz_room.sets[set].emoticons) {
+                    if (word == emote.name) {
+                        if (emotes[emote.id] == undefined) {
+                            emotes[emote.id] = [start + "-" + (start + word.length - 1)];
+                        } else {
+                            emotes[emote.id].push(start + "-" + (start + word.length - 1));
                         }
+                        found = true;
+                        break;
+                    }
+
+                    if (found) {
+                        break;
                     }
                 }
-
-                start += word.length + 1
             }
-        } catch (err) {
-            this.Logger.error("FFZ Fetch Error!");
+
+            start += word.length + 1;
         }
 
         return Promise.resolve(emotes);
     }
-    async getBTTVEmotes() {
+    async getBTTVEmotes(bttv_emotes) {
         let emotes = {};
 
-        try {
-            let bttv_emotes = await BTTV.GetChannelEmotes(this.getRoomID(), true);
-            let start = 0;
+        //Fetch Emote Data
+        if (!bttv_emotes) {
+            try {
+                bttv_emotes = await BTTV.GetChannelEmotes(this.getRoomID(), true);
+            } catch (err) {
 
-            for (let word of this.getMessage().split(" ")) {
-                for (let emote of bttv_emotes) {
-                    if (word == emote.code) {
-                        if (emotes[word] == undefined) {
-                            emotes[word] = [start + "-" + (start + word.length - 1)];
-                        } else {
-                            emotes[word].push(start + "-" + (start + word.length - 1));
-                        }
-                        break;
-                    }
-                }
-
-                start += word.length + 1
             }
-        } catch (err) {
-            this.Logger.error("BTTV Fetch Error!");
+        }
+
+        if (!bttv_emotes) return Promise.reject(new Error("BTTV Fetch Error"));
+
+        let start = 0;
+
+        for (let word of this.getMessage().split(" ")) {
+            for (let emote of bttv_emotes) {
+                if (word == emote.code) {
+                    if (emotes[emote.id] == undefined) {
+                        emotes[emote.id] = [start + "-" + (start + word.length - 1)];
+                    } else {
+                        emotes[emote.id].push(start + "-" + (start + word.length - 1));
+                    }
+                    break;
+                }
+            }
+
+            start += word.length + 1;
         }
 
         return Promise.resolve(emotes);
+    }
+    async ExtractTTVEmotes(API) {
+        //Get Global Emotes
+        let globals = [];
+
+        try {
+            globals = (await API.GetGlobalEmotes()).data;
+        } catch (err) {
+
+        }
+
+        //Get FollowEmotes
+        let follows = [];
+
+        try {
+            if (this.is_Follower) {
+                let channel_emotes = (await API.GetChannelEmotes({ broadcaster_id: this.getRoomID() })).data;
+                follows = channel_emotes.filter(elt => elt.emote_type === 'follower');
+
+                //Temporary until Twitch implements Subscription Checks
+                subs = channel_emotes.filter(elt => elt.emote_type === 'subscriptions' && elt.tier <= this.getSubTier() * 1000);
+            }
+        } catch (err) {
+
+        }
+
+        //Get SubEmotes - Currently not Supported by Twitch :(
+        let subs = [];
+
+        let emotes = {};
+
+        for (let i = 0; i < this.message.length; i++) {
+            let next_space = this.message.indexOf(' ', i);
+            if (next_space < 0) next_space = this.message.length;
+            let word = this.message.substring(i, next_space);
+            
+            //Check Emotes of all Types to match a word
+            let emote = globals.find(elt => elt.name === word) || follows.find(elt => elt.name === word) || subs.find(elt => elt.name === word);
+
+            if (emote) {
+                if (!emotes[emote.id]) emotes[emote.id] = [];
+
+                emotes[emote.id].push(i + '-' + (next_space - 1));
+            }
+
+            i = next_space;
+        }
+
+        if (Object.getOwnPropertyNames(emotes).length > 0) this.userstate['emotes'] = emotes;
+        return emotes;
     }
 
     getMessageDetails() {
@@ -751,9 +819,7 @@ class Message {
 
     //Checker
     hasBadge(badgeName) {
-        if (!this.userstate.badges)
-            return false;
-
+        if (!this.userstate.badges) return false;
         return this.userstate.badges[badgeName] ? true : false;
     }
     matchUserlevel(userLevel, strictLevel = 0) {
@@ -798,6 +864,13 @@ class Message {
             }
         }
         return false;
+    }
+    isFollower() {
+        return this.is_Follower;
+    }
+    getSubTier() {
+        if (this.hasBadge('subscriber')) return parseInt(this.userstate.badges['subscriber'] / 1000);
+        return 0;
     }
 }
 

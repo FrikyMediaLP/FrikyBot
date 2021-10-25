@@ -239,15 +239,14 @@
 
                     <center style="margin-top: 30px;" class="editor_chatpter">Cooldown</center>
                     <input id="EDITOR_CD" type="range" min="0" value="1" step="1" max="39" oninput="editor_Command_cooldown_change(this);" />
-                    <input id="Editor_CD_Text" type="text" value="1min"  oninput="editor_Command_interval_reverse(this.value)"/>
+                    <input id="Editor_CD_Text" type="text" value="1m" oninput="editor_Command_interval_reverse(this.value)"/>
 
-                    <p>Alias</p>
                     <center class="editor_chatpter">Alias</center>
                     <input type="text" id="EDITOR_ALIAS" autocomplete="off" />
 
                     <div id="EDITOR_COUNT_WRAPPER">
                         <center style="margin-top: 30px;" class="editor_chatpter">Count Value <button onclick="editor_Command_counterremove()">clear</button></center>
-                        <input id="EDITOR_COUNT" type="range" min="0" value="1" step="1" />
+                        <input id="EDITOR_COUNT" type="range" min="0" value="1" step="1" onchange="this.title = this.value"/>
                     </div>
 
                     <center style="margin-top: 20px;" class="editor_chatpter">Enabled</center>
@@ -336,10 +335,15 @@
 
                     <center style="margin-top: 30px;" class="editor_chatpter">Interval</center>
                     <input id="EDITOR_TIMER_INTERVAL" type="range" min="1" value="1" step="1" max="32" oninput="editor_Timer_interval_change(this);" />
-                    <input id="Editor_TIMER_INTERVAL_Text" type="text" value="5m" oninput="editor_Timer_interval_reverse(this.value)"/>
+                    <input id="Editor_TIMER_INTERVAL_Text" type="text" value="5m" oninput="editor_Timer_interval_reverse(this.value)" />
+
+                    <center style="margin-top: 30px;" class="editor_chatpter">Seperation Lines</center>
+                    <input id="EDITOR_TIMER_LINES" type="range" min="0" value="10" step="1" oninput="editor_Timer_lines_change(this.value);" />
+                    <input id="Editor_TIMER_LINES_Text" type="text" value="10" oninput="editor_Timer_lines_change(this.value)" />
 
                     <p>Alias</p>
-                    <input type="text" id="EDITOR_TIMER_ALIAS" autocomplete="off" />
+                    <input type="text" id="EDITOR_TIMER_ALIAS" autocomplete="off" oninput="editor_Timer_alias(this)" />
+                    <center id="EDITOR_TIMER_ALIAS_INFO"></center>
 
                     <center style="margin-top: 20px;" class="editor_chatpter">Enabled</center>
                     <center><switchbutton value="true" id="EDITOR_TIMER_ENABLE"></switchbutton></center>

@@ -45,6 +45,9 @@
     border-radius: 5px;
     font-family: 'Roboto', sans-serif;
 }
+.darkmode .Package {
+    background-color: #2e2e2e;
+}
 
     .Package .IMG {
         width: 100%;
@@ -247,12 +250,17 @@
                 display: grid;
             }
 
-                .Package .Misc .Settings .Setting input, .Package .Misc .Settings .Setting select {
-                    outline: none !important;
-                    border: none;
-                    border-bottom: 1px solid black;
-                    text-align: right;
-                }
+            .Package .Misc .Settings .Setting input, .Package .Misc .Settings .Setting select {
+                outline: none !important;
+                border: none;
+                border-bottom: 1px solid black;
+                text-align: right;
+                background: none;
+            }
+.darkmode .Package .Misc .Settings .Setting input {
+    border-color: lightgray;
+    color: white;
+}
 
                 .Package .Misc .Settings .Setting.SWITCH {
                     grid-template-columns: auto 52px;

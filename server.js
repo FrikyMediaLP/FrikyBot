@@ -269,19 +269,21 @@ async function INIT() {
                 await obj.Init(INSTALLED_MODULES['WebApp'].Object.GetInteractor());
 
                 //Authenticator
-                let auth = new (node_module).Authenticator(Logger, obj.GetConfig(false), obj);
+                let auth = new (node_module).Authenticator(Logger, obj.GetConfig(false), INSTALLED_MODULES['TwitchAPI'].Object);
                 await auth.Init(INSTALLED_MODULES['WebApp'].Object.GetInteractor());
                 INSTALLED_MODULES['WebApp'].Object.addAuthenticator(auth);
             } else {
                 //Init
                 await obj.Init(INSTALLED_MODULES['WebApp'].Object.GetInteractor());
             }
+
+            obj.Logger.info("Module Loaded" + (obj.isReady() ? ' and Ready' : '') + '!');
         } catch (err) {
             Logger[module].error(err.message);
             Server_Status.errors.outage[module] = err.message;
         }
     }
-
+    
     //LOAD CONFIG PACKAGES
     let packages = ConfigHandler.GetConfigJSON().Packages;
     for (let pack in packages) {
@@ -349,10 +351,14 @@ async function INIT_WEBAPP() {
         ModuleControlAPIRouter.get('/remove', API_MODULE_CONTROL_REMOVE);
         ModuleControlAPIRouter.post('/add', API_MODULE_CONTROL_ADD);
         WebAppInteractor.addAuthAPIRoute('/modules/control', { user_level: 'staff' }, ModuleControlAPIRouter);
+        WebAppInteractor.addAuthAPIEndpoint('/modules/logs/:module', {}, 'GET', API_MODULE_LOGS);
+        WebAppInteractor.addAuthAPIEndpoint('/modules/logs/:module/:log', {}, 'GET', API_MODULE_LOGS);
 
         //Bot API - Packages
         APIRouter.get('/packages', API_PACKAGES_INFO);
         WebAppInteractor.addAuthAPIEndpoint('/packages/settings', { user_level: 'staff' }, 'POST', API_PACKAGE_SETTINGS);
+        WebAppInteractor.addAuthAPIEndpoint('/packages/logs/:package', {}, 'GET', API_PACKAGE_LOGS);
+        WebAppInteractor.addAuthAPIEndpoint('/packages/logs/:package/:log', {}, 'GET', API_PACKAGE_LOGS);
 
         let PackageControlAPIRouter = express.Router();
         PackageControlAPIRouter.get('/start', API_PACKAGE_CONTROL_START);
@@ -409,7 +415,11 @@ function loadModule(module, preloaded_config, ConfigHandler) {
             Object: null
         };
 
-        let obj = new INSTALLED_MODULES[module].node_module[module](preloaded_config, Logger);
+        let obj = null;
+
+        if (module === 'TwitchAPI') obj = new INSTALLED_MODULES[module].node_module[module](preloaded_config, Logger, INSTALLED_MODULES['TwitchIRC'].Object);
+        else obj = new INSTALLED_MODULES[module].node_module[module](preloaded_config, Logger);
+
         INSTALLED_MODULES[module].Object = obj;
 
         ConfigHandler.AddConfig(obj.Config);
@@ -419,7 +429,6 @@ function loadModule(module, preloaded_config, ConfigHandler) {
             Logger.server.warn("Please check your install!");
             return Promise.reject(err);
         }
-
         Logger.setup.error(module + ' failed to load!');
     }
 }
@@ -448,7 +457,7 @@ async function iniPackage(pack) {
     try {
         let packClass = INSTALLED_PACKAGES[pack].Class;
 
-        INSTALLED_PACKAGES[pack].Object = new packClass(INSTALLED_MODULES['WebApp'].Object.GetInteractor(), (INSTALLED_MODULES['TwitchIRC'] || {}).Object, (INSTALLED_MODULES['TwitchAPI'] || {}).Object, (INSTALLED_MODULES['DataCollection'] || {}).Object, Logger);
+        INSTALLED_PACKAGES[pack].Object = new packClass(INSTALLED_MODULES['WebApp'].Object.GetInteractor(), (INSTALLED_MODULES['TwitchIRC'] || {}).Object, (INSTALLED_MODULES['TwitchAPI'] || {}).Object, Logger);
         
         //Init ENABLED Packages
         if (INSTALLED_PACKAGES[pack].Object.isEnabled()) {
@@ -507,6 +516,35 @@ function shutdown(timeS) {
 
     setTimeout(() => shutdown(timeS - 1), 1000);
 }
+function GetPaginationValues(pagination = "") {
+    if (!pagination) return null;
+    let out = [10, 0, {}];
+
+    try {
+        if (pagination.indexOf('A') >= 0 && pagination.indexOf('B') >= 0 && pagination.indexOf('C') >= 0) {
+            out[0] = parseInt(pagination.substring(1, pagination.indexOf('B')));
+            out[1] = parseInt(pagination.substring(pagination.indexOf('B') + 1, pagination.indexOf('C')));
+        }
+
+        if (pagination.indexOf('T') >= 0) out[2].timesorted = true;
+        if (pagination.indexOf('CSS') >= 0 && pagination.indexOf('CSE') >= 0) {
+            out[2].customsort = pagination.substring(pagination.indexOf('CSS') + 2, pagination.indexOf('CSE'));
+        }
+        if (pagination.indexOf('PS') >= 0 && pagination.indexOf('PE') >= 0) out[2].pagecount = parseInt(pagination.substring(pagination.indexOf('PS') + 2, pagination.indexOf('PE')));
+    } catch (err) {
+        return null;
+    }
+
+    return out;
+}
+function GetPaginationString(first = 10, cursor = 0, options = {}) {
+    let s = "A" + first + "B" + cursor + "C";
+    if (options.timesorted) s += "T";
+    if (options.customsort) s += "CSS" + customsort + "CSE";
+    if (options.pagecount !== undefined) s += "PS" + options.pagecount + "PE";
+    return s;
+}
+
 
 /*
  *  ----------------------------------------------------------
@@ -654,6 +692,27 @@ function API_MODULE_CONTROL_ADD(req, res, next) {
 
     //Restart when added
     shutdown(5);
+}
+
+async function API_MODULE_LOGS(req, res, next) {
+    const module_name = req.params['module'];
+    const log_name = req.params['log'];
+    const pagination = req.query['pagination'];
+    let module_obj = INSTALLED_MODULES[module_name];
+
+    if (!module_obj || !module_obj.Object) return res.sendStatus(404);
+
+    try {
+        let logs = null;
+
+        if (log_name) logs = await module_obj.Object.GetLog(log_name, pagination);
+        else logs = await module_obj.Object.GetLogs(pagination);
+        return res.json(logs);
+    } catch (err) {
+        return res.sendStatus(408);
+    }
+
+    return res.sendStatus(500);
 }
 
 //Package API
@@ -849,6 +908,27 @@ async function API_PACKAGE_CONTROL_ADD(req, res, next) {
     return Promise.resolve();
 }
 
+async function API_PACKAGE_LOGS(req, res, next) {
+    const package_name = req.params['package'];
+    const log_name = req.params['log'];
+    const pagination = req.query['pagination'];
+    let package_obj = INSTALLED_PACKAGES[package_name];
+
+    if (!package_obj || !package_obj.Object) return res.sendStatus(404);
+
+    try {
+        let logs = null;
+
+        if (log_name) logs = await package_obj.Object.GetLog(log_name, pagination);
+        else logs = await package_obj.Object.GetLogs(pagination);
+        return res.json(logs);
+    } catch (err) {
+        return res.sendStatus(408);
+    }
+
+    return res.sendStatus(500);
+}
+
 function API_PACKAGE_SETTINGS(req, res, next) {
     const package_name = req.query['package_name'];
 
@@ -869,9 +949,9 @@ function API_PACKAGE_SETTINGS(req, res, next) {
 //Page Infos API
 async function PAGE_Navi(req, res, next) {
     //Main - Section
-    let MainNavigationPackages = ["CommandHandler", "ChatStats", "CustomChat"];
+    let MainNavigationPackages = ["CommandHandler"];
     let MainSection = [{ type: "icon", name: "Homepage", href: "/", icon: "images/icons/home.svg" }];
-
+    
     for (let pack of MainNavigationPackages) {
         if (INSTALLED_PACKAGES[pack] && INSTALLED_PACKAGES[pack].Object && INSTALLED_PACKAGES[pack].Object.getWebNavigation()) {
             let temp_Pck_Nav = INSTALLED_PACKAGES[pack].Object.getWebNavigation();
@@ -1018,6 +1098,7 @@ async function PAGE_Settings_Setup(req, res, next) {
         }
 
         ttv_api.endpoints = TwitchAPI.GetEndpointSettings();
+        ttv_api.eventsubs = TwitchAPI.GetEventSubSettings();
     }
 
     res.json({
@@ -1087,6 +1168,8 @@ async function PAGE_Settings_Logs(req, res, next) {
         Packages: []
     };
 
+    const pagination = GetPaginationString(10, 0, { timesorted: true });
+
     //Modules
     for (let name in INSTALLED_MODULES) {
         let module = INSTALLED_MODULES[name].Object;
@@ -1094,7 +1177,7 @@ async function PAGE_Settings_Logs(req, res, next) {
         try {
             data['Modules'].push({
                 name: name,
-                logs: await module.GetLogs()
+                logs: await module.GetLogs(pagination)
             });
         } catch (err) {
 
@@ -1108,7 +1191,7 @@ async function PAGE_Settings_Logs(req, res, next) {
         try {
             data['Packages'].push({
                 name: name,
-                logs: await packg.GetLogs()
+                logs: await packg.GetLogs(pagination)
             });
         } catch (err) {
 
@@ -1227,7 +1310,6 @@ async function API_BotStatus(req, res, next) {
 
         let TwitchIRC = (INSTALLED_MODULES['TwitchIRC'] || {}).Object;
         let TwitchAPI = (INSTALLED_MODULES['TwitchAPI'] || {}).Object;
-        let DataCollection = (INSTALLED_MODULES['DataCollection'] || {}).Object;
 
         //Twitch IRC
         if (TwitchIRC && TwitchIRC.isEnabled() && TwitchIRC.isReady()) {
@@ -1242,13 +1324,21 @@ async function API_BotStatus(req, res, next) {
             Server_Status.errors.fatal.TwitchAPI = "Not available.";
         } else {
             delete Server_Status.errors.fatal.TwitchAPI;
+            delete Server_Status.errors.outage.TwitchAPI;
 
+            //Tokens
             if (!TwitchAPI.UserAccessToken) {
                 Server_Status.errors.outage.TwitchAPI = "Only Basic API Access";
             } else if (!TwitchAPI.AppAccessToken) {
                 Server_Status.errors.outage.TwitchAPI = "No API Access";
-            } else {
-                delete Server_Status.errors.outage.TwitchAPI;
+            }
+
+            //EventSubs
+            let missing_ES = TwitchAPI.GetMissingEventSubs();
+            if (missing_ES.length === 1) {
+                Server_Status.errors.outage.TwitchAPI = 'EventSub "' + TwitchAPI.GetMissingEventSubs()[0] + '" not available!';
+            } else if (missing_ES.length > 1) {
+                Server_Status.errors.outage.TwitchAPI = missing_ES.length + " EventSubs not available!";
             }
 
             if (TwitchIRC) {
@@ -1273,12 +1363,7 @@ async function API_BotStatus(req, res, next) {
                 }
             }
         }
-
-        //DataCollection
-        if (DataCollection) {
-            Server_Status.errors.outage.DataCollection = "Not availabe. (WiP)";
-        }
-
+        
         //Check Status Level
         if (Object.getOwnPropertyNames(Server_Status.errors.fatal).length > 0) {
             Server_Status.status = "Fatal";

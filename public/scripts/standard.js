@@ -186,7 +186,7 @@ async function STANDARD_FETCH_RESPONSE_CHECKER(response) {
             }
         }
 
-        return Promise.reject(new Error("Error: " + response.status + " - " + error));
+        return Promise.reject(new Error("Error: " + response.status + " - " + (error || response.statusText)));
     }
 }
 function getAuthHeader() {
@@ -307,6 +307,55 @@ function HasURLSearch(name = '') {
 }
 function GetURLSearchContent(name = '') {
     return (GetURLSearchArray().find(elt => elt.name === name) || {}).value || null;
+}
+
+function GetPaginationValues(pagination = "") {
+    if (!pagination) return null;
+    let out = [10, 0, {}];
+
+    try {
+        if (pagination.indexOf('A') >= 0 && pagination.indexOf('B') >= 0 && pagination.indexOf('C') >= 0) {
+            out[0] = parseInt(pagination.substring(1, pagination.indexOf('B')));
+            out[1] = parseInt(pagination.substring(pagination.indexOf('B') + 1, pagination.indexOf('C')));
+        }
+
+        if (pagination.indexOf('T') >= 0) out[2].timesorted = true;
+        if (pagination.indexOf('CSS') >= 0 && pagination.indexOf('CSE') >= 0) {
+            out[2].customsort = pagination.substring(pagination.indexOf('CSS') + 2, pagination.indexOf('CSE'));
+        }
+        if (pagination.indexOf('PS') >= 0 && pagination.indexOf('PE') >= 0) out[2].pagecount = parseInt(pagination.substring(pagination.indexOf('PS') + 2, pagination.indexOf('PE')));
+    } catch (err) {
+        return null;
+    }
+
+    return out;
+}
+function GetPaginationString(first = 10, cursor = 0, options = {}) {
+    let s = "A" + first + "B" + cursor + "C";
+    if (options.timesorted) s += "T";
+    if (options.customsort) s += "CSS" + customsort + "CSE";
+    if (options.pagecount !== undefined) s += "PS" + options.pagecount + "PE";
+    return s;
+}
+
+//WEBSOCKET
+function StartWebsocket(register_info) {
+    const socket = new WebSocket('ws://' + window.location.hostname + (window.location.port ? ":" + window.location.port : ""));
+    
+    socket.addEventListener('message', function (event) {
+        if (event.data.toString() === 'Error') {
+            console.error("Websocket error!");
+            return;
+        }
+
+        let type = event.data.split(":")[0];
+        
+        if (type === "register") {
+            socket.send("register:" + JSON.stringify(register_info));
+        }
+    });
+
+    return socket;
 }
 
 //HTML

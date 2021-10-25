@@ -104,6 +104,11 @@
                                 <p><b>Remember:</b> Everything is mounted to this Port (Settings, Cookies, ...)! So, if you change the Port, remember to change/update every other related Setting.</p>
                             </div>
                             <div>
+                                <h4>Hostname</h4>
+                                <input id="SETTING_WebApp_Hostname" type="text" value="localhost" placeholder="Default: localhost" oninput="hostname_change(this.value)" />
+                                <button id="WebApp_Hostname_Save" disabled onclick="hostname_save();">SAVE</button>
+                                <p id="SETTING_WebApp_Hostname_Hint" hidden>This is just a dummy Text, used by Packages an Modules to redirect Webhooks back to the deployed Server location. This doesnt change the Servers WebApp Deployment! Keep in mind to update the Twitch Application URL and use the 'Update EventSubs Button' in the Module Overview to update requested EventSubs to the new URL!</p>
+
                                 <h4>Port</h4>
                                 <input id="SETTING_WebApp_Port" type="number" value="8080" max="9999" placeholder="Default: 8080" oninput="port_change(this.value)" />
                                 <p id="SETTING_WebApp_Port_Hint" hidden>Changing this setting requires a restart!</p>
@@ -161,6 +166,7 @@
 
                                 <h3>Login using Twitch</h3>
                                 <p>Make sure your Twitch Dec Application is setup and valid. A Token with rights to "read/write Chat Messages", "moderate Chat" and "read/write Whispers" will be requested, <b>NOTHING MORE!</b></p>
+                                <p><b>BUT</b>, unless you give us permission to check your <b>Subscriptions</b> too, we wont be able to check the Bots (Sub)Emotes and cant track them! <b>Twitch currently doesnt support looking up an individuals Subscription - we hope they add this soon!</b> </p>
                                 <p>This Login will redirect you to Twitch and then back here (you MIGHT need to navigate to this step again tho)</p>
                             </div>
                             <div style="position: relative;">
@@ -172,6 +178,7 @@
                                 <button onclick="TwitchIRC_OAuth_show(this)">SHOW OAUTH TOKEN</button>
                                 <button id="TwitchIRC_USER_TEST" onclick="TwitchIRC_USER_TEST()">TEST</button>
                                 <button id="TwitchIRC_OAUTH_SAVE" onclick="TwitchIRC_User_Save()" style="display: none;">SAVE EXTERNAL OAUTH TOKEN</button>
+                                <div id="TwitchIRC_ALLOW_SUBSCRIPTION_WRAPPER"><span  title="Twitch currently doesnt support looking up an individuals Subscription - we hope they add this soon!">Allow reading Subscriptions: </span><input type="checkbox" onclick="TwitchIRC_User_Subscription_toggle(this)" title="Twitch currently doesnt support looking up an individuals Subscription - we hope they add this soon!" disabled/></div>
 
                                 <div class="TTV_LOGIN TTV_LOGIN_FALSE" id="TwitchIRC_User" style="position: absolute; bottom: 5px; left: 50%; transform: translate(-50%);">
                                     <div class="TTV_LOGIN_DATA">
@@ -378,17 +385,28 @@
                                 </div>
                             </div>
                         </div>
-
-                        <div class="Con_Cat WIZ_GROUP_DataCollection" hidden>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchAPI" hidden>
                             <div>
-                                <h3>Introduction</h3>
-                                <p>DataCollection is a big part of the FrikyBot. This mainly refers to Chat Message Data(Active Chatters, Fav. Emotes, ...) and Stream Data(Viewer Counts, Sub History, Most played Games, ...).</p>
-                                <p>All Data the Bot "collects" is open to anyone in the Chat or authorized for the Twitch API. So no private Data is collected.</p>
-                                <p><b>DataCollection is currently still WIP and not yet implemented. More about it in the future.</b></p>
+                                <h3 style="margin-bottom: 5px;">EventSub Topics</h3>
+                                <p>EventSubs are the way Twitch can relay events using Webhooks to an Application/Bot. Using these enables a realtime tracking of Subs, Stream Updates and Chat Events.</p>
+                                <p>All of these are used by default and are very usefull - but you can turn them off if you want to.</p>
+                                <p>For more information visit the <a href="https://dev.twitch.tv/docs/eventsub" target="_blank">Twitch EventSub Documentation</a>!</p>
+
+                                <h3>Beta EventSub Topics</h3>
+                                <p>As the Name implies <b style="color: orange">Beta Topics</b> are still in development by Twitch and can change at any time! We will always be a step behind these changes until Twitch provides new Updates on their Documentation!</p>
+                            </div>
+                            <div style="position: relative;">
+                                <h3 style="margin-bottom: 5px;">Twitch EventSub Topics</h3>
+                                <button style="float: right;" onclick="TwitchAPI_EventSub_Control_All('enable')">Enable All</button>
+                                <button style="float: right;" onclick="TwitchAPI_EventSub_Control_All('disable')">Disable All</button>
+                                <div id="TWITCHAPI_EVENTSUB_ENABLES">
+
+                                </div>
+                                <div id="TWITCHAPI_EVENTSUB_LEGEND">
+
+                                </div>
                             </div>
                         </div>
-                        <div class="Con_Cat WIZ_GROUP_DataCollection" hidden><center>coming soon</center></div>
-                        <div class="Con_Cat WIZ_GROUP_DataCollection" hidden><center>coming soon</center></div>
 
                         <div class="Con_Cat WIZ_GROUP_Packages" hidden>
                             <div>

@@ -6,7 +6,7 @@ const SettingTypes = [
         name: 'number', options: [
             { name: 'type', check: (x, optionSet) => typeof (x) === 'number' && !isNaN(x) ? true : 'type missmatch' },
             { name: 'min', check: (x, optionSet) => x >= parseInt(optionSet.min) || 'number too small' },
-            { name: 'max', check: (x, optionSet) => x <= parseInt(optionSet.min) || 'number too big' },
+            { name: 'max', check: (x, optionSet) => x <= parseInt(optionSet.max) || 'number too big' },
             { name: 'range', check: (x, optionSet) => (x >= parseInt(optionSet.range.substring(0, optionSet.range.indexOf(':'))) && x <= parseInt(optionSet.range.substring(optionSet.range.indexOf(':') + 1))) || 'number out of bounds' },
             { name: 'selection', check: (x, optionSet) => optionSet.selection.find(elt => elt === x) !== undefined || 'number not in the selection' }
         ], default: 0
@@ -241,7 +241,7 @@ class Config {
         //Init
         this.Config = options.preloaded || this.CreateBlankConfig();
         delete options.preloaded;
-
+        
         //Cascaded Configs
         this.parent = null;
         this.children = [];
@@ -284,7 +284,11 @@ class Config {
         this.children.push(cfgObj);
         cfgObj.Load();
         cfgObj.FillConfig();
+        
         return true;
+    }
+    GetChildConfig(name) {
+        return this.children.find(elt => elt.GetName() === name) || null;
     }
     RemoveChildConfig(name) {
         let idx = -1;
@@ -341,9 +345,16 @@ class Config {
         this.Config = this.CreateBlankConfig(include_opt);
     }
     FillConfig() {
+        //Template
         for (let templ of this.Template) {
             if (this.Config[templ.name] !== undefined) continue;
             this.UpdateSetting(templ.name, this.GetSettingDefault(templ.name));
+        }
+
+        //Children
+        for (let child of this.children) {
+            child.FillConfig();
+            this.UpdateSetting(child.GetName(), child.GetConfig());
         }
     }
 
@@ -465,8 +476,7 @@ class Config {
                 copy[stgName] = settings;
                 continue;
             }
-
-
+            
             //Template
             let template = this.Template.find(elt => elt.name === stgName);
             if (!template) template = {};
@@ -497,7 +507,7 @@ class Config {
                 copy[stgName] = this.Config[stgName];
             }
         }
-
+        
         return copy;
     }
     GetConfigREDACTED() {

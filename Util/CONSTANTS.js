@@ -1,6 +1,6 @@
 //Paths relative to the main rep
 const CONSTANTS = {
-    MODULE_BOOT_ORDER: ['WebApp', 'TwitchIRC', 'TwitchAPI', 'DataCollection'],
+    MODULE_BOOT_ORDER: ['WebApp', 'TwitchIRC', 'TwitchAPI'],
     FILESTRUCTURE: {
         CONFIG_FILE_PATH: "config.json",
         PACKAGES_INSTALL_ROOT: "Packages/",

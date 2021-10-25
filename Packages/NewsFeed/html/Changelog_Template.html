@@ -154,7 +154,6 @@
                 fetchAll(scheduled);
             } else {
                 const page = window.location.pathname.split("/")[3];
-
                 document.getElementById('ALL_CHANGELOG_HEADER').remove();
 
                 //Authorization
@@ -199,7 +198,7 @@
                 .then(STANDARD_FETCH_RESPONSE_CHECKER)
                 .then(json => {
                     if (json.removed > 0) {
-                        OUTPUT_showInfo('Changelog Removed! Go back to <a href="/">All Changelogs</a>');
+                        OUTPUT_showInfo('Changelog Removed! Go back to <a href="/News/Changelog">All Changelogs</a>');
                         document.getElementById('CHANGELOG').remove();
                     }
                     else OUTPUT_showError('Changelog couldnt be removed!');

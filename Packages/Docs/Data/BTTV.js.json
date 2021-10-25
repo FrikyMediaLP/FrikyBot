@@ -1,0 +1,80 @@
+{
+  "BTTV": {
+    "description": "THESE DOCS ARE NOT IN DEPTH since BTTV doesnt have an official API Documentation.",
+    "modules": {
+      "node-fetch": "npm"
+    },
+    "variables": {
+      "FETCH": {
+        "type": "node-fetch Module",
+        "npm": "https://www.npmjs.com/package/node-fetch",
+        "description": "Javascript Fetch Method but in NodeJS."
+      },
+      "ROOT": {
+        "type": "String",
+        "description": "BetterTwitchTV API Root 'https://api.betterttv.net/3/'."
+      }
+    },
+    "functions": {
+      "GetGlobalEmotes": {
+        "params": null,
+        "is-async": true,
+        "description": "Return Data from the '/cached/emotes/global' Endpoint."
+      },
+      "GetTwitchUser": {
+        "params": [
+          {
+            "name": "userID",
+            "type": "Number"
+          }
+        ],
+        "is-async": true,
+        "description": "Return Data from the 'cached/users/twitch/:user_id' Endpoint."
+      },
+      "GetEmote": {
+        "params": [
+          {
+            "name": "emote_id",
+            "type": "String"
+          }
+        ],
+        "is-async": true,
+        "description": "Returns Information about a Single Emote."
+      },
+      "GetEmoteImage": {
+        "params": [
+          {
+            "name": "emote_id",
+            "type": "String"
+          },
+          {
+            "name": "sze",
+            "type": "Number"
+          }
+        ],
+        "is-async": true,
+        "description": "Returns a PNG-Image of an Image. Sizes are 1 - 3."
+      },
+      "GetChannelEmotes": {
+        "params": [
+          {
+            "name": "channelID",
+            "type": "Number"
+          },
+          {
+            "name": "includeGlobalEmotes",
+            "type": "Boolean"
+          }
+        ],
+        "is-async": true,
+        "description": "Collects the Global Emotes and User Emotes into one Array."
+      }
+    },
+    "exports": {
+      "GetGlobalEmotes": "GetGlobalEmotes",
+      "GetTwitchUser": "GetTwitchUser",
+      "GetEmote": "GetEmote",
+      "GetChannelEmotes": "GetChannelEmotes"
+    }
+  }
+}

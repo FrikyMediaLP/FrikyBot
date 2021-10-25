@@ -126,7 +126,7 @@ class ModuleBase {
             else out.push({ name: dis.name, value: dis.value });
         }
 
-        return [];
+        return out;
     }
 
     addLog(name, database, query) {
@@ -145,7 +145,9 @@ class ModuleBase {
             this.LOGS.splice(index, 1);
         }
     }
-    async GetLogs(pagination = "T") {
+    async GetLogs(pagination) {
+        if (!pagination) pagination = this.GetPaginationString(10, 0, { timesorted: true });
+
         let out = {};
         for (let log of this.LOGS) {
             try {
@@ -156,9 +158,11 @@ class ModuleBase {
         }
         return Promise.resolve(out);
     }
-    async GetLog(name, pagination = "T") {
+    async GetLog(name, pagination) {
         let log = this.LOGS.find(elt => elt.name === name);
         if (!log) return Promise.reject(new Error('Log not found.'));
+        
+        if (!pagination) pagination = this.GetPaginationString(10, 0, { timesorted: true });
         return this.AccessNeDB(log.database, log.query || {}, pagination);
     }
     
@@ -189,7 +193,7 @@ class ModuleBase {
     }
     async AccessNeDB(datastore, query = {}, pagination) {
         if (!datastore) return Promise.resolve([]);
-        
+
         return new Promise((resolve, reject) => {
             datastore.find(query, (err, docs) => {
                 if (err) {
@@ -200,13 +204,13 @@ class ModuleBase {
                         let first = 10;
                         let cursor = 0;
                         let opts = {};
-
+                        
                         if (pages) {
                             first = pages[0] || 10;
                             cursor = pages[1] || 0;
                             opts = pages[2] || {};
                         }
-
+                        
                         if (first > 0) opts.pagecount = Math.ceil(docs.length / first);
 
                         if (opts.timesorted) docs.sort((a, b) => {
@@ -214,7 +218,11 @@ class ModuleBase {
                             else if (a.iat) return (-1) * (a.iat - b.iat);
                             else return 0;
                         });
-                        
+
+                        if (opts.customsort) docs.sort((a, b) => {
+                            return (-1) * (a[opts.customsort] - b[opts.customsort]);
+                        });
+
                         resolve({
                             data: docs.slice(first * cursor, first * (cursor + 1)),
                             pagination: this.GetPaginationString(first, cursor + 1, opts)
@@ -233,11 +241,14 @@ class ModuleBase {
         try {
             if (pagination.indexOf('A') >= 0 && pagination.indexOf('B') >= 0 && pagination.indexOf('C') >= 0) {
                 out[0] = parseInt(pagination.substring(1, pagination.indexOf('B')));
-                out[1] = parseInt(pagination.substring(pagination.indexOf('B'), pagination.indexOf('C')));
+                out[1] = parseInt(pagination.substring(pagination.indexOf('B') + 1, pagination.indexOf('C')));
             }
 
             if (pagination.indexOf('T') >= 0) out[2].timesorted = true;
-            if (pagination.indexOf('PS') >= 0 && pagination.indexOf('PE') >= 0) out[2].pagecount = parseInt(pagination.substring(pagination.indexOf('PS'), pagination.indexOf('PE')));
+            if (pagination.indexOf('CSS') >= 0 && pagination.indexOf('CSE') >= 0) {
+                out[2].customsort = pagination.substring(pagination.indexOf('CSS') + 2, pagination.indexOf('CSE'));
+            }
+            if (pagination.indexOf('PS') >= 0 && pagination.indexOf('PE') >= 0) out[2].pagecount = parseInt(pagination.substring(pagination.indexOf('PS') + 2, pagination.indexOf('PE')));
         } catch (err) {
             return null;
         }
@@ -247,6 +258,7 @@ class ModuleBase {
     GetPaginationString(first = 10, cursor = 0, options = {}) {
         let s = "A" + first + "B" + cursor + "C";
         if (options.timesorted) s += "T";
+        if (options.customsort) s += "CSS" + customsort + "CSE";
         if (options.pagecount !== undefined) s += "PS" + options.pagecount + "PE";
         return s;
     }

@@ -1,0 +1,148 @@
+{
+  "FFZ": {
+    "description": "THESE DOCS ARE NOT IN DEPTH. Check the FFZ-Docs for more info: <a href=\"https://api.frankerfacez.com/docs/\">FFZ Docs</a>",
+    "modules": {
+      "node-fetch": "npm"
+    },
+    "variables": {
+      "FETCH": {
+        "type": "node-fetch Module",
+        "npm": "https://www.npmjs.com/package/node-fetch",
+        "description": "Javascript Fetch Method but in NodeJS."
+      },
+      "ROOT": {
+        "type": "String",
+        "description": "FrankerFaceZ API Root 'http://api.frankerfacez.com/v1/'."
+      }
+    },
+    "functions": {
+      "GetBadges": {
+        "params": [
+          {
+            "name": "includeUsers",
+            "type": "Boolean"
+          }
+        ],
+        "is-async": true,
+        "description": "Return Data from the '/badges' Endpoint or '/_badges' Endpoint."
+      },
+      "GetBadge": {
+        "params": [
+          {
+            "name": "includeUsers",
+            "type": "Boolean"
+          },
+          {
+            "name": "includeUsers",
+            "type": "Boolean"
+          }
+        ],
+        "is-async": true,
+        "description": "Return Data from the '/badge/:badge_name' Endpoint or '/_badge/:badge_name' Endpoint."
+      },
+      "GetEmote": {
+        "params": [
+          {
+            "name": "id",
+            "type": "Number"
+          }
+        ],
+        "is-async": true,
+        "description": "Return Data from the '/emote/:emote_id' Endpoint."
+      },
+      "GetEmoticons": {
+        "params": [
+          {
+            "name": "params",
+            "type": "Object"
+          }
+        ],
+        "is-async": true,
+        "description": "Return Data from the '/emoticons' Endpoint. Use the params to Query the Request."
+      },
+      "GetRoomByName": {
+        "params": [
+          {
+            "name": "name",
+            "type": "String"
+          },
+          {
+            "name": "includeSets",
+            "type": "Boolean"
+          }
+        ],
+        "is-async": true,
+        "description": "Return Data from the '/room' Endpoint or '/_room' Endpoint."
+      },
+      "GetRoomByID": {
+        "params": [
+          {
+            "name": "id",
+            "type": "Number"
+          },
+          {
+            "name": "includeSets",
+            "type": "Boolean"
+          }
+        ],
+        "is-async": true,
+        "description": "Return Data from the '/room/id/:room_id' Endpoint or '/_room/id/:room_id' Endpoint."
+      },
+      "GetGlobalSet": {
+        "params": null,
+        "is-async": true,
+        "description": "Return Data from the '/set/global' Endpoint."
+      },
+      "GetSet": {
+        "params": [
+          {
+            "name": "id",
+            "type": "Number"
+          }
+        ],
+        "is-async": true,
+        "description": "Return Data from the '/set/:set_id' Endpoint."
+      },
+      "GetUserByName": {
+        "params": [
+          {
+            "name": "name",
+            "type": "String"
+          },
+          {
+            "name": "includeSets",
+            "type": "Boolean"
+          }
+        ],
+        "is-async": true,
+        "description": "Return Data from the '/user/:user_name' Endpoint or the the '/_user/:user_name' Endpoint."
+      },
+      "GetUserByID": {
+        "params": [
+          {
+            "name": "id",
+            "type": "Number"
+          },
+          {
+            "name": "includeSets",
+            "type": "Boolean"
+          }
+        ],
+        "is-async": true,
+        "description": "Return Data from the '/user/id/:user_id' Endpoint or the the '/_user/id/:user_id' Endpoint."
+      }
+    },
+    "exports": {
+      "GetBadges": "GetBadges",
+      "GetBadge": "GetBadge",
+      "GetEmote": "GetEmote",
+      "GetEmoticons": "GetEmoticons",
+      "GetRoomByName": "GetRoomByName",
+      "GetRoomByID": "GetRoomByID",
+      "GetGlobalSet": "GetGlobalSet",
+      "GetSet": "GetSet",
+      "GetUserByName": "GetUserByName",
+      "GetUserByID": "GetUserByID"
+    }
+  }
+}

@@ -325,6 +325,17 @@ body.darkmode #WIZARD #WIZ_UI {
     border-color: dimgray;
 }
 
+/* WEBAPP */
+#WEBAPP_HOSTNAME_VERIFY {
+    float: right;
+    transform: translate(-20px, -2px);
+}
+
+/* Twitch IRC */
+#TwitchIRC_ALLOW_SUBSCRIPTION_WRAPPER {
+    margin-top: 50px;
+}
+
 /* CHANNEL SELECTOR */
 .CHANNEL_SELECTOR {
     display: none;
@@ -620,4 +631,51 @@ body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > span, body.darkmode #TWITCHAPI_USERL
         display: grid;
         grid-template-columns: auto 52px;
         grid-row-gap: 2px;
+    }
+
+/* EventSubs */
+#TWITCHAPI_EVENTSUB_ENABLES {
+    margin-top: 20px;
+}
+
+    #TWITCHAPI_EVENTSUB_ENABLES p {
+        border-bottom: 1px solid gray;
+        font-weight: bold;
+        margin-bottom: 5px !important;
+    }
+        #TWITCHAPI_EVENTSUB_ENABLES p.beta {
+            color: orange;
+        }
+
+    #TWITCHAPI_EVENTSUB_ENABLES > .EVENTSUB_CAT {
+        display: grid;
+        grid-template-columns: auto 52px;
+        grid-row-gap: 2px;
+    }
+
+        #TWITCHAPI_EVENTSUB_ENABLES > .EVENTSUB_CAT > span > span {
+            margin-left: 5px;
+        }
+
+#TWITCHAPI_EVENTSUB_LEGEND {
+    margin-top: 20px;
+}
+
+#TWITCHAPI_EVENTSUB_LEGEND p {
+    position: relative;
+}
+
+.EVENTSUB_LEGEND_IDX {
+    color: #028deb;
+    font-size: 12px;
+    position: absolute;
+    top: -2px;
+    position: relative;
+}
+
+    .EVENTSUB_LEGEND_IDX.missing {
+        color: #de3333;
+    }
+    .EVENTSUB_LEGEND_IDX.beta {
+        color: orange;
     }

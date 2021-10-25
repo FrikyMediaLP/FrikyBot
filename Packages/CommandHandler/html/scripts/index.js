@@ -49,6 +49,7 @@ const TIMER_TEMPLATE = {
     description: "string",
     enabled: "boolean",
     name: "string",
+    lines: "number",
     alias: "string"
 };
 const TIMER_TEMPLATE_REQUIRED = {
@@ -228,7 +229,9 @@ function updateCommandsTable() {
         },
         column_addition: {
             settings: (x) => '<button yellow onclick="edit_Custom(\'' + x.name + '\')">edit</button><button red onclick="remove_Custom(\'' + x.name + '\')">remove</button>'
-        }
+        },
+        pagination: '',
+        ui_change_func: 'Table_UI_change'
     };
     if (AUTH_MODE) options.headers.push('by', 'settings');
     
@@ -358,7 +361,18 @@ async function send_edit_Custom() {
             OUTPUT_showError(err.message, document.getElementById('EDITOR_OUTPUT_1'));
         });
 }
-function remove_Custom(name) {
+async function remove_Custom(name) {
+    //Await Confirmation
+    let answer = 'NO';
+    
+    try {
+        answer = await MISC_USERCONFIRM("YOU SURE YOU WANT THIS?", "Do you really want to delete this Command?");
+    } catch (err) {
+
+    }
+
+    if (answer !== 'YES') return Promise.resolve();
+
     let opts = getAuthHeader();
     opts['method'] = 'DELETE';
     opts['headers']['Content-Type'] = 'application/json';
@@ -403,6 +417,7 @@ function editor_Command_set(data = {}) {
     let userlevel = document.getElementById('EDITOR_UL').childNodes[0];
     let strict_level = document.getElementById('EDITOR_UL_MODE');
     let cooldown = document.getElementById('Editor_CD_Text');
+    let alias = document.getElementById('EDITOR_ALIAS');
     document.getElementById('EDITOR_COUNT_WRAPPER').style.display = 'none';
 
     if (!data.userlevel) data.userlevel = "Regular";
@@ -414,16 +429,20 @@ function editor_Command_set(data = {}) {
     editor_Command_trigger_reverse(data.detection_type || 0);
     output.value = data.output || '';
     description.value = data.description || '';
+    alias.value = data.alias || '';
     
     ICON_SELECTOR_setValue(userlevel, UL_Options.find(elt => elt.value === data.userlevel));
     strict_level.value = data.strict_level || 0;
     cooldown.value = data.cooldown || '1m';
+    
     if (data.counter !== undefined) {
         document.getElementById('EDITOR_COUNT_WRAPPER').style.display = 'block';
         document.getElementById('EDITOR_COUNT').value = data.counter;
+        document.getElementById('EDITOR_COUNT').title = data.counter;
     } else {
         document.getElementById('EDITOR_COUNT_WRAPPER').style.display = 'none';
         document.getElementById('EDITOR_COUNT').value = 0;
+        document.getElementById('EDITOR_COUNT').title = 0;
     }
 
     editor_Command_trigger_mode(detection_type || 0);
@@ -949,7 +968,20 @@ function updateTimerTable() {
         headers: ['name', 'output', 'interval', 'active'],
         header_translation: { 'by': 'added_by' },
         content_translation: {
-            output: (x, obj, i, content) => !content.trim() ? (!obj.description || show_output_only ? (hightlight_vars ? createVariableDivs(extractVariables(obj.output || "Alias: " + obj.alias), obj.output || "Alias: " + obj.alias) : (obj.output || "Alias: " + obj.alias)) : obj.description) : ''
+            output: (x, obj, i, content) => {
+                let s = '';
+                if (!content.trim())
+                    if (!obj.description || show_output_only)
+                        if (hightlight_vars && obj.output) s += createVariableDivs(extractVariables(obj.output), obj.output);
+                        else if (obj.alias) {
+                            s += '<span ' + (!Commands.find(elt => obj.alias.split(' ')[0] === elt.name) && !HCCommands.find(elt => obj.alias.split(' ')[0] === elt.name) ? 'notfound title="Alias Command not found!"' : '') + '>';
+                            s += "Alias: " + obj.alias;
+                            s += '</span>';
+                        }
+                        else s += obj.output;
+                    else s += obj.description;
+                return s;
+            }
         },
         timestamps: { 'active': 'relative' },
         column_addition: {
@@ -961,7 +993,7 @@ function updateTimerTable() {
 
                 btns += '<button yellow onclick="edit_timer(\'' + x.name + '\')">edit</button>';
                 btns += '<button red onclick="remove_timer(\'' + x.name + '\')">remove</button>';
-
+                
                 return btns;
             }
         }
@@ -1080,6 +1112,7 @@ function editor_Timer_setData(data = {}) {
     let interval = document.getElementById('Editor_TIMER_INTERVAL_Text');
     let enabled = document.getElementById('EDITOR_TIMER_ENABLE');
     let alias = document.getElementById('EDITOR_TIMER_ALIAS');
+    let alias_info = document.getElementById('EDITOR_TIMER_ALIAS_INFO');
     
     name.value = data.name || '';
     name.placeholder = name.value;
@@ -1088,8 +1121,20 @@ function editor_Timer_setData(data = {}) {
     description.value = data.description || '';
     interval.value = data.interval;
     editor_Timer_interval_reverse(data.interval);
+    interval.value = data.interval;
+    editor_Timer_lines_change(data.lines);
     SWITCHBUTTON_TOGGLE(enabled, data.enabled === true);
     alias.value = data.alias || '';
+
+    let alias_text = alias.value.split(' ')[0];
+
+    if (!Commands.find(elt => elt.name === alias_text) && !HCCommands.find(elt => elt.name === alias_text)) {
+        alias.classList.add("notfound");
+        alias_info.innerHTML = 'Alias Command not found!';
+    } else {
+        alias.classList.remove("notfound");
+        alias_info.innerHTML = '';
+    }
 }
 
 function editor_Timer_output_change(elt, e) {
@@ -1120,6 +1165,25 @@ function editor_Timer_interval_reverse(cooldownStr) {
 
     document.getElementById('EDITOR_TIMER_INTERVAL').value = s;
 }
+function editor_Timer_lines_change(value = 10) {
+    let slider = document.getElementById('EDITOR_TIMER_LINES');
+    let text = document.getElementById('Editor_TIMER_LINES_Text');
+
+    slider.value = value;
+    text.value = value;
+}
+function editor_Timer_alias(elt) {
+    let alias = elt.value.split(' ')[0];
+    let alias_info = document.getElementById('EDITOR_TIMER_ALIAS_INFO');
+
+    if (!Commands.find(elt => elt.name === alias) && !HCCommands.find(elt => elt.name === alias)) {
+        elt.classList.add("notfound");
+        alias_info.innerHTML = 'Alias Command not found!';
+    } else {
+        elt.classList.remove("notfound");
+        alias_info.innerHTML = '';
+    }
+}
 
 function editor_Timer_gerneratoreJSON() {
     let name = document.getElementById('EDITOR_TIMER_NAME').value;
@@ -1128,8 +1192,9 @@ function editor_Timer_gerneratoreJSON() {
     let interval = document.getElementById('Editor_TIMER_INTERVAL_Text').value;
     let enabled = document.getElementById('EDITOR_TIMER_ENABLE').value === true;
     let alias = document.getElementById('EDITOR_TIMER_ALIAS').value;
+    let lines = parseInt(document.getElementById('EDITOR_TIMER_LINES').value);
 
-    let data = { name, output, description, enabled, interval, alias };
+    let data = { name, output, description, enabled, interval, alias, lines };
     
     for (let key in data) {
         if (data[key] === "") delete data[key];
@@ -1253,7 +1318,6 @@ async function send_edit_Timer() {
     await fetch('/api/commands/timers', opts)
         .then(STANDARD_FETCH_RESPONSE_CHECKER)
         .then(json => {
-
             //Update Table
             let idx = -1;
             Timers.find((elt, index) => {
@@ -1264,7 +1328,7 @@ async function send_edit_Timer() {
 
                 return false;
             });
-
+            
             if (data.enabled === true) data.active = Date.now() + parseCooldownString(data.interval);
             if (idx >= 0 && Timers[idx].enabled === true) data.active = Timers[idx].active;
             if (idx >= 0) Timers.splice(idx, 1, data);
@@ -1282,6 +1346,17 @@ async function send_edit_Timer() {
         });
 }
 async function remove_timer(name) {
+    //Await Confirmation
+    let answer = 'NO';
+
+    try {
+        answer = await MISC_USERCONFIRM("YOU SURE YOU WANT THIS?", "Do you really want to delete this Command?");
+    } catch (err) {
+
+    }
+
+    if (answer !== 'YES') return Promise.resolve();
+
     let opts = getAuthHeader();
     opts['method'] = 'DELETE';
     opts['headers']['Content-Type'] = 'application/json';
@@ -1334,8 +1409,8 @@ async function start_timer(name) {
                 return false;
             });
             if (idx >= 0) {
-                Timers[0].active = Date.now() + parseCooldownString(Timers[0].interval);
-                Timers[0].enabled = true;
+                Timers[idx].active = Date.now() + parseCooldownString(Timers[idx].interval);
+                Timers[idx].enabled = true;
             }
 
             Timers.sort(sortByNameDEC);
@@ -1368,8 +1443,8 @@ async function stop_timer(name) {
                 return false;
             });
             if (idx >= 0) {
-                delete Timers[0].active;
-                Timers[0].enabled = false;
+                delete Timers[idx].active;
+                Timers[idx].enabled = false;
             }
 
             Timers.sort(sortByNameDEC);

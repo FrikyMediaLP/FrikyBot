@@ -1,0 +1,248 @@
+{
+  "ModuleBase": {
+    "description": "ModuleBase containing everythink to create a Module.",
+    "modules": {
+      "CONFIGHANDLER": "FrikyBot Module"
+    },
+    "variables": {
+      "CONFIGHANDLER": {
+        "type": "ConfigHandler Module",
+        "description": "Bot Config Handler managing Changes and sub-Configs."
+      }
+    },
+    "classes": {
+      "ModuleBase": {
+        "description": "Parent Class of Modules. Providing all necessary features to create and maintain a Module.",
+        "constructor": {
+          "params": [
+            {
+              "name": "details",
+              "type": "Object"
+            },
+            {
+              "name": "configJSON",
+              "type": "Object"
+            },
+            {
+              "name": "logger",
+              "opt": true,
+              "type": "Logger.js:Logger"
+            }
+          ],
+          "description": "Setting up the Config and Ready Requirements."
+        },
+        "functions": {
+          "Init": {
+            "params": [
+              {
+                "name": "WebInter",
+                "type": "WebApp::WebInteractor"
+              }
+            ],
+            "is-async": true,
+            "description": "Overwrite this Function to Setup Variables and Directories."
+          },
+          "getName": {
+            "params": null,
+            "description": "Returns the Module name."
+          },
+          "getDescription": {
+            "params": null,
+            "description": "Returns the Module Description."
+          },
+          "getDetails": {
+            "params": null,
+            "description": "Returns the Details including Description, picture, ready, displayables and enabled."
+          },
+          "isEnabled": {
+            "params": null,
+            "description": "Returns the current enable State of the Module."
+          },
+          "enable": {
+            "params": null,
+            "description": "Used for enabling the Module."
+          },
+          "disable": {
+            "params": null,
+            "description": "Used for disabling the Module."
+          },
+          "setEnable": {
+            "params": [
+              {
+                "name": "enable",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Sets the isEnabled() Functions Return to the given Boolean."
+          },
+          "GetConfig": {
+            "params": [
+              {
+                "name": "json",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Returns the Module Config as JSON. If json is false, the Config Object is returned."
+          },
+          "addReadyRequirement": {
+            "params": [
+              {
+                "name": "func",
+                "type": "Function"
+              }
+            ],
+            "description": "Adds the Ready Requirement."
+          },
+          "removeReadyRequirement": {
+            "params": [
+              {
+                "name": "index",
+                "type": "Number"
+              }
+            ],
+            "description": "Removes the Ready Requierement at the given Index."
+          },
+          "isReady": {
+            "params": null,
+            "description": "Checks all Ready Requirements and returns true or false."
+          },
+          "addDisplayable": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              },
+              {
+                "name": "value",
+                "type": "Any"
+              }
+            ],
+            "description": "Pushes a Displayable Stat to the 'DISPLAYABELS' Array."
+          },
+          "addDisplayables": {
+            "params": [
+              {
+                "name": "displayables",
+                "type": "Array"
+              }
+            ],
+            "description": "Pushes all Displayable Stats to the 'DISPLAYABELS' Array."
+          },
+          "removeDisplayable": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              }
+            ],
+            "description": "Pops the given Displayable Stat off the 'DISPLAYABELS' Array."
+          },
+          "GetDisplayables": {
+            "params": null,
+            "description": "Returns the 'DISPLAYABELS' Array."
+          },
+          "addLog": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              },
+              {
+                "name": "query",
+                "type": "nedb::Datastore"
+              },
+              {
+                "name": "query",
+                "type": "Object"
+              }
+            ],
+            "description": "Pushes a Log to the 'LOGS' Array."
+          },
+          "removeLog": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              }
+            ],
+            "description": "Pops a Log off the 'LOGS' Array."
+          },
+          "GetLogs": {
+            "params": null,
+            "is-async": true,
+            "description": "Returns the 'LOGS' Array."
+          },
+          "setLogger": {
+            "params": [
+              {
+                "name": "loggerObject",
+                "type": "Object"
+              }
+            ],
+            "description": "Sets the Class´s Logger Functions. The Logger Object needs an info(msg:string), a warn(msg:string) and an error(msg:error) Function."
+          },
+          "replaceAll": {
+            "params": [
+              {
+                "name": "string",
+                "type": "String"
+              },
+              {
+                "name": "replace",
+                "type": "String"
+              },
+              {
+                "name": "wITH",
+                "type": "String"
+              }
+            ],
+            "description": "Replaces all 'replace'-substrings with the 'with'-contents."
+          },
+          "AccessNeDB": {
+            "params": [
+              {
+                "name": "datastore",
+                "type": "nedb::Datastore"
+              },
+              {
+                "name": "query",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Allows Access to an NEDB Database Asynchronously."
+          },
+          "GetPaginationValues": {
+            "params": [
+              {
+                "name": "pagination",
+                "type": "String"
+              }
+            ],
+            "description": "Returns First, cursor and other Pagination values decoded in the Pagination String."
+          },
+          "GetPaginationString": {
+            "params": [
+              {
+                "name": "first",
+                "type": "Number"
+              },
+              {
+                "name": "cursor",
+                "type": "Number"
+              },
+              {
+                "name": "options",
+                "type": "Object"
+              }
+            ],
+            "description": "Turns the given parameters into a Pagination String."
+          }
+        }
+      }
+    },
+    "exports": {
+      "ModuleBase": "ModuleBase"
+    }
+  }
+}

@@ -1,7 +1,8 @@
-const CORE_MODULES = ['WebApp', 'TwitchIRC', 'TwitchAPI', 'DataCollection'];
-const WIP_MODULES = ['DataCollection'];
+const CORE_MODULES = ['WebApp', 'TwitchIRC', 'TwitchAPI'];
+const WIP_MODULES = [];
 
 const CONTROLABLES_INDEX = {
+    'WebApp': CONTROLS_WEBAPP,
     'TwitchIRC': CONTROLS_TWITCHIRC,
     'TwitchAPI': CONTROLS_TWITCHAPI
 };
@@ -54,6 +55,7 @@ function createModule(module) {
 
     s += '<div class="misc">';
 
+    if ((module.displayables || []).length === 0) s += '<span style="text-align: right;">NO STATS AVAILABLE</span>';
     for (let i = 0; i < 5 && i < (module.displayables || []).length; i++) {
         let stat = module.displayables[i];
         s += '<span>' + stat.name + ':</span><span style="text-align: right;">' + ColorValue(stat.value, stat.name) + '</span>';
@@ -90,6 +92,38 @@ function updateModule(module) {
 }
 
 //Custom Controls
+//WEBAPP
+function CONTROLS_WEBAPP(module) {
+    let s = '';
+
+    s += '<button onclick="CONTROLS_WEBAPP_STOP()">STOP</button>';
+    s += '<button onclick="CONTROLS_WEBAPP_RESTART()">RESTART</button>';
+
+    return s;
+}
+function CONTROLS_WEBAPP_STOP() {
+    fetch("/api/webapp/control/stop", getAuthHeader())
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            OUTPUT_showInfo('Web Server stopped!');
+        })
+        .catch(err => {
+            console.log(err);
+            OUTPUT_showError(err.message);
+        });
+}
+function CONTROLS_WEBAPP_RESTART() {
+    fetch("/api/webapp/control/restart", getAuthHeader())
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            OUTPUT_showInfo('Web Server restarting ... please wait!');
+        })
+        .catch(err => {
+            console.log(err);
+            OUTPUT_showError(err.message);
+        });
+}
+
 //TTV IRC
 function CONTROLS_TWITCHIRC(module) {
     let s = '';
@@ -141,6 +175,7 @@ function CONTROLS_TWITCHAPI(module) {
     let s = '';
 
     s += '<button onclick="CONTROLS_API_TOKENS()">CHECK TOKENS</button>';
+    s += '<button onclick="CONTROLS_API_EVENTSUB()">UPDATE EVENTSUBS</button>';
 
     return s;
 }
@@ -150,7 +185,7 @@ function CONTROLS_API_TOKENS() {
     opt['method'] = 'PATCH';
     opt['headers']['Content-Type'] = 'application/json';
     opt['body'] = JSON.stringify({ type: ['app', 'user'] });
-    
+
     fetch("/api/twitchapi/token", opt)
         .then(STANDARD_FETCH_RESPONSE_CHECKER)
         .then(json => {
@@ -161,11 +196,27 @@ function CONTROLS_API_TOKENS() {
             OUTPUT_showError(err.message);
         });
 }
+function CONTROLS_API_EVENTSUB(topic = 'all') {
+    let opt = getAuthHeader();
+
+    opt['method'] = 'GET';
+    opt['headers']['Content-Type'] = 'application/json';
+
+    fetch("/api/twitchapi/EventSub?topic=" + topic, opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            OUTPUT_showInfo(json.data.length + ' EventSubs updated!');
+        })
+        .catch(err => {
+            console.log(err);
+            OUTPUT_showError(err.message);
+        });
+}
 
 //Packages
 function createPackage(package) {
     let s = '';
-
+    
     s += '<div class="Package " id="Package_' + package.name + '" ' + (package.enabled ? '' : 'disabled') + '>';
 
     s += '<span class="hdr">' + package.name + '</span>';
@@ -176,7 +227,14 @@ function createPackage(package) {
     s += '</div>';
     
     s += '<div class="misc">';
-    s += '<center>DISPLAYABLES FOLLOW (WIP)</center>';
+
+    if ((package.displayables || []).length === 0) s += '<span style="text-align: right;">NO STATS AVAILABLE</span>';
+
+    for (let i = 0; i < 5 && i < (package.displayables || []).length; i++) {
+        let stat = package.displayables[i];
+        s += '<span>' + stat.name + ':</span><span style="text-align: right;">' + ColorValue(stat.value, stat.name) + '</span>';
+    }
+
     s += '</div>';
 
     s += '</div>';

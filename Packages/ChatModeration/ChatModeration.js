@@ -26,11 +26,12 @@ const PUNISHMENT = {
 }
 
 class ChatModeration extends require('./../../Util/PackageBase.js').PackageBase {
-    constructor(webappinteractor, twitchirc, twitchapi, datacollection, logger) {
-        super(PACKAGE_DETAILS, webappinteractor, twitchirc, twitchapi, datacollection, logger);
+    constructor(webappinteractor, twitchirc, twitchapi, logger) {
+        super(PACKAGE_DETAILS, webappinteractor, twitchirc, twitchapi, logger);
         
         this.Config.AddSettingTemplates([
             { name: 'debug', type: 'boolean', default: false },
+            { name: 'Log_Dir', type: 'string', default: 'Logs/' + PACKAGE_DETAILS.name + '/' },
             { name: 'disable_Chat_Commands', type: 'boolean', default: false }
         ]);
         this.Config.Load();
@@ -41,7 +42,12 @@ class ChatModeration extends require('./../../Util/PackageBase.js').PackageBase 
 
     async Init(startparameters) {
         if (!this.isEnabled()) return Promise.resolve();
-        
+        let cfg = this.Config.GetConfig();
+
+        //Static Information
+        this.LATEST_STREAM_DATA = null;
+        this.next_stream_check = 0;
+
         //Permitted
         this.Permitted = {};
 
@@ -51,6 +57,10 @@ class ChatModeration extends require('./../../Util/PackageBase.js').PackageBase 
             new SpamFilter(this, this.TwitchIRC, this.TwitchAPI, this.Logger),
             new LinkFilter(this, this.TwitchIRC, this.TwitchAPI, this.Logger)
         ];
+
+        //Logs
+        this.PUNISHMENT_LOG = new Datastore({ filename: PATH.resolve(cfg.Log_Dir + 'API_Logs.db'), autoload: true });
+        this.addLog('Punishment Issues', this.PUNISHMENT_LOG);
         
         //Twitch Chat Listener
         if (this.TwitchIRC) this.TwitchIRC.on('chat', (channel, userstate, message, self) => this.MessageEventHandler(channel, userstate, message, self));
@@ -91,15 +101,14 @@ class ChatModeration extends require('./../../Util/PackageBase.js').PackageBase 
         this.useDefaultFileRouter();
         
         //PACKAGE INTERCONNECT - Adding Commands
-        let cfg = this.Config.GetConfig();
         if (cfg.disable_Chat_Commands != true) {
             
             try {
                 COMMANDHANDLER = require('./../CommandHandler/CommandHandler.js');
                 this.addPackageInterconnectRequest("CommandHandler", (CommandHandlerObj) => {
-                    CommandHandlerObj.addHardcodedCommands("!ChatModeration", new COMMANDHANDLER.HCCommand("!ChatModeration", (userMessageObj, commandOrigin, parameters) => this.Chat_Command_ChatModeration(userMessageObj, commandOrigin, parameters),
+                    CommandHandlerObj.addHardcodedCommands("!ChatModeration", new COMMANDHANDLER.HCCommand("!ChatModeration", (userMessageObj, parameters) => this.Chat_Command_ChatModeration(userMessageObj, parameters),
                         { description: '<p>Set/Change/Enable/Disable/... Chat Moderation Filters using the Twitch Chat.</p>' }));
-                    CommandHandlerObj.addHardcodedCommands("!permit", new COMMANDHANDLER.HCCommand("!permit", (userMessageObj, commandOrigin, parameters) => this.Chat_Command_permit(userMessageObj, commandOrigin, parameters),
+                    CommandHandlerObj.addHardcodedCommands("!permit", new COMMANDHANDLER.HCCommand("!permit", (userMessageObj, parameters) => this.Chat_Command_permit(userMessageObj, parameters),
                         { description: '<p>Permits a User to post any Message otherwise restricted by the FrikyBot ChatModeration Filters! <b>(this doesn´t stop AutoMod or other Twitch Intern Settings)</b></p>' }));
                 }, "Add Chat Commands to setup Chat Moderation Features.");
             } catch (err) {
@@ -122,7 +131,28 @@ class ChatModeration extends require('./../../Util/PackageBase.js').PackageBase 
             this.Logger.error(err.message);
         }
 
+        try {
+            this.CheckLiveStatus();
+        } catch (err) {
+
+        }
+
+        if (this.LATEST_STREAM_DATA) this.Logger.warn("Stream is Live! Chat Moderation Active!");
+
         this.Logger.info("ChatModeration (Re)Loaded!");
+        return Promise.resolve();
+    }
+    async CheckLiveStatus(channel) {
+        try {
+            let response = await this.TwitchAPI.GetStreams({ user_login: channel || this.TwitchIRC.getChannel(true) });
+            if (response.data.length > 0) this.LATEST_STREAM_DATA = response.data[0];
+            else this.LATEST_STREAM_DATA = null;
+        } catch (err) {
+            this.LATEST_STREAM_DATA = null;
+            return Promise.reject(err);
+        }
+
+        this.next_stream_check = Date.now() + 5*60*1000;        //Check every 5 min at max
         return Promise.resolve();
     }
     
@@ -132,41 +162,32 @@ class ChatModeration extends require('./../../Util/PackageBase.js').PackageBase 
 
         //Dont Check Bot Messages
         if (self) return Promise.resolve();
-        let cfg = this.Config.GetConfig();
         
         //SKIP PERMITTED
-        if (this.Permitted[userstate.username] != undefined) {
-            if (this.Permitted[userstate.username] > Date.now()) {
-                return Promise.resolve();
-            } else {
-                delete this.Permitted[userstate.username];
-            }
-        }
+        this.updatePermitList();
+        if (this.checkPermit[userstate.username]) return Promise.resolve();
 
+        let cfg = this.Config.GetConfig();
         let msgObj = new TWITCHIRC.Message(channel, userstate, message);
 
         //Skip Moderators and up
         if (msgObj.matchUserlevel(CONSTANTS.UserLevel.moderator)) return Promise.resolve();
-
-        let streamData = null;
-
+        
         //SKIP WHEN IN DEBUG
-        if (cfg.debug !== true) {
+        if (cfg.debug !== true && this.next_stream_check < Date.now()) {
             //Skip when Streamer is Offline
             try {
-                streamData = await this.TwitchAPI.GetStreams({ user_login: channel });
-
-                if (!streamData.data || streamData.data.length == 0) {
-                    return Promise.resolve();
-                }
+                await this.CheckLiveStatus(channel);
+                if (!this.LATEST_STREAM_DATA) return Promise.resolve();
             } catch (err) {
                 this.Logger.error(err.message);
             }
         }
-       
+
+        //Check Filter
         for (let filter of this.Filters) {
             try {
-                let issue = await filter.CheckMessage(msgObj, streamData);
+                let issue = await filter.CheckMessage(msgObj, this.LATEST_STREAM_DATA);
                 if (typeof issue == "object") {
                     await this.executePunishment(msgObj, issue);
                     this.Logger.warn("Chat Alert -> " + issue.reason + " -> Punishment: " + issue.punishment + (issue.punishment_length ? (" LENGTH: " + issue.punishment_length) : ""));
@@ -180,6 +201,16 @@ class ChatModeration extends require('./../../Util/PackageBase.js').PackageBase 
         return Promise.resolve();
     }
     async executePunishment(msgObj, issue) {
+        //Logs
+        if (this.PUNISHMENT_LOG) {
+            this.PUNISHMENT_LOG.insert({
+                issue: issue,
+                message_object: channel,
+                time: Date.now()
+            });
+        }
+
+        //Execute
         try {
             if (issue.punishment == PUNISHMENT.DELETE) {
                 await this.TwitchIRC.deleteMessage(msgObj.getID());
@@ -201,12 +232,21 @@ class ChatModeration extends require('./../../Util/PackageBase.js').PackageBase 
         }
         return this.TwitchIRC.say(codedString);
     }
+
+    updatePermitList() {
+        for (let user in this.Permitted) {
+            if (this.Permitted[user] < Date.now()) delete this.Permitted[user];
+        }
+    }
+    checkPermit(username) {
+        return this.Permitted[username] > Date.now();
+    }
     permitUser(username) {
         this.Permitted[username] = Date.now() + (1000 * 60);
     }
 
     //Commands
-    async Chat_Command_ChatModeration(userMessageObj, commandOrigin, parameters) {
+    async Chat_Command_ChatModeration(userMessageObj, parameters) {
         //Get ChatModeration Status
         if (parameters.length == 1) {
             try {
@@ -284,7 +324,7 @@ class ChatModeration extends require('./../../Util/PackageBase.js').PackageBase 
         
         return Promise.resolve();
     }
-    async Chat_Command_permit(userMessageObj, commandOrigin, parameters) {
+    async Chat_Command_permit(userMessageObj, parameters) {
         if (parameters.length > 1 && userMessageObj.matchUserlevel(CONSTANTS.UserLevel.moderator)) {
             try {
                 this.permitUser(parameters[1].toLowerCase());

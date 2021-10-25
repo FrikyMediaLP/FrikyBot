@@ -44,6 +44,9 @@
     border-radius: 5px;
     font-family: 'Roboto', sans-serif;
 }
+.darkmode .Module {
+    background-color: #2e2e2e;
+}
 
     .Module .IMG {
         width: 100%;
@@ -94,10 +97,15 @@
             border-bottom-right-radius: 5px;
         }
 
+
     .Module.NOTREADY .Control center.Status {
         color: gray;
         background-color: rgba(0, 0, 0, 0.2);
     }
+.darkmode .Module.NOTREADY .Control center {
+    color: white;
+    background-color: rgba(0, 0, 0, 1);
+}
 
         .Module.NOTREADY .Control center.Status::after {
             content: 'not ready';
@@ -107,6 +115,10 @@
         color: red;
         background-color: rgba(255, 0, 0, 0.2);
     }
+.darkmode .Module.DISABLED .Control center {
+    color: white;
+    background-color: rgba(255, 0, 0, 1);
+}
 
         .Module.DISABLED .Control center.Status::after {
             content: 'Disabled';
@@ -116,6 +128,10 @@
         color: green;
         background-color: rgba(0, 155, 0, 0.5)
     }
+.darkmode .Module.ENABLED .Control center {
+    color: white;
+    background-color: rgba(0, 155, 0, 1);
+}
 
         .Module.ENABLED .Control center.Status::after {
             content: 'Enabled';

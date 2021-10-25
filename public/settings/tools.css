@@ -6,9 +6,10 @@
         cursor: pointer;
     }
 
-#HEADER {
+#content #HEADER {
     font-size: 40px;
     font-family: 'Roboto', sans-serif;
+    margin-bottom: 20px;
 }
 
 #TOOLS {
@@ -39,7 +40,7 @@ button, input, textarea{
         border: 1px solid white;
     }
 .darkmode #TOOL_SELECT .TOOL {
-    background-color: #4f4f4f !important;
+    background-color: #2e2e2e !important;
 }
 
         #TOOL_SELECT .TOOL:not([data-targetid]){
@@ -50,16 +51,19 @@ button, input, textarea{
         border-color: gray;
     }
 
-        #TOOL_SELECT .TOOL .header {
-            border-bottom: 1px solid black;
-            font-size: 20px;
-        }
+#TOOL_SELECT .TOOL .header {
+    border-bottom: 1px solid black;
+    font-size: 20px;
+}
+.darkmode #TOOL_SELECT .TOOL .header {
+    border-color: lightgray;
+}
 
-        #TOOL_SELECT .TOOL .desc {
-            margin-top: 10px;
-            height: calc(100% - 20px);
-            overflow: scroll !important;
-        }
+#TOOL_SELECT .TOOL .desc {
+    margin-top: 10px;
+    height: 100%;
+    overflow: scroll !important;
+}
 
 #TOOL_BACK {
     position: absolute;

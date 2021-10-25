@@ -396,7 +396,7 @@ async function TTV_LOGIN_CLICKED(elt, type, scopes = [], forced = true) {
     let opt = getAuthHeader();
     opt.headers['Content-Type'] = 'application/json';
     opt.method = 'POST';
-    opt.body = JSON.stringify({ scopes: scopes })
+    opt.body = JSON.stringify({ scopes: scopes });
     
     return fetch("/api/TwitchAPI/login/" + type, opt)
         .then(STANDARD_FETCH_RESPONSE_CHECKER)

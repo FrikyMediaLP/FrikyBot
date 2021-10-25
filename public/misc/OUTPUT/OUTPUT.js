@@ -17,11 +17,6 @@
  * 
  */
 
-function OUTPUT_hideError(elt) {
-    if (!elt) elt = document.getElementsByTagName("OUTPUT")[0];
-    if (!elt) return;
-    elt.setAttribute('show', 'hidden');
-}
 function OUTPUT_create(elt) {
     let elts = document.getElementsByTagName("OUTPUT");
     if (elt) elts = [elts];
@@ -29,6 +24,14 @@ function OUTPUT_create(elt) {
     for (let target of elts) {
         target.innerHTML = '<div onclick="OUTPUT_hideError(this.parentElement)">x</div><center></center>';
     }
+}
+function OUTPUT_hideError(elt) {
+    OUTPUT_hide(elt);
+}
+function OUTPUT_hide(elt) {
+    if (!elt) elt = document.getElementsByTagName("OUTPUT")[0];
+    if (!elt) return;
+    elt.setAttribute('show', 'hidden');
 }
 function OUTPUT_showInfo(text, elt) {
     if (!elt) elt = document.getElementsByTagName("OUTPUT")[0];

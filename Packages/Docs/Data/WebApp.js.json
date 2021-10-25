@@ -1,0 +1,999 @@
+{
+  "WebApp": {
+    "description": "WebApp Module managing the HTML Website and API aswell as provifing Authentication and Logins.",
+    "modules": {
+      "jsonwebtoken": "npm",
+      "path": "npm",
+      "express": "npm",
+      "crypto": "npm",
+      "nedb": "npm",
+      "fs": "NodeJS Module",
+      "CONFIGHANDLER": "FrikyBot Module"
+    },
+    "variables": {
+      "jwt": {
+        "type": "Object",
+        "npm": "https://www.npmjs.com/package/jsonwebtoken",
+        "description": "JWT Support."
+      },
+      "crypto": {
+        "type": "Object",
+        "npm": "https://www.npmjs.com/package/crypto",
+        "description": "Crypto Library for En/Decrypting."
+      },
+      "express": {
+        "type": "Express Module",
+        "npm": "https://www.npmjs.com/package/express",
+        "description": "Express WebApp hosting the Website and API."
+      },
+      "path": {
+        "type": "Object",
+        "npm": "https://www.npmjs.com/package/path",
+        "description": "Library handling relative and absolute Paths."
+      },
+      "fs": {
+        "type": "Object",
+        "npm": "https://nodejs.org/api/fs.html",
+        "description": "NodeJS internal File System."
+      },
+      "Datastore": {
+        "type": "Object",
+        "npm": "https://www.npmjs.com/package/nedb",
+        "description": "Database manager."
+      },
+      "CONFIGHANDLER": {
+        "type": "Object",
+        "description": "CONFIGHANDLER Module."
+      },
+      "API_TREE_DEPTH": {
+        "type": "Number",
+        "description": "Number of the Maximum API Tree Depth Search."
+      },
+      "MODULE_DETAILS": {
+        "type": "Object",
+        "description": "Object containing the Module Detail Informations."
+      }
+    },
+    "classes": {
+      "WebApp": {
+        "description": "The actual Class for managing a HTML Webserver.",
+        "parent": {
+          "name": "ModuleBase",
+          "from": {
+            "name": "ModuleBase",
+            "type": "FrikyBot Module"
+          }
+        },
+        "constructor": {
+          "params": [
+            {
+              "name": "configJSON",
+              "type": "Object"
+            },
+            {
+              "name": "logger",
+              "opt": true,
+              "type": "Logger.js:Logger"
+            },
+            {
+              "name": "WebAppInteractor",
+              "opt": true,
+              "type": "WebApp.js:WebAppInteractor"
+            }
+          ],
+          "description": "Preparing the Module Datastructure."
+        },
+        "variables": {
+          "app": {
+            "type": "express.js::express()",
+            "description": "The Express WebApp maintaining a Serversocket."
+          },
+          "Installed_Authenticators": {
+            "type": "Array",
+            "description": "Collecting all Authenticators."
+          },
+          "Authenticator": {
+            "type": "WebApp.js::Authenticator",
+            "description": "The currently active Authenticator."
+          },
+          "WebAppInteractor": {
+            "type": "WebApp.js::Authenticator",
+            "description": "The current WebAppInteractor."
+          },
+          "AUTH_LOG": {
+            "type": "nedb::Datastore",
+            "description": "Database of all Authentications."
+          },
+          "Settings_LOG": {
+            "type": "nedb::Datastore",
+            "description": "Database of all Setting Changes."
+          }
+        },
+        "functions": {
+          "Init": {
+            "params": [
+              {
+                "name": "WebInter",
+                "type": "WebApp::WebInteractor"
+              }
+            ],
+            "is-async": true,
+            "description": "Setting up the Custom API, loading Databases and Creating Filestructures."
+          },
+          "setupWAI": {
+            "params": [],
+            "description": "Creating a new WebAppInteractor with default File Hosting and API Structures."
+          },
+          "StartServer": {
+            "params": [],
+            "is-async": true,
+            "description": "Starts the WebServer."
+          },
+          "StopServer": {
+            "params": [],
+            "is-async": true,
+            "description": "Stops the WebServer."
+          },
+          "Restart": {
+            "params": [],
+            "is-async": true,
+            "description": "Restarts the WebServer."
+          },
+          "addAuthenticator": {
+            "params": [
+              {
+                "name": "authenticator",
+                "type": "WebApp.js::Authenticator"
+              }
+            ],
+            "description": "Add an Authenticator to the selectable Authenticators."
+          },
+          "switchAuthenticator": {
+            "params": [
+              {
+                "name": "name",
+                "type": "String"
+              }
+            ],
+            "description": "Switch the current Authenticator the the new Authenticator by the given name."
+          },
+          "setAuthenticator": {
+            "params": [],
+            "description": "Automatically choses an Authenticator and activate the chosen Authenticator."
+          },
+          "ChangeUser": {
+            "params": [
+              {
+                "name": "authenticator",
+                "type": "WebApp.js::Authenticator"
+              }
+            ],
+            "description": "Deactivates the old Authenticator and Activates the new Authenticator."
+          },
+          "unsetAuthenticator": {
+            "params": null,
+            "description": "Deactivates and removes the current Authenticator."
+          },
+          "API_ANALYSE": {
+            "params": [
+              {
+                "name": "layer",
+                "type": "Array"
+              },
+              {
+                "name": "type",
+                "type": "String"
+              },
+              {
+                "name": "iter",
+                "type": "Number"
+              },
+              {
+                "name": "allow_cleanup",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Analyses the Express Object Structure to find all Api Endpoints and Routes."
+          },
+          "API_TREE_STACK": {
+            "params": [
+              {
+                "name": "layer",
+                "type": "Array"
+              },
+              {
+                "name": "step",
+                "type": "Number"
+              }
+            ],
+            "description": "Analyses the a Stack Object Structure of an Express Router."
+          },
+          "API_TREE_R": {
+            "params": [
+              {
+                "name": "router",
+                "type": "express.js::Router"
+              },
+              {
+                "name": "step",
+                "type": "Number"
+              }
+            ],
+            "description": "Analyses the an Express Router for its Endpoints and Routes."
+          },
+          "API_TREE_D": {
+            "params": [
+              {
+                "name": "dispatch",
+                "type": "express.js::Dispatch"
+              },
+              {
+                "name": "step",
+                "type": "Number"
+              }
+            ],
+            "description": "Analyses the an Express Dispatch Datastructure for its Endpoints and Methods."
+          },
+          "API_TREE_GENERATE": {
+            "params": [
+              {
+                "name": "endpoint_group",
+                "type": "Array"
+              }
+            ],
+            "description": "Creates an API Tree with Stacked Endpoints on a mount."
+          },
+          "API_TREE_SIMPLYFIY": {
+            "params": [
+              {
+                "name": "dispatch",
+                "type": "Object"
+              }
+            ],
+            "description": "Simplyfies the retulted API Endpoint Tree into a mount and its tree."
+          },
+          "API_TREE_SIMPLYFIY_LAYERS": {
+            "params": [
+              {
+                "name": "dispatch",
+                "type": "Object"
+              },
+              {
+                "name": "mount",
+                "type": "String"
+              }
+            ],
+            "description": "Simplyfies the Layer Analysis of the API Endpoints into a mount and its tree."
+          },
+          "GetAuthenticatorDetails": {
+            "params": null,
+            "description": "Returns the current Authenticator Information."
+          },
+          "GetInteractor": {
+            "params": null,
+            "description": "Returns the current WebAppInteractor."
+          },
+          "BetterFileFinder": {
+            "params": [
+              {
+                "name": "folder",
+                "type": "String"
+              },
+              {
+                "name": "extensions",
+                "type": "Array"
+              },
+              {
+                "name": "req",
+                "type": "express.js::Request"
+              },
+              {
+                "name": "res",
+                "type": "express.js::Response"
+              },
+              {
+                "name": "next",
+                "type": "express.js::Middleware"
+              },
+              {
+                "name": "steps",
+                "type": "Number"
+              }
+            ],
+            "description": "Sends a ResponseFile when a File with the given Extensions was found. Otherwise moves to the next Middleware."
+          }
+        },
+        "API": {
+          "Endpoints": [
+            {
+              "name": "Get Login Information",
+              "endpoint": "/api/login/user",
+              "description": "Returns User Information based on their Authentication Token.",
+              "request": null,
+              "response": {
+                "user": {
+                  "type": "Object",
+                  "description": "User Information stored in the Token and added by the Authenticator."
+                }
+              }
+            },
+            {
+              "name": "Update WebServer Port",
+              "endpoint": "/api/settings/webapp/port",
+              "description": "Change the Localhost Port of the WebServer.",
+              "restriction": "full",
+              "request": {
+                "method": "POST",
+                "body": {
+                  "port": {
+                    "type": "Number",
+                    "description": "New WebServer Port."
+                  }
+                }
+              },
+              "response": {
+                "msg": {
+                  "type": "String",
+                  "description": "Will be '200'."
+                },
+                "port": {
+                  "type": "Number",
+                  "description": "Echoes back the new Port."
+                }
+              }
+            },
+            {
+              "name": "Set Authenticator",
+              "endpoint": "/api/settings/webapp/authenticator",
+              "description": "Change the current Authenticator.",
+              "restriction": "full",
+              "request": {
+                "method": "PUT",
+                "body": {
+                  "authenticator": {
+                    "type": "String",
+                    "description": "Name of the new Authenticator."
+                  }
+                }
+              },
+              "response": {
+                "msg": {
+                  "type": "Number",
+                  "description": "Will be '200'."
+                },
+                "port": {
+                  "type": "Number",
+                  "description": "Echoes back the new Port."
+                }
+              }
+            },
+            {
+              "name": "Toggle API Enable",
+              "endpoint": "/api/settings/webapp/api",
+              "description": "Toggles the API Enable State globally.",
+              "restriction": "full",
+              "request": null,
+              "response": {
+                "new_displayables": {
+                  "type": "Array",
+                  "description": "All Displayables of this Module."
+                }
+              }
+            },
+            {
+              "name": "Not Found",
+              "endpoint": "/api/*",
+              "description": "Returns an Error when no API Endpoint was found.",
+              "request": null,
+              "response": {
+                "err": {
+                  "type": "String",
+                  "description": "will be '404 - API Endpoint not found'."
+                }
+              }
+            }
+          ]
+        },
+        "FileHosting": {
+          "Static": "public",
+          "Routes": {
+            "/*": {
+              "type": "redirect",
+              "description": "Redirects the 404-Not Found Page."
+            }
+          }
+        }
+      },
+      "WebAppInteractor": {
+        "description": "Sub Class Handling File and API Routing seperated from the direkt access to the Express App.",
+        "constructor": {
+          "params": [
+            {
+              "name": "MAIN_ROUTER",
+              "type": "express.js::Router"
+            },
+            {
+              "name": "FILE_ROUTER",
+              "type": "express.js::Router"
+            },
+            {
+              "name": "API_ROUTER",
+              "type": "express.js::Router"
+            },
+            {
+              "name": "Authenticator",
+              "type": "WebApp.js::Authenticator"
+            },
+            {
+              "name": "Logger",
+              "type": "Logger.js::Logger"
+            },
+            {
+              "name": "Auth_Log",
+              "type": "nedb::Datastore"
+            }
+          ],
+          "description": "Setup Routers and Stats Datastructures."
+        },
+        "variables": {
+          "MAIN_ROUTER": {
+            "type": "express.js::Router",
+            "description": "The Main Router of ALL incomming HTTP Requests to the Server."
+          },
+          "FILE_ROUTER": {
+            "type": "express.js::Router",
+            "description": "The Main File Router designed to host Files and HTML, CSS, JS Files or Images."
+          },
+          "API_ROUTER": {
+            "type": "express.js::Router",
+            "description": "The Main API Router designed to return JSON Payloads."
+          },
+          "Authenticator": {
+            "type": "WebApp.js::Authenticator",
+            "description": "The current WebApp Authenticator. Remember to Update this when switching Authenticators."
+          },
+          "Logger": {
+            "type": "Logger.js::Logger",
+            "description": "The Console Logger Object."
+          },
+          "Auth_Log": {
+            "type": "nedb::Datastore",
+            "description": "Statistic Database storing Request Data."
+          },
+          "STAT_MAIN_CALLS": {
+            "type": "Number",
+            "description": "Number of Main Router calls."
+          },
+          "STAT_FILE_CALLS": {
+            "type": "Number",
+            "description": "Number of File Router calls."
+          },
+          "STAT_API_CALLS": {
+            "type": "Number",
+            "description": "Number of API Router calls."
+          },
+          "STAT_MAIN_CALLS_PER_10": {
+            "type": "Number",
+            "description": "Number of Main Router calls in the last 10 Minutes."
+          },
+          "STAT_FILE_CALLS_PER_10": {
+            "type": "Number",
+            "description": "Number of File Router calls in the last 10 Minutes."
+          },
+          "STAT_API_CALLS_PER_10": {
+            "type": "Number",
+            "description": "Number of API Router calls in the last 10 Minutes."
+          },
+          "STAT_AUTHENTICATIONS": {
+            "type": "Number",
+            "description": "Number of User Authentications."
+          },
+          "STAT_AUTHENTICATIONS_PER_10": {
+            "type": "Number",
+            "description": "Number of User Authentications in the last 10 Minutes."
+          },
+          "STAT_FAILED_AUTHENTICATIONS": {
+            "type": "Number",
+            "description": "Number of Failed User Authentications."
+          },
+          "STAT_FAILED_AUTHENTICATIONS_PER_10": {
+            "type": "Number",
+            "description": "Number of Failed User Authentications in the last 10 Minutes."
+          },
+          "STAT_MINUTE_TIMER": {
+            "type": "Interval",
+            "description": "Inerval resetting the per 10 Stats to 0 every 10 minutes. (yeah thats not really accurate i know, but i is OKAAAY)"
+          }
+        },
+        "functions": {
+          "addMainRoute": {
+            "params": [
+              {
+                "name": "...middlewares",
+                "type": "express.js::Middleware"
+              }
+            ],
+            "description": "Adds a Middleware to the Main Router."
+          },
+          "addFileRoute": {
+            "params": [
+              {
+                "name": "route",
+                "type": "String"
+              },
+              {
+                "name": "...middlewares",
+                "type": "express.js::Middleware"
+              }
+            ],
+            "description": "Adds a Middleware to the File Router at the given route."
+          },
+          "addAPIRoute": {
+            "params": [
+              {
+                "name": "route",
+                "type": "String"
+              },
+              {
+                "name": "...middlewares",
+                "type": "express.js::Middleware"
+              }
+            ],
+            "description": "Adds a Middleware to the API Router at the given route."
+          },
+          "addAuthAPIRoute": {
+            "params": [
+              {
+                "name": "route",
+                "type": "String"
+              },
+              {
+                "name": "auth_method",
+                "type": "Object"
+              },
+              {
+                "name": "...middlewares",
+                "type": "express.js::Middleware"
+              }
+            ],
+            "description": "Adds a Authentication restricted Middleware to the API Router at the given route. Use the auth_method to select the Authentication restriction."
+          },
+          "addAPIEndpoint": {
+            "params": [
+              {
+                "name": "route",
+                "type": "String"
+              },
+              {
+                "name": "method",
+                "type": "String"
+              },
+              {
+                "name": "...middlewares",
+                "type": "express.js::Middleware"
+              }
+            ],
+            "description": "Adds an API Endpoint at the given Route using the given Method."
+          },
+          "addAuthAPIEndpoint": {
+            "params": [
+              {
+                "name": "route",
+                "type": "String"
+              },
+              {
+                "name": "auth_method",
+                "type": "Object"
+              },
+              {
+                "name": "method",
+                "type": "String"
+              },
+              {
+                "name": "...middlewares",
+                "type": "express.js::Middleware"
+              }
+            ],
+            "description": "Adds an Authentication restricted API Endpoint at the given Route using the given Method. Use the auth_method to select the Authentication restriction."
+          },
+          "AuthorizeRequest": {
+            "params": [
+              {
+                "name": "method",
+                "type": "Object"
+              },
+              {
+                "name": "req",
+                "type": "express.js::Request"
+              },
+              {
+                "name": "res",
+                "type": "express.js::Response"
+              },
+              {
+                "name": "next",
+                "type": "express.js::Middleware"
+              }
+            ],
+            "is-async": true,
+            "description": "Authorizes a request based on its Header an authentication method."
+          },
+          "AuthenticateUser": {
+            "params": [
+              {
+                "name": "headers",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Authenticates a User based on request headers."
+          },
+          "AuthorizeUser": {
+            "params": [
+              {
+                "name": "user",
+                "type": "Object"
+              },
+              {
+                "name": "method",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Authorizes a User Object based on the given authentication method."
+          }
+        },
+        "API": {
+          "Endpoints": [
+            {
+              "name": "Incrementing Stats.",
+              "endpoint": "/api/*",
+              "description": "Increments the STAT_FILE_CALLS Numbers.",
+              "request": null,
+              "response": null
+            }
+          ]
+        },
+        "FileHosting": {
+          "Routes": {
+            "/*": {
+              "type": "normal",
+              "description": "Increments the STAT_FILE_CALLS Numbers."
+            }
+          }
+        }
+      },
+      "Authenticator": {
+        "description": "Authenticator Parent Class.",
+        "constructor": {
+          "params": [
+            {
+              "name": "name",
+              "type": "String"
+            },
+            {
+              "name": "Logger",
+              "type": "Logger.js::Logger"
+            },
+            {
+              "name": "preloadedCfg",
+              "type": "Object"
+            }
+          ],
+          "description": "Setting up Config Settings and Datastructures."
+        },
+        "variables": {
+          "Config": {
+            "type": "ConfigHandler.js::Config",
+            "description": "The Authenticator Config - a Childconfig of the WebApp Class."
+          },
+          "name": {
+            "type": "String",
+            "description": "The Authenticator Name."
+          },
+          "active": {
+            "type": "Boolean",
+            "description": "The Active State of the Authenticator."
+          },
+          "Authenticator": {
+            "type": "WebApp.js::Authenticator",
+            "description": "The current WebApp Authenticator. Remember to Update this when switching Authenticators."
+          },
+          "Logger": {
+            "type": "Logger.js::Logger",
+            "description": "The Console Logger Object."
+          },
+          "READY_REQUIREMENTS": {
+            "type": "Object",
+            "description": "The Ready Requierements of the Authenticator."
+          }
+        },
+        "functions": {
+          "Init": {
+            "params": [
+              {
+                "name": "webInt",
+                "type": "WebApp.js::WebAppInteractor"
+              }
+            ],
+            "is-async": true,
+            "description": "Overwrite this Function to setup your Datastructures."
+          },
+          "AuthorizeRequest": {
+            "params": [
+              {
+                "name": "method",
+                "type": "Object"
+              },
+              {
+                "name": "req",
+                "type": "express.js::Request"
+              },
+              {
+                "name": "res",
+                "type": "express.js::Response"
+              },
+              {
+                "name": "next",
+                "type": "express.js::Middleware"
+              }
+            ],
+            "is-async": true,
+            "description": "Overwrite this Function with your implementation of Authorizing a request based on its Header an authentication method."
+          },
+          "AuthenticateUser": {
+            "params": [
+              {
+                "name": "headers",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Overwrite this Function with your implementation of Authenticating a User based on request headers."
+          },
+          "AuthorizeUser": {
+            "params": [
+              {
+                "name": "user",
+                "type": "Object"
+              },
+              {
+                "name": "method",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "Overwrite this Function with your implementation of Authorizing a User Object based on the given authentication method."
+          },
+          "GetName": {
+            "params": null,
+            "description": "Returns the Authenticator name."
+          },
+          "GetConfig": {
+            "params": [
+              {
+                "name": "json",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Return the Config Object. When 'json' is true (by default it is), the Conig JSON will be returned,."
+          },
+          "GetIdentifier": {
+            "params": null,
+            "description": "Overwrite this Function with your implementation of the Authenticator Identifier."
+          },
+          "setEnable": {
+            "params": [
+              {
+                "name": "state",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Set Enable state of the Authentication."
+          },
+          "isEnabled": {
+            "params": null,
+            "description": "Return the Enable State of the Authentication."
+          },
+          "setActive": {
+            "params": [
+              {
+                "name": "state",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Set Active state of the Authentication."
+          },
+          "isActive": {
+            "params": null,
+            "description": "Return the Active State of the Authentication."
+          },
+          "addReadyRequirement": {
+            "params": [
+              {
+                "name": "func",
+                "type": "Function"
+              }
+            ],
+            "description": "Add a Ready Requierement Function to the Stack."
+          },
+          "removeReadyRequirement": {
+            "params": [
+              {
+                "name": "index",
+                "type": "Number"
+              }
+            ],
+            "description": "Remove a Ready Requierement Function from the Stack at the given index."
+          },
+          "isReady": {
+            "params": null,
+            "description": "Checks all Ready Requierement Functions and returns the result."
+          },
+          "setLogger": {
+            "params": [
+              {
+                "name": "loggerObject",
+                "type": "Logger.js::Logger"
+              }
+            ],
+            "description": "Sets the Logger Object or creates a custom one based on 'console.log'."
+          }
+        }
+      },
+      "FrikyBot_Auth": {
+        "description": "FrikyBot Authenticator implementation.",
+        "parent": {
+          "name": "Authenticator",
+          "from": {
+            "name": "WebApp.js::Authenticator",
+            "type": "FrikyBot Module"
+          }
+        },
+        "constructor": {
+          "params": [
+            {
+              "name": "Logger",
+              "type": "Logger.js::Logger"
+            },
+            {
+              "name": "preloadedCfg",
+              "type": "Object"
+            }
+          ],
+          "description": "Setting up Config Settings and Datastructures."
+        },
+        "functions": {
+          "Init": {
+            "params": [
+              {
+                "name": "webInt",
+                "type": "WebApp.js::WebAppInteractor"
+              }
+            ],
+            "is-async": true,
+            "description": "Overwrite this Function to setup your Datastructures."
+          },
+          "AuthorizeRequest": {
+            "params": [
+              {
+                "name": "method",
+                "type": "Object"
+              },
+              {
+                "name": "req",
+                "type": "express.js::Request"
+              },
+              {
+                "name": "res",
+                "type": "express.js::Response"
+              },
+              {
+                "name": "next",
+                "type": "express.js::Middleware"
+              }
+            ],
+            "is-async": true,
+            "description": "The FrikyBot Implementation of Authorizing a User based on a JWT Token and Userlevel."
+          },
+          "AuthenticateUser": {
+            "params": [
+              {
+                "name": "headers",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "The FrikyBot Implementation of Authorizing a User based on a JWT Token and Userlevel."
+          },
+          "AuthorizeUser": {
+            "params": [
+              {
+                "name": "user",
+                "type": "Object"
+              },
+              {
+                "name": "method",
+                "type": "Object"
+              }
+            ],
+            "is-async": true,
+            "description": "The FrikyBot Implementation of Authorizing a User based on a JWT Token and Userlevel."
+          },
+          "checkToken": {
+            "params": [
+              {
+                "name": "token",
+                "type": "String"
+              }
+            ],
+            "is-async": true,
+            "description": "Returns Userdata stored in the JWT Token."
+          },
+          "generateToken": {
+            "params": [
+              {
+                "name": "username",
+                "type": "String"
+              },
+              {
+                "name": "user_level",
+                "type": "String"
+              }
+            ],
+            "description": "Returns a JWT TOken with the supplied User Information."
+          },
+          "regenerateSecret": {
+            "params": [
+              {
+                "name": "updateConfig",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Returns a Secret used to sign and validate JWTs. Updating the Config is enabled by default."
+          },
+          "GetUserlevels": {
+            "params": null,
+            "description": "Returns all available Userlevels."
+          },
+          "GetUserLevelIndex": {
+            "params": [
+              {
+                "name": "user_level",
+                "type": "String"
+              }
+            ],
+            "description": "Returns the Index of the Userlevel out of all Userlevels."
+          },
+          "CompareUserlevels": {
+            "params": [
+              {
+                "name": "user_level",
+                "type": "String or Number"
+              },
+              {
+                "name": "target_level",
+                "type": "String or Number"
+              },
+              {
+                "name": "cutoff",
+                "type": "Boolean"
+              }
+            ],
+            "description": "Compares the given Userlevels and returns true on match, false otherwise. Use the cutoff to allow the same Userlevel to return false instead of true!"
+          },
+          "GetIdentifier": {
+            "params": null,
+            "description": "Overwrite this Function with your implementation of the Authenticator Identifier."
+          }
+        }
+      }
+    },
+    "exports": {
+      "WebApp": "WebApp",
+      "WebAppInteractor": "WebAppInteractor",
+      "Authenticator": "Authenticator",
+      "FrikyBot_Auth": "FrikyBot_Auth"
+    }
+  }
+}
