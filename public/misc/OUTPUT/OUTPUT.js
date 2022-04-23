@@ -22,6 +22,7 @@ function OUTPUT_create(elt) {
     if (elt) elts = [elts];
 
     for (let target of elts) {
+        if (target.innerHTML !== "") continue;
         target.innerHTML = '<div onclick="OUTPUT_hideError(this.parentElement)">x</div><center></center>';
     }
 }

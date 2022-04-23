@@ -17,6 +17,12 @@ const SettingTypes = [
     }, {
         name: 'string', options: [
             { name: 'type', check: (x, optionSet) => typeof (x) === 'string' || 'type missmatch' },
+            {
+                name: 'selection', check: (x, optionSet) => {
+                    if (optionSet.selection.find(elt => elt === x)) return true;
+                    return 'not in selection';
+                }
+            },
             { name: 'minlength', check: (x, optionSet) => x.length >= optionSet.minlength || 'too short' }
         ], default: ''
     }, {
@@ -199,8 +205,14 @@ class ConfigHandler{
         }
     }
     Load() {
+        let pt = path.resolve(this.Settings.export_dir + this.Settings.export_name + '.json');
+
         try {
-            let s = fs.readFileSync(path.resolve(this.Settings.export_dir + this.Settings.export_name + '.json'));
+            if (!fs.existsSync(pt)) {
+                this.Save();
+            }
+            
+            let s = fs.readFileSync(pt);
             this.Preloaded = JSON.parse(s);
             return this.UpdateConfig(this.Preloaded);
         } catch (err) {

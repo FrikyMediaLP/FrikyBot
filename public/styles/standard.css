@@ -4,6 +4,14 @@
     ////////////////////////////////////
 */
 
+:root {
+    --frikybot-light: #19a3ff;
+    --frikybot-dark: #028deb;
+    --frikybot-darker: #00497a;
+    --frikybot-link: #2ab89b;
+    --frikybot-link-light: #2ee6c0;
+}
+
 body, html {
     height: 100%;
     width: 100%;

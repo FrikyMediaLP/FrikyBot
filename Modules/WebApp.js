@@ -28,6 +28,7 @@ class WebApp extends require('./../Util/ModuleBase.js') {
         this.Config.AddSettingTemplates([
             { name: 'Hostname', type: 'string', default: 'localhost', group: 0 },
             { name: 'Port', type: 'number', range: '0:99999', default: 8080, group: 0 },
+            { name: 'upload_limit', type: 'string', default: '3mb', group: 0 },
             { name: 'selected_Authenticator', type: 'string' },
             { name: 'enable_api', type: 'boolean', default: true },
             { name: 'Authenticator', type: 'config', requiered: true, group: 1 },
@@ -78,7 +79,7 @@ class WebApp extends require('./../Util/ModuleBase.js') {
             verify: (req, res, buf) => {
                 req.rawBody = buf;
             },
-            limit: '3mb'
+            limit: cfg['upload_limit'] || '3mb'
         }));
 
         //WebSocketServer Stuff
@@ -169,26 +170,20 @@ class WebApp extends require('./../Util/ModuleBase.js') {
         
         //WebApp Settings API
         this.WebAppInteractor.addAuthAPIEndpoint('/settings/webapp/hostname', { user_level: 'admin' }, 'POST', async (req, res) => {
-            try {
-                if (!req.body.hostname) {
-                    res.json({ err: 'Hostname nof valid' });
-                    return Promise.resolve();
-                }
-
-                let errors = this.Config.UpdateSetting('Hostname', req.body.hostname);
-
-                if (errors !== true) {
-                    res.json({ err: 'Changing Hostname failed: ' + errors[0] });
-                    return Promise.resolve();
-                }
-
-                this.WebAppInteractor.SetHostname(req.body.hostname);
-
-                res.json({ msg: '200', port: req.body.hostname });
-            } catch (err) {
-                res.json({ err: 'restart failed' });
+            if (!req.body.hostname) {
+                res.json({ err: 'Hostname nof valid' });
+                return Promise.resolve();
             }
 
+            let errors = this.Config.UpdateSetting('Hostname', req.body.hostname);
+
+            if (errors !== true) {
+                res.json({ err: 'Changing Hostname failed: ' + errors[0] });
+                return Promise.resolve();
+            }
+
+            this.WebAppInteractor.SetHostname(req.body.hostname);
+            
             //Logging
             if (this.Settings_LOG) {
                 this.Settings_LOG.insert({
@@ -199,6 +194,7 @@ class WebApp extends require('./../Util/ModuleBase.js') {
                 });
             }
 
+            res.sendStatus(200);
             return Promise.resolve();
         });
         this.WebAppInteractor.addAuthAPIEndpoint('/settings/webapp/port', { user_level: 'admin' }, 'POST', async (req, res) => {
@@ -233,6 +229,38 @@ class WebApp extends require('./../Util/ModuleBase.js') {
                 });
             }
             
+            return Promise.resolve();
+        });
+        this.WebAppInteractor.addAuthAPIEndpoint('/settings/webapp/upload_limit', { user_level: 'admin' }, 'POST', async (req, res) => {
+            try {
+                if (!req.body.upload_limit) {
+                    res.json({ err: 'Limit nof valid' });
+                    return Promise.resolve();
+                }
+
+                let errors = this.Config.UpdateSetting('upload_limit', req.body.upload_limit);
+
+                if (errors !== true) {
+                    res.json({ err: 'Changing Limit: ' + errors[0] });
+                    return Promise.resolve();
+                }
+
+                res.json({ msg: '200', upload_limit: req.body.upload_limit });
+                await this.Restart();
+            } catch (err) {
+                res.json({ err: 'restart failed' });
+            }
+            
+            //Logging
+            if (this.Settings_LOG) {
+                this.Settings_LOG.insert({
+                    endpoint: '/api/settings/webapp/upload_limit',
+                    method: 'POST',
+                    body: req.body,
+                    time: Date.now()
+                });
+            }
+
             return Promise.resolve();
         });
         this.WebAppInteractor.addAuthAPIEndpoint('/settings/webapp/authenticator', { user_level: 'admin' }, 'PUT', (req, res) => {
@@ -886,23 +914,8 @@ class WebAppInteractor {
 
         try {
             let user = await this.Authenticator.AuthenticateUser(headers);
-            this.STAT_AUTHENTICATIONS++;
-            this.STAT_AUTHENTICATIONS_PER_10++;
-
-            if (this.Auth_Log) {
-                this.Auth_Log.insert({
-                    user: user,
-                    method: {},
-                    status: 'success',
-                    auth: this.Authenticator.GetName(),
-                    time: Date.now()
-                });
-            }
-
             return Promise.resolve(user);
         } catch (err) {
-            this.STAT_FAILED_AUTHENTICATIONS++;
-            this.STAT_FAILED_AUTHENTICATIONS_PER_10++;
             return Promise.reject(err);
         }
     }
@@ -1098,7 +1111,7 @@ class Authenticator {
 
 /*
  *  ----------------------------------------------------------
- *            FrikyBot Authenticator Implementation
+ *            FrikyBot Authenticator Implementationv
  *  ----------------------------------------------------------
  */
 

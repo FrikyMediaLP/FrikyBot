@@ -268,7 +268,7 @@ class Logger {
 
         //File Export
         if (this.Settings.enableFileOutput) {
-            this.Save2DB(time, source, type, outputStringBW);
+            this.Save2DB(time, source, type, message);
             this.Save2Log(time, outputStringBW + (lineBreak ? "\n" : ""), type);
         }
     }
@@ -363,6 +363,95 @@ class Logger {
         } catch (err) {
             this.error(err.message);
         }
+    }
+    GetAllRawLogNames() {
+        return fs.readdirSync(path.resolve(this.Settings.FileStructure.ROOT + this.Settings.FileStructure.RAW));
+    }
+
+    //Access Databases
+    async GetRawLog(log_name, query = {}, pagination) {
+        let log;
+
+        if (log_name === undefined) {
+            log = this.LogDataBase;
+        } else {
+            let raw_path_comb = this.Settings.FileStructure.ROOT + this.Settings.FileStructure.RAW + log_name + ".db";
+            log = new Datastore({ filename: path.resolve(raw_path_comb), autoload: true });
+        }
+
+        return this.AccessNeDB(log, query, pagination);
+    }
+
+    async AccessNeDB(datastore, query = {}, pagination) {
+        if (!datastore) return Promise.resolve([]);
+
+        return new Promise((resolve, reject) => {
+            datastore.find(query, (err, docs) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    if (pagination) {
+                        let pages = this.GetPaginationValues(pagination);
+                        let first = 10;
+                        let cursor = 0;
+                        let opts = {};
+
+                        if (pages) {
+                            first = pages[0] || 10;
+                            cursor = pages[1] || 0;
+                            opts = pages[2] || {};
+                        }
+
+                        if (first > 0) opts.pagecount = Math.ceil(docs.length / first);
+
+                        if (opts.timesorted) docs.sort((a, b) => {
+                            if (a.time) return (-1) * (a.time - b.time);
+                            else if (a.iat) return (-1) * (a.iat - b.iat);
+                            else return 0;
+                        });
+
+                        if (opts.customsort) docs.sort((a, b) => {
+                            return (-1) * (a[opts.customsort] - b[opts.customsort]);
+                        });
+
+                        resolve({
+                            data: docs.slice(first * cursor, first * (cursor + 1)),
+                            pagination: this.GetPaginationString(first, Math.min(first * (cursor + 1), opts.pagecount), opts)
+                        });
+                    } else {
+                        resolve(docs);
+                    }
+                }
+            });
+        });
+    }
+    GetPaginationValues(pagination = "") {
+        if (!pagination) return null;
+        let out = [10, 0, {}];
+
+        try {
+            if (pagination.indexOf('A') >= 0 && pagination.indexOf('B') >= 0 && pagination.indexOf('C') >= 0) {
+                out[0] = parseInt(pagination.substring(1, pagination.indexOf('B')));
+                out[1] = parseInt(pagination.substring(pagination.indexOf('B') + 1, pagination.indexOf('C')));
+            }
+
+            if (pagination.indexOf('T') >= 0) out[2].timesorted = true;
+            if (pagination.indexOf('CSS') >= 0 && pagination.indexOf('CSE') >= 0) {
+                out[2].customsort = pagination.substring(pagination.indexOf('CSS') + 3, pagination.indexOf('CSE'));
+            }
+            if (pagination.indexOf('PS') >= 0 && pagination.indexOf('PE') >= 0) out[2].pagecount = parseInt(pagination.substring(pagination.indexOf('PS') + 2, pagination.indexOf('PE')));
+        } catch (err) {
+            return null;
+        }
+
+        return out;
+    }
+    GetPaginationString(first = 10, cursor = 0, options = {}) {
+        let s = "A" + first + "B" + cursor + "C";
+        if (options.timesorted) s += "T";
+        if (options.customsort) s += "CSS" + options.customsort + "CSE";
+        if (options.pagecount !== undefined) s += "PS" + options.pagecount + "PE";
+        return s;
     }
 
     //UTIL

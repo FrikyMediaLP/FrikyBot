@@ -63,9 +63,9 @@
                 content: ' (WIP)';
             }
 
-            #DASHBOARD #Modules .Module[notready] .hdr {
-                background-color: lightcoral;
-            }
+#DASHBOARD #Modules .Module[notready] .hdr {
+    background-color: #ff8100;
+}
 
             #DASHBOARD #Modules .Module .hdr {
                 grid-area: header;
@@ -163,6 +163,20 @@
                     margin: 5px;
                     max-height: 20px !important;
                 }
+
+#DASHBOARD #Packages .Package[disabled] .ctrl button.RELOAD {
+    color: lightgray;
+    /* DISABLE SELECT */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: default;
+}
+    #DASHBOARD #Packages .Package[disabled] .ctrl button.RELOAD:hover {
+        pointer-events: none;
+    }
 
 #DASHBOARD #Packages .Package .misc {
     grid-area: misc;

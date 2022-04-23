@@ -256,6 +256,10 @@ body.darkmode .TTV_LOGIN .TTV_LOGIN_DATA {
     background-color: #6441a5;
     cursor: pointer;
 }
+.TTV_LOGIN[disabled] .TTV_LOGIN_BUTTON {
+    filter: grayscale(1);
+    cursor: default;
+}
 
     .TTV_LOGIN .TTV_LOGIN_BUTTON center {
         padding: 5px;

@@ -35,7 +35,8 @@
 /* MODULES */
 .Module {
     height: auto;
-    margin-top: 40px;
+    margin-top: 10px;
+    margin-bottom: 30px;
     display: grid;
     grid-template-columns: 90px auto;
     grid-template-rows: auto auto;
@@ -170,13 +171,13 @@
         content: 'ENABLE';
     }
 
-    .Module.ENABLED .Control button.ENABLE::after {
-        content: 'DISABLE';
-    }
+.Module.ENABLED .Control button.ENABLE::after {
+    content: 'DISABLE';
+}
 
-    .Module.NOTREADY .Control button::after {
-        content: 'START';
-    }
+.Module.NOTREADY .Control button.ENABLE::after {
+    content: 'START';
+}
 
     .Module .Control button.REMOVE {
         background-color: #e04a4a;

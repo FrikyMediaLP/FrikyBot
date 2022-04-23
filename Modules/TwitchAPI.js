@@ -22,7 +22,7 @@ const TTV_API_INFO = {
         token_type: 'User',
         method: 'POST',
         url: '/channels/commercial',
-        req_scope: null,
+        req_scope: 'channel:edit:commercial',
         resource: 'Ads'
     },
     //Analytics
@@ -165,6 +165,21 @@ const TTV_API_INFO = {
         req_scope: null,
         resource: 'Chat'
     },
+    "Get Chat Settings": {
+        token_type: 'Any',
+        method: 'GET',
+        url: '/chat/settings',
+        req_scope: null,
+        opt_scope: 'moderator:read:chat_settings',
+        resource: 'Chat'
+    },
+    "Get Global Chat Badges": {
+        token_type: 'User',
+        method: 'PATCH',
+        url: '/chat/settings',
+        req_scope: 'moderator:manage:chat_settings',
+        resource: 'Chat'
+    },
     //Clips
     "Create Clip": {
         token_type: 'User',
@@ -174,7 +189,7 @@ const TTV_API_INFO = {
         rate_limited: true,
         resource: 'Clips'
     },
-    "Get Clip": {
+    "Get Clips": {
         token_type: 'Any',
         method: 'GET',
         url: '/clips',
@@ -365,6 +380,20 @@ const TTV_API_INFO = {
         returns_raw: true,
         resource: 'Moderation'
     },
+    "Get AutoMod Settings": {
+        token_type: 'User',
+        method: 'GET',
+        url: '/moderation/automod/settings',
+        req_scope: 'moderator:read:automod_settings',
+        resource: 'Moderation'
+    },
+    "Update AutoMod Settings": {
+        token_type: 'User',
+        method: 'PUT',
+        url: '/moderation/automod/settings',
+        req_scope: 'moderator:manage:automod_settings',
+        resource: 'Moderation'
+    },
     "Get Banned Events": {
         token_type: 'User',
         method: 'GET',
@@ -377,6 +406,41 @@ const TTV_API_INFO = {
         method: 'GET',
         url: '/moderation/banned',
         req_scope: 'moderation:read',
+        resource: 'Moderation'
+    },
+    "Ban User": {
+        token_type: 'User',
+        method: 'POST',
+        url: '/moderation/bans',
+        req_scope: 'moderator:manage:banned_user',
+        resource: 'Moderation'
+    },
+    "Unban User": {
+        token_type: 'User',
+        method: 'DELETE',
+        url: '/moderation/bans',
+        req_scope: 'moderator:manage:banned_users',
+        resource: 'Moderation'
+    },
+    "Get Blocked Terms": {
+        token_type: 'User',
+        method: 'GET',
+        url: '/moderation/blocked_terms',
+        req_scope: 'moderator:read:blocked_terms',
+        resource: 'Moderation'
+    },
+    "Add Blocked Term": {
+        token_type: 'User',
+        method: 'POST',
+        url: '/moderation/blocked_terms',
+        req_scope: 'moderator:manage:blocked_terms',
+        resource: 'Moderation'
+    },
+    "Remove Blocked Term": {
+        token_type: 'User',
+        method: 'DELETE',
+        url: '/moderation/blocked_terms',
+        req_scope: 'moderator:manage:blocked_terms',
         resource: 'Moderation'
     },
     "Get Moderators": {
@@ -497,6 +561,31 @@ const TTV_API_INFO = {
         url: '/search/channels',
         req_scope: null,
         resource: 'Search'
+    },
+    //Music
+    "Get Soundtrack Current Track": {
+        token_type: 'Any',
+        method: 'GET',
+        url: '/soundtrack/current_track',
+        req_scope: null,
+        resource: 'Music',
+        beta: true
+    },
+    "Get Soundtrack Playlist": {
+        token_type: 'Any',
+        method: 'GET',
+        url: '/soundtrack/playlist',
+        req_scope: null,
+        resource: 'Music',
+        beta: true
+    },
+    "Get Soundtrack Playlists": {
+        token_type: 'Any',
+        method: 'GET',
+        url: '/soundtrack/playlists',
+        req_scope: null,
+        resource: 'Music',
+        beta: true
     },
     //Streams
     "Get Stream Key": {
@@ -1002,7 +1091,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             { name: 'log_api_calls', type: 'boolean', default: true },
             { name: 'disabled_eventsub_topics', type: 'array', selection: Object.getOwnPropertyNames(TTV_EVENTSUB_TOPICS), allow_empty: true, default: ['drop.entitlement.grant', 'extension.bits_transaction.create', 'user.authorization.grant', 'user.authorization.revoke', 'user.update'] },
             { name: 'EventSub_Secret', type: 'string', private: true, requiered: true, default_func: () => this.regenerateEventSubSecret(false) },
-            { name: 'EventSub_max_Timeout', type: 'number', default: 5, min: 1 }
+            { name: 'EventSub_max_Timeout', type: 'number', default: 12, min: 1 }
         ]);
         this.Config.options = {
             groups: [{ name: 'Your Application' }, { name: 'User Login' }, { name: 'Authenticatior' }, { name: 'Twitch Api Settings' }, { name: 'EventSub Topics' }]
@@ -1100,7 +1189,8 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         this.addLog('Settings Changes', this.Settings_LOG);
 
         //Check Config
-        if (!this.isReady()) return Promise.resolve();
+        if (this.isEnabled() !== true) return Promise.reject(new Error('Twitch API is disabled!'));
+        if (this.isReady() !== true) return Promise.reject(new Error('Twitch API Config not ready!'));
         
         //Checking Tokens
         this.Logger.warn("Checking Access Tokens...");
@@ -1343,7 +1433,8 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                 msg: 'Application Info successfully changed',
                 ClientID: this.Config.GetConfig()['ClientID'],
                 Secret: this.Config.GetConfig()['Secret'],
-                usertoken: this.UserAccessToken !== null
+                usertoken: this.UserAccessToken !== null,
+                ready: this.isReady()
             });
         });
         WebInter.addAuthAPIEndpoint('/settings/TwitchAPI/Endpoints/:endpoint', { user_level: 'staff' }, 'PUT', async (req, res) => {
@@ -1555,7 +1646,6 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                 res.json({ data: this.EventSubs });
                 return Promise.resolve();
             } catch (err) {
-                console.log(err);
                 res.json({ err: err.message });
                 return Promise.resolve();
             }
@@ -2005,7 +2095,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             .catch(err => Promise.reject(err));
     }
     async OIDCUserInfoEndpoint(oauth) {
-        return await this.request("https://id.twitch.tv/oauth2/userinfo", {
+        return this.request("https://id.twitch.tv/oauth2/userinfo", {
             headers: {
                 'Authorization': 'Bearer ' + oauth
             }
@@ -2253,7 +2343,9 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         
         return FETCH(TTV_API_ROOT + ENDPOINT_URL, OPTIONS)
             .then(async data => {
-                if (RETURN_RAW) {
+                if (data.status === 204) {
+                    return Promise.resolve(204);
+                } else if (RETURN_RAW) {
                     return data.text();
                 } else {
                     return data.json();
@@ -2386,7 +2478,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         let cfg = this.Config.GetConfig();
         let cur_hostname = this.WebAppInteractor.GetHostname();
         let new_webhooks = [];
-
+        
         //Skip when not deployed
         if (!ignore_deploy) {
             if (cur_hostname === 'localhost') return Promise.reject(new Error('not deployed'));
@@ -2406,30 +2498,35 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         }
 
         let current_scopes = this.GetScopes();
-
+        
         //Check current
         //Get EventSubs from Twitch - check Hostname - remove from this.WebHooks - Delete when invalid or disabled
         for (let webhook of webhook_status) {
-
             let found = false;
-
+            
             //Requiered Scope is available?
             if (TTV_EVENTSUB_TOPICS[webhook.type].scope) {
                 let eventsub_scopes = TTV_EVENTSUB_TOPICS[webhook.type].scope;
                 if (!(eventsub_scopes instanceof Array)) eventsub_scopes = [eventsub_scopes];
 
                 for (let scope of eventsub_scopes) {
-                    if (!current_scopes.find(elt => elt === scope)) found = true;
+                    if (current_scopes.find(elt => elt === scope)) {
+                        found = true;
+                        break;
+                    }
                 }
+            } else {
+                found = true;
             }
-            
+
             let old_host = webhook.transport.callback.substring(8, webhook.transport.callback.indexOf('/api/TwitchAPI/'));
+            let disabled = cfg['disabled_eventsub_topics'].find(elt => elt === webhook.type);
             
             //Disabled or invalid
-            if (found || cfg['disabled_eventsub_topics'].find(elt => elt === webhook.type) || old_host !== cur_hostname) {
+            if (!found || cfg['disabled_eventsub_topics'].find(elt => elt === webhook.type) || old_host != cur_hostname) {
                 let idx = -1;
                 this.EventSubs.find((elt, index) => {
-                    if (elt.type === topic) {
+                    if (elt.type === webhook.type) {
                         idx = index;
                         return true;
                     }
@@ -2437,21 +2534,23 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                 });
                 if (idx >= 0) this.EventSubs.splice(idx, 1);
 
+                let reason = 'unknown';
+                if (!found) reason = 'no scope';
+                if (disabled) reason = 'disabled';
+                if (old_host != cur_hostname) reason = 'new hostname';
+
                 //Delete
                 try {
-                    this.Logger.warn("Removing EventSub: " + webhook.type);
+                    this.Logger.warn("Removing EventSub: " + webhook.type + ' -> Reason: ' + reason);
                     await this.DeleteEventSubSubscription({ id: webhook.id });
                 } catch (err) {
                     this.Logger.warn("EventSub " + webhook.type + " couldnt be removed! Error: " + err.message);
                 }
-
-                //Just continue
-                if (old_host === cur_hostname) continue;
             } else {
                 new_webhooks.push(webhook);
             }
         }
-
+        
         this.EventSubs = new_webhooks;
         
         //Create missing
@@ -2462,17 +2561,21 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             
             //Requiered Scope is available?
             if (TTV_EVENTSUB_TOPICS[topic].scope) {
-                let found = true;
+                let found = false;
                 let eventsub_scopes = TTV_EVENTSUB_TOPICS[topic].scope;
                 if (!(eventsub_scopes instanceof Array)) eventsub_scopes = [eventsub_scopes];
 
                 for (let scope of eventsub_scopes) {
-                    if (!current_scopes.find(elt => elt === scope)) found = false;
+                    if (current_scopes.find(elt => elt === scope)) {
+                        found = true;
+                        break;
+                    }
                 }
                 
                 if (!found) continue;
             }
 
+            //Request EventSub
             try {
                 await this.CreateEventSubSubscription(topic);
                 await this.awaitWebHookSetup(topic);
@@ -2528,18 +2631,30 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
 
             //Type specific
             for (let callback of this.EventSubs_Extern_Callback.filter(elt => elt.topic === req.body.subscription.type)) {
-                callback.func(JSON.parse(JSON.stringify(req.body)));
+                try {
+                    callback.func(JSON.parse(JSON.stringify(req.body)));
+                } catch (err) {
+                    console.log(err);
+                }
             }
 
             //Resouce specific
             let startWith = req.body.subscription.type.split('.')[0];
             for (let callback of this.EventSubs_Extern_Callback.filter(elt => elt.topic === startWith + ".all")) {
-                callback.func(JSON.parse(JSON.stringify(req.body)));
+                try {
+                    callback.func(JSON.parse(JSON.stringify(req.body)));
+                } catch (err) {
+                    console.log(err);
+                }
             }
             
             //all
             for (let callback of this.EventSubs_Extern_Callback.filter(elt => elt.topic === "all")) {
-                callback.func(JSON.parse(JSON.stringify(req.body)));
+                try {
+                    callback.func(JSON.parse(JSON.stringify(req.body)));
+                } catch (err) {
+                    console.log(err);
+                }
             }
         } else if (req.headers['twitch-eventsub-message-type'] === 'revocation') {
             try {
@@ -2583,7 +2698,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
     async awaitWebHookSetup(topic) {
         let cfg = this.Config.GetConfig();
         let max_tries = cfg['EventSub_max_Timeout'] || 3;
-
+        
         return new Promise((resolve, reject) => {
             let tries = 1;
             let interwahl;
@@ -2599,7 +2714,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                 }
 
                 tries++;
-            }, 1000);
+            }, 5000);
         });
     }
 
@@ -2737,21 +2852,12 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
     async request(URL, options, callback, raw) {
         return FETCH(URL, options)
             .then(async (data) => {
-                for (let symbol of Object.getOwnPropertySymbols(data)) {
-                    if (symbol.toString() == "Symbol(Response internals)") {
-
-                        //HERE HEADERS - TWITCH RATELIMIT CHECK
-                        //console.log(data[symbol]);
-                        this.RateLimits = data[symbol];
-                    }
-                }
-
                 if (raw) return data.text().then(callback);
                 return data.json().then(callback);
             })
             .catch(err => {
-                this.Logger.warn("TWITCH API SERVICE IS DOWN!");
-                return Promise.reject(new Error('TWITCHDOWN'));
+                if (URL.indexOf('/api/identify') === -1) this.Logger.warn("TWITCH API SERVICE MIGHT BE DOWN!");
+                return Promise.reject(err);
             });
     }
     trimString(str) {
@@ -3301,3 +3407,5 @@ class Authenticator extends WEBAPP.Authenticator {
 
 module.exports.TwitchAPI = TwitchAPI;
 module.exports.Authenticator = Authenticator;
+module.exports.TTV_API_INFO = TTV_API_INFO;
+module.exports.TTV_EVENTSUB_TOPICS = TTV_EVENTSUB_TOPICS;

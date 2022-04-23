@@ -256,7 +256,7 @@ class ModuleBase {
         return out;
     }
     GetPaginationString(first = 10, cursor = 0, options = {}) {
-        let s = "A" + first + "B" + cursor + "C";
+        let s = "A" + first + "B" + Math.min(cursor, (options.pagecount  || (cursor + 1)) - 1) + "C";
         if (options.timesorted) s += "T";
         if (options.customsort) s += "CSS" + customsort + "CSE";
         if (options.pagecount !== undefined) s += "PS" + options.pagecount + "PE";

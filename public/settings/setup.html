@@ -102,6 +102,9 @@
                                 <h3>Change Websocket Port (opt)</h3>
                                 <p>You can change the Port the Webserver is mounted on here.</p>
                                 <p><b>Remember:</b> Everything is mounted to this Port (Settings, Cookies, ...)! So, if you change the Port, remember to change/update every other related Setting.</p>
+
+                                <h3>Change Upload Limit (opt)</h3>
+                                <p>Changing the Upload Limit of Images/Sounds/Videos/etc. might decrease Performance.</p>
                             </div>
                             <div>
                                 <h4>Hostname</h4>
@@ -112,6 +115,11 @@
                                 <h4>Port</h4>
                                 <input id="SETTING_WebApp_Port" type="number" value="8080" max="9999" placeholder="Default: 8080" oninput="port_change(this.value)" />
                                 <p id="SETTING_WebApp_Port_Hint" hidden>Changing this setting requires a restart!</p>
+
+                                <h4>Upload Limit</h4>
+                                <input id="SETTING_WebApp_upload_limit" type="text" value="3mb" placeholder="Default: 3mb" oninput="upload_limit_change(this.value)" />
+                                <p id="SETTING_WebApp_upload_limit_Hint" hidden>Changing this setting requires a restart!</p>
+
                             </div>
                         </div>
                         <div class="Con_Cat Con_Cat_Description WIZ_GROUP_WebApp" hidden>
@@ -180,7 +188,7 @@
                                 <button id="TwitchIRC_OAUTH_SAVE" onclick="TwitchIRC_User_Save()" style="display: none;">SAVE EXTERNAL OAUTH TOKEN</button>
                                 <div id="TwitchIRC_ALLOW_SUBSCRIPTION_WRAPPER"><span  title="Twitch currently doesnt support looking up an individuals Subscription - we hope they add this soon!">Allow reading Subscriptions: </span><input type="checkbox" onclick="TwitchIRC_User_Subscription_toggle(this)" title="Twitch currently doesnt support looking up an individuals Subscription - we hope they add this soon!" disabled/></div>
 
-                                <div class="TTV_LOGIN TTV_LOGIN_FALSE" id="TwitchIRC_User" style="position: absolute; bottom: 5px; left: 50%; transform: translate(-50%);">
+                                <div class="TTV_LOGIN TTV_LOGIN_FALSE" id="TwitchIRC_User" style="position: absolute; bottom: 5px; left: 50%; transform: translate(-50%);" disabled  title="Only available when Twitch API is setup!">
                                     <div class="TTV_LOGIN_DATA">
 
                                     </div>
@@ -198,6 +206,7 @@
                                 <h3>Twitch Channel</h3>
                                 <p>The FrikyBot currently only supports one Channel at a time.</p>
                                 <p>Please enter the channel the Bot should join and listen for Messages/Events. A list of Twitch Channel will appear, click on one to auto-fill. <b>Note: </b>Not all Channels appear in this list!</p>
+                                <p><b>Note:</b> Twitch removed the ability to follow Channels as a bot - if you need the bot to be a follower, you have to log in the Bot Account on Twitch and follow manually!</p>
                             </div>
                             <div>
                                 <h3>Twitch Channel</h3>
@@ -296,7 +305,7 @@
                                 <div id="TWITCHAPI_USERLOGIN_SCOPES" style="display: none">
 
                                 </div>
-                                <div class="TTV_LOGIN TTV_LOGIN_FALSE" id="TwitchAPI_CustomUserLogin" style="display: none">
+                                <div class="TTV_LOGIN TTV_LOGIN_FALSE" id="TwitchAPI_CustomUserLogin" style="display: none" disabled title="Only available when Twitch API is setup!">
                                     <div class="TTV_LOGIN_DATA">
 
                                     </div>
@@ -381,6 +390,10 @@
                                 <button style="float: right;" onclick="TwitchAPI_Endpoint_Control_All('enable', true)">Enable All</button>
                                 <button style="float: right;" onclick="TwitchAPI_Endpoint_Control_All('disable', true)">Disable All</button>
                                 <div id="TWITCHAPI_API_ENABLES_UNOFF">
+
+                                </div>
+                                <h3 style="margin-bottom: 5px;">Twitch API Scope Legend</h3>
+                                <div id="TWITCHAPI_API_LEGEND">
 
                                 </div>
                             </div>

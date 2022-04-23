@@ -31,6 +31,7 @@ async function Modules_init() {
     for (let elt of document.getElementsByClassName('STAT_ARRAY')) MISC_SELECT_WidthCheck(elt);
     SWITCHBUTTON_AUTOFILL();
     ScollToHash();
+    OUTPUT_create();
 }
 
 async function FetchSettings() {
@@ -99,7 +100,9 @@ function createModule(module) {
     if (!module) return;
 
     let is_enabled = module.enabled === true;
-    let s = '<div class="Module ' + (module.ready ? (is_enabled ? 'ENABLED' : 'DISABLED') : 'NOTREADY') + '" id="MODULE_' + module.name + '">';
+
+    let s = '<output id="OUTPUT_' + module.name + '"></output>';
+    s += '<div class="Module ' + (module.ready ? (is_enabled ? 'ENABLED' : 'DISABLED') : 'NOTREADY') + '" id="MODULE_' + module.name + '">';
 
     let img = '../images/icons/packages.svg';
 
@@ -124,7 +127,7 @@ function createModuleControl(module) {
     
     s += '<center class="Status"></center>';
     s += '<button class="ENABLE" onclick="CONTROL_ENABLE(\'' + module.name + '\')"></button>';
-    s += '<button class="REMOVE" onclick="CONTROL_REMOVE(\'' + module.name + '\')">REMOVE</button>';
+    s += '<button class="REMOVE" onclick="CONTROL_REMOVE(\'' + module.name + '\')" ' + (module.ready === false ? 'disabled' : '') + '>REMOVE</button>';
 
     return s;
 }
@@ -191,7 +194,7 @@ function createButtons(module) {
 function CONTROL_ENABLE(module_name) {
     let module_elt = document.getElementById('MODULE_' + module_name);
 
-    const type = module_elt.classList.contains('DISABLED') ? 'start' : 'stop';
+    const type = module_elt.classList.contains('ENABLED') ? 'stop' : 'start';
     if (!type) return;
 
     document.getElementById('content').classList.add('HALT');
@@ -202,11 +205,14 @@ function CONTROL_ENABLE(module_name) {
             document.getElementById('content').classList.remove('HALT');
             module_elt.classList.remove('ENABLED');
             module_elt.classList.remove('DISABLED');
-            module_elt.classList.add(json.status === true ? 'ENABLED' : 'DISABLED');
-
+            module_elt.classList.remove('NOTREADY');
+            module_elt.classList.add(json.status === false ? 'NOTREADY' : (json.enable ? 'ENABLED' : 'DISABLED'));
+            
             //Output
-            if (json.module_name === module_name && (json.enable === 'success' || json.disable === 'success'))
-                OUTPUT_showInfo('Module ' + (type === 'start' ? 'Enable' : 'Disable') + 'd!');
+            if (json.module_name === module_name && json.status === false)
+                OUTPUT_showWarning('Module not ready, check setup settings!', document.getElementById('OUTPUT_' + module_name));
+             else if (json.module_name === module_name && json.status === true)
+                OUTPUT_showInfo('Module ' + (type === 'start' ? 'Enable' : 'Disable') + 'd!', document.getElementById('OUTPUT_' + module_name));
             else {
                 return Promise.reject(new Error('Module ' + (type === 'start' ? 'Enable' : 'Disable') + ' Failed!'));
             }
@@ -215,7 +221,7 @@ function CONTROL_ENABLE(module_name) {
         })
         .catch(err => {
             console.log(err);
-            OUTPUT_showError(err.message);
+            OUTPUT_showError(err.message, document.getElementById('OUTPUT_' + module_name));
 
             //Visuals
             document.getElementById('content').classList.remove('HALT');
@@ -232,7 +238,7 @@ function CONTROL_REMOVE(module_name, is_unknown = false) {
 
             //Output
             if (json.module_name === module_name && json.removed === 'success') {
-                OUTPUT_showInfo((is_unknown ? 'Unknown ' : '') + 'Module Removed! Shutting down ... Restart requiered!');
+                OUTPUT_showInfo((is_unknown ? 'Unknown ' : '') + 'Module Removed! Shutting down ... Restart requiered!', document.getElementById('OUTPUT_' + module_name));
                 module_elt.remove();
             } else {
                 return Promise.reject(new Error((is_unknown ? 'Unknown ' : '') + 'Module Remove Failed!'));
@@ -242,7 +248,7 @@ function CONTROL_REMOVE(module_name, is_unknown = false) {
         })
         .catch(err => {
             console.log(err);
-            OUTPUT_showError(err.message);
+            OUTPUT_showError(err.message, document.getElementById('OUTPUT_' + module_name));
 
             //Visuals
             document.getElementById('content').classList.remove('HALT');
@@ -388,6 +394,7 @@ function CONTROLS_TWITCHAPI(module) {
     let s = '';
 
     s += '<button onclick="CONTROLS_API_TOKENS()">CHECK TOKENS</button>';
+    s += '<button onclick="CONTROLS_API_EVENTSUB()">UPDATE EVENTSUBS</button>';
     
     return s;
 }
@@ -410,5 +417,22 @@ function CONTROLS_API_TOKENS() {
             console.log(err);
             OUTPUT_showError(err.message);
             document.getElementById('content').classList.remove('HALT');
+        });
+}
+function CONTROLS_API_EVENTSUB(topic = 'all') {
+    let opt = getAuthHeader();
+
+    opt['method'] = 'GET';
+    opt['headers']['Content-Type'] = 'application/json';
+
+    fetch("/api/twitchapi/EventSub?topic=" + topic, opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            OUTPUT_showInfo(json.data.length + ' EventSubs updated!');
+        })
+        .catch(err => {
+            if (err.message === 'not deployed') err = new Error('WebServer not deployed to Domain or using Proxy! Eventsubs are unavailable!');
+            console.log(err);
+            OUTPUT_showError(err.message);
         });
 }

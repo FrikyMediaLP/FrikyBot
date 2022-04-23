@@ -29,10 +29,25 @@
         "enabled": true,
         "state": false
     },
+    "channel:manage:polls": {
+        "desc": "Manage a channel’s polls.",
+        "enabled": true,
+        "state": true
+    },
+    "channel:manage:predictions": {
+        "desc": "Manage of channel’s Channel Points Predictions.",
+        "enabled": true,
+        "state": true
+    },
     "channel:manage:redemptions": {
         "desc": "Manage Channel Points custom rewards and their redemptions on a channel.",
         "enabled": true,
         "state": true
+    },
+    "channel:manage:schedule": {
+        "desc": "Manage a channel’s stream schedule.",
+        "enabled": true,
+        "state": false
     },
     "channel:manage:videos": {
         "desc": "Manage a channel’s videos, including deleting videos.",
@@ -47,11 +62,20 @@
     "channel:read:goals": {
         "desc": "View Creator Goals for a channel.",
         "enabled": true,
-        "state": false,
-        "beta": true
+        "state": true
     },
     "channel:read:hype_train": {
         "desc": "View Hype Train information for a channel.",
+        "enabled": true,
+        "state": true
+    },
+    "channel:read:polls": {
+        "desc": "View a channel’s polls.",
+        "enabled": true,
+        "state": true
+    },
+    "channel:read:predictions": {
+        "desc": "View a channel’s Channel Points Predictions.",
         "enabled": true,
         "state": true
     },
@@ -75,10 +99,55 @@
         "enabled": true,
         "state": true
     },
+    "moderation:read": {
+        "desc": "View a channel’s moderation data including Moderators, Bans, Timeouts, and Automod settings.",
+        "enabled": true,
+        "state": true
+    },
+    "moderator:manage:banned_users": {
+        "desc": "Ban and unban users.",
+        "enabled": true,
+        "state": true
+    },
+    "moderator:read:blocked_terms": {
+        "desc": "View a broadcaster’s list of blocked terms.",
+        "enabled": true,
+        "state": true
+    },
+    "moderator:manage:blocked_terms": {
+        "desc": "Manage a broadcaster’s list of blocked terms.",
+        "enabled": true,
+        "state": true
+    },
+    "moderator:manage:automod": {
+        "desc": "Manage messages held for review by AutoMod in channels where you are a moderator.",
+        "enabled": true,
+        "state": true
+    },
+    "moderator:read:automod_settings": {
+        "desc": "View a broadcaster’s AutoMod settings.",
+        "enabled": true,
+        "state": true
+    },
+    "moderator:manage:automod_settings": {
+        "desc": "Manage a broadcaster’s AutoMod settings.",
+        "enabled": true,
+        "state": true
+    },
+    "moderator:read:chat_settings": {
+        "desc": "View a broadcaster’s chat room settings.",
+        "enabled": true,
+        "state": true
+    },
+    "moderator:manage:chat_settings": {
+        "desc": "Manage a broadcaster’s chat room settings.",
+        "enabled": true,
+        "state": true
+    },
     "user:edit": {
         "desc": "Manage a user object.",
         "enabled": true,
-        "state": false
+        "state": true
     },
     "user:read:blocked_users": {
         "desc": "View the block list of a user.",
@@ -93,57 +162,22 @@
     "user:read:broadcast": {
         "desc": "View a user’s broadcasting configuration, including Extension configurations.",
         "enabled": true,
-        "state": false
+        "state": true
     },
     "user:read:email": {
         "desc": "Read an authorized user’s email address.",
         "enabled": true,
         "state": false
     },
-    "channel:manage:polls": {
-        "desc": "Manage a channel’s polls.",
-        "enabled": true,
-        "state": false
-    },
-    "channel:manage:predictions": {
-        "desc": "Manage of channel’s Channel Points Predictions.",
-        "enabled": true,
-        "state": false
-    },
-    "channel:manage:schedule": {
-        "desc": "Manage a channel’s stream schedule.",
-        "enabled": true,
-        "state": false
-    },
-    "channel:read:polls": {
-        "desc": "View a channel’s polls.",
-        "enabled": true,
-        "state": false
-    },
-    "channel:read:predictions": {
-        "desc": "View a channel’s Channel Points Predictions.",
-        "enabled": true,
-        "state": false
-    },
-    "moderation:read": {
-        "desc": "View a channel’s moderation data including Moderators, Bans, Timeouts, and Automod settings.",
-        "enabled": true,
-        "state": false
-    },
-    "moderator:manage:automod": {
-        "desc": "Manage messages held for review by AutoMod in channels where you are a moderator.",
-        "enabled": true,
-        "state": false
-    },
     "user:read:follows": {
         "desc": "View the list of channels a user follows.",
         "enabled": true,
-        "state": false
+        "state": true
     },
     "user:read:subscriptions": {
         "desc": "View if an authorized user is subscribed to specific channels.",
         "enabled": true,
-        "state": false
+        "state": true
     }
 };
 const SETTINGTYPES = [
@@ -202,6 +236,7 @@ let WIZARD_AUTHS = [];
 
 let CUR_CONFIG = {};
 
+let TTV_API_READY = false;
 let TTV_API_AUTH_USERS = [];
 let TTV_API_AUTH_USERLEVELS = [];
 let TTV_API_ACTIVE_SCOPES = [];
@@ -227,7 +262,8 @@ async function Setup_init() {
     //Data
     try {
         let data = await FetchSettings();
-
+        console.log(data);
+        
         //Create
         WIZARD_create(data.tmpl, data.cfg, data.auths);
         CUR_CONFIG = data.cfg;
@@ -238,14 +274,22 @@ async function Setup_init() {
             TwitchAPI_USER_SET_INFO(data.ttv_api.user);
             TwitchAPI_UserLogin_createScopes(data.ttv_api.user.scopes);
             
-            TTV_API_AUTH_USERS = data.ttv_api.authenticator_users;
-            TTV_API_AUTH_USERLEVELS = data.ttv_api.authenticator_userlevels;
+            TTV_API_AUTH_USERS = data.ttv_api.authenticator_users || [];
+            TTV_API_AUTH_USERLEVELS = data.ttv_api.authenticator_userlevels || [];
             TwitchAPI_Auth_DB_create();
             TwitchAPI_Auth_Interface();
 
             TTV_API_ACTIVE_SCOPES = data.ttv_api.user.scopes;
             TwitchAPI_API_create(data.ttv_api.endpoints);
             TwitchAPI_EventSub_create(data.ttv_api.eventsubs);
+
+            if (data.ttv_api.ready) {
+                TTV_API_READY = true;
+                for (let elt of document.getElementsByClassName('TTV_LOGIN')) {
+                    elt.removeAttribute('disabled');
+                    elt.removeAttribute('title');
+                }
+            }
         }
         
         //Seperate Groups
@@ -564,7 +608,7 @@ function port_change(value) {
 function hostname_change(value) {
     if (value == CUR_CONFIG.WebApp.Hostname) {
         document.getElementById('SETTING_WebApp_Hostname_Hint').setAttribute('hidden', '');
-        document.getElementById('WEBAPP_HOSTNAME_VERIFY').setAttribute('hidden', '');
+        document.getElementById('WebApp_Hostname_Save').disabled = true;
         return;
     }
 
@@ -582,13 +626,25 @@ function hostname_save() {
         .then(json => {
             OUTPUT_showInfo("Hostname changed!");
             CUR_CONFIG['WebApp']['Hostname'] = document.getElementById('SETTING_WebApp_Hostname').value;
-            hostname_change();
+            hostname_change(CUR_CONFIG['WebApp']['Hostname']);
             TwitchAPI_Application_setURL(CUR_CONFIG['WebApp']['Hostname']);
         })
         .catch(err => {
             OUTPUT_showError(err.message);
             console.log(err);
         });
+}
+function upload_limit_change(value) {
+    if (value == CUR_CONFIG.WebApp.upload_limit) {
+        document.getElementById('WIZ_UI_RESTART').setAttribute('hidden', '');
+        document.getElementById('WIZ_UI_NEXT').removeAttribute('hidden');
+        document.getElementById('SETTING_WebApp_upload_limit_Hint').setAttribute('hidden', '');
+        return;
+    }
+
+    document.getElementById('SETTING_WebApp_upload_limit_Hint').removeAttribute('hidden');
+    document.getElementById('WIZ_UI_NEXT').setAttribute('hidden', '');
+    document.getElementById('WIZ_UI_RESTART').removeAttribute('hidden');
 }
 
 async function FrikyBot_Auth_switch(elt) {
@@ -742,7 +798,7 @@ async function TwitchIRC_User_Save() {
     return fetch('/api/settings/twitchirc/user', opt)
         .then(STANDARD_FETCH_RESPONSE_CHECKER)
         .then(json => {
-            OUTPUT_showInfo(json.msg);
+            OUTPUT_showInfo('User successfully changed. Reload to get Token Information!');
             CUR_CONFIG['TwitchIRC']['login'] = login;
             CUR_CONFIG['TwitchIRC']['oauth'] = oauth;
             TwitchIRC_User_change();
@@ -784,6 +840,7 @@ function TwitchIRC_Channel_input(value) {
     
     //Buffer Layer
     if (TwitchIRC_FETCHING === true) return;
+    if (TTV_API_READY === false) return;
 
     setTimeout(() => {
         if (value === document.getElementById('SETTING_TwitchIRC_channel').value)
@@ -912,6 +969,17 @@ function TwitchAPI_Application_Save() {
             TwitchAPI_Application_change();
             ClientID.classList.remove('missing');
             Secret.classList.remove('missing');
+
+            TTV_API_READY = json.ready === true;
+            for (let elt of document.getElementsByClassName('TTV_LOGIN')) {
+                if (TTV_API_READY) {
+                    elt.setAttribute('disabled', 'true');
+                    elt.setAttribute('title', 'Only available when Twitch API is setup!');
+                } else {
+                    elt.removeAttribute('disabled');
+                    elt.removeAttribute('title');
+                }
+            }
         })
         .catch(err => {
             ClientID.classList.add('missing');
@@ -1257,6 +1325,7 @@ async function TwitchAPI_Auth_DB_delete(user_id) {
 function TwitchAPI_Auth_DB_Channel_change(value) {
     //Buffer Layer
     if (TwitchAPI_FETCHING === true) return;
+    if (TTV_API_READY === false) return;
 
     setTimeout(() => {
         if (value === document.getElementById('TwitchAPI_Authenticator_Interface_Name').value)
@@ -1358,6 +1427,13 @@ function TwitchAPI_API_create(endpoints = {}) {
     for (let elt of document.getElementsByClassName('TTV_API_ENDPOINT_ENABLE_UNOFF')) {
         if (elt instanceof Element && elt.tagName === 'SWITCHBUTTON') SWITCHBUTTON_AUTOFILL(elt);
     }
+
+    //Scope Legend
+    s = '';
+    for (let scope in TTV_API_SCOPES) {
+        s += '<p title="' + scope + '"><span class="TTVAPI_API_LEGEND_IDX ' + (!TwitchAPI_hasScope(scope) ? 'missing ' : '') + (TwitchAPI_isBetaScope(scope) ? 'beta ' : '') + '">' + TwitchAPI_EventSub_GetScopeIdx(scope) + '</span> ' + TTV_API_SCOPES[scope].desc + '</p>';
+    }
+    document.getElementById('TWITCHAPI_API_LEGEND').innerHTML = s;
 }
 function TwitchAPI_API_createCategorie(cat, unoff = false) {
     let s = '';
@@ -1365,7 +1441,9 @@ function TwitchAPI_API_createCategorie(cat, unoff = false) {
     s += '<div class="ENDPOINT_CAT">';
 
     for (let api of cat.endpoints) {
-        s += '<span>' + api.name + '</span>' + SWITCHBUTTON_CREATE(api.enabled === true, false, 'TwitchAPI_Endpoint_Control(this, ' + unoff + '); ', null, 'data-endpoint="' + api.name + '"  class="TTV_API_ENDPOINT_ENABLE' + (unoff ? '_UNOFF' : '') + '"');
+        let missing = !TwitchAPI_hasScope(api.req_scope);
+        let beta = TwitchAPI_isBetaScope(api.req_scope);
+        s += '<span>' + api.name + '<span title="Requieres ' + (missing ? 'missing ' : '') + 'Scopes: ' + (api.req_scope instanceof Array ? api.req_scope.join(' or ') : api.req_scope) + ' " class="TTVAPI_API_LEGEND_IDX ' + (missing ? 'missing ' : '') + (beta ? 'beta ' : '') + '">' + TwitchAPI_EventSub_GetScopeIdx(api.req_scope) + '</span></span>' + SWITCHBUTTON_CREATE(api.enabled === true, false, 'TwitchAPI_Endpoint_Control(this, ' + unoff + '); ', null, 'data-endpoint="' + api.name + '"  class="TTV_API_ENDPOINT_ENABLE' + (unoff ? '_UNOFF' : '') + '"');
     }
 
     s += '</div>';
@@ -1569,7 +1647,7 @@ function TwitchAPI_EventSub_GetScopeIdx(scopes) {
         Object.getOwnPropertyNames(TTV_API_SCOPES)
             .find((elt, index) => {
                 if (elt === scope) {
-                    idxs.push(index);
+                    idxs.push(index+1);
                     return true;
                 }
                 return false;

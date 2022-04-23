@@ -120,7 +120,7 @@ function setCookie(name, value, session) {
         else localStorage.setItem(name, value);
     } else if (!DISABLE_COOKIE_BLOCKED_NOTIFICATION) {
         if (document.getElementsByTagName('output')) {
-            OUTPUT_showError('Cookie "' + name + '" was not saved, because you didnt allowed that Cookie! <a href="' + ROOT + '/Cookies#highlighted=' + name + '" target="_blank">Change Cookie Settings!</a>');
+            OUTPUT_showError('Cookie "' + name + '" was not saved, because you didnt allowed that Cookie! <a href="/Cookies#highlighted=' + name + '" target="_blank">Change Cookie Settings!</a>');
         }
     }
 }
@@ -331,7 +331,7 @@ function GetPaginationValues(pagination = "") {
     return out;
 }
 function GetPaginationString(first = 10, cursor = 0, options = {}) {
-    let s = "A" + first + "B" + cursor + "C";
+    let s = "A" + first + "B" + Math.min(cursor, (options.pagecount || (cursor + 1)) - 1) + "C";
     if (options.timesorted) s += "T";
     if (options.customsort) s += "CSS" + customsort + "CSE";
     if (options.pagecount !== undefined) s += "PS" + options.pagecount + "PE";
@@ -402,18 +402,45 @@ function HTMLArray2RealArray(arr = []) {
     return output;
 }
 //GRID-STUFF
-function disableContent() {
+function disableContent(callback, use_disabler_click = false) {
     if (document.getElementById('contentDISABLER')) return;
 
     let div = document.createElement('DIV');
     div.id = 'contentDISABLER';
+    if (callback) div.dataset.callback = callback;
     document.getElementById('content').appendChild(div);
     document.getElementById('content').classList.add('DISABLED');
+    if (use_disabler_click) document.getElementById("content").addEventListener("click", CONTENT_DISABLE_REMOVE_BLUR);
 }
 function enableContent() {
     if (!document.getElementById('contentDISABLER')) return;
+    if (document.getElementById('contentDISABLER').dataset.callback) window[document.getElementById('contentDISABLER').dataset.callback]();
     document.getElementById('contentDISABLER').remove();
     document.getElementById('content').classList.remove('DISABLED');
+    document.getElementById("content").removeEventListener("click", CONTENT_DISABLE_REMOVE_BLUR);
+}
+function CONTENT_DISABLE_REMOVE_BLUR() {
+    enableContent();
+}
+function FindSubElementFromPath(parent, path = []) {
+    if (path.length === 0) return parent;
+
+    const type = path[0].charAt(0);
+    const check_class = (a) => a.classList.contains(path[0].substring(1));
+    const check_id = (a) => a.id === path[0].substring(1);
+    const check_tag = (a) => a.tagName === path[0];
+
+    let checkChild = (a) => false;
+    if (type === '.') checkChild = check_class;
+    else if (type === '#') checkChild = check_id;
+    else checkChild = check_tag;
+
+    for (let child of parent.childNodes) {
+        if (!(child instanceof Element)) continue;
+        if (checkChild(child)) return FindSubElementFromPath(child, path.slice(1));
+    }
+
+    return null;
 }
 
 //Data
@@ -436,18 +463,21 @@ function findFormattedStringVariableTree(formattedString = "") {
 
     return output;
 }
-function FillFormattedString(string, vars = {}) {
+function FillFormattedString(string = "", vars = {}) {
     let outstring = "";
 
-    for (let word of string.split(" ")) {
-        let varname = word.substring(1, word.length-1);
-        if (word.charAt(0) === "{" && word.charAt(word.length - 1) === "}" && vars[varname] !== undefined)
-            outstring += " " + vars[varname];
-        else
-            outstring += " " + word;
-    }
+    let i = 0;
+    while (string.indexOf('{', i) >= 0 && string.indexOf('}', string.indexOf('{', i)) >= 0 ) {
+        let varname = string.substring(string.indexOf('{', i) + 1, string.indexOf('}', string.indexOf('{', i)));
 
-    return outstring.substring(1);
+        outstring += string.substring(i, string.indexOf('{', i));
+        outstring += vars[varname];
+
+        i = string.indexOf('}', string.indexOf('{', i)) + 1;
+    }
+    outstring += string.substring(i);
+
+    return outstring;
 }
 function PrintArraySpaced(arr) {
     let s = "";
@@ -555,7 +585,7 @@ function toggleClass(elt, className, parentSelect = 0) {
 //MISC
 function PROFILE_IMAGES(id, transparent = false) {
     let colors = ["blue", "green", "orange", "purple", "red", "yellow"];
-    return ROOT + "images/Profiles/" + (colors[id > colors.length - 1 ? id % (colors.length - 1) : id] || colors[0]) + (transparent ? '_transparent' : '') + ".png";
+    return "/images/Profiles/" + (colors[id > colors.length - 1 ? id % (colors.length - 1) : id] || colors[0]) + (transparent ? '_transparent' : '') + ".png";
 }
 function COLOR_PALETTE(id) {
     let colors = ["blue", "green", "orange", "purple", "red", "yellow"];

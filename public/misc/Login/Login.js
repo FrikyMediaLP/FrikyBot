@@ -334,16 +334,16 @@ function TTV_LOGIN_SETDATA(elt, userdata, enable_logout = false, logout_func) {
 
     if (userdata.refresh === true) s += '<span class="TTV_LOGIN_HINT">*refreshes when expired</span>';
 
-    data_elt.innerHTML = s + '</div><div class="TTV_LOGIN_DATA_RIGHT"><img src="' + (userdata.picture || '../images/no_image_found_alpha.png') + '" /></div></div>';
+    data_elt.innerHTML = s + '</div><div class="TTV_LOGIN_DATA_RIGHT"><img src="' + (userdata.picture || '/images/no_image_found_alpha.png') + '" /></div></div>';
 
     //Login/out
     if (enable_logout) {
         s = '<center onclick="';
 
         if (logout_func) s += logout_func + '(); ';
-        s += ' HOVERPROFILE_logout(); TTV_COL_LOG(\'' + elt.id + '\');"';
+        s += ' TTV_COL_LOG(\'' + elt.id + '\');"';
 
-        s += '><span>LOG OUT</span><img src="../images/icons/twitch.svg" data-type="svg" />';
+        s += '><span>LOG OUT</span><img src="/images/icons/twitch.svg" data-type="svg" />';
         s += '</center>';
         log_elt.innerHTML = s;
     }
@@ -390,7 +390,7 @@ function TTV_COL_LOG(id) {
 }
 
 async function TTV_LOGIN_CLICKED(elt, type, scopes = [], forced = true) {
-    if (!elt || !(elt instanceof Element)) return;
+    if (!elt || !(elt instanceof Element) || elt.parentElement.parentElement.hasAttribute('disabled')) return;
     if (!type) return;
     
     let opt = getAuthHeader();

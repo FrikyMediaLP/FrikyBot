@@ -108,6 +108,37 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="TOOL_CONTENT" id="RAW_LOG_VISUALIZER">
+                    <h2>Raw Log File</h2>
+                    <select id="RAW_LOG_VISUALIZER_SELECT" onchange="RAW_LOG_VISULIZER_SHOW(this.value)">
+                        <option hidden selected>Select Log File</option>
+                        <option disabled>NONE</option>
+                    </select>
+                    <label>
+                        Invert Time Scale
+                        <input id="RAW_LOG_VISUALIZER_INVERT" type="checkbox" onchange="RAW_LOG_VISULIZER_SHOW(document.getElementById('RAW_LOG_VISUALIZER_SELECT').value)" />
+                    </label>
+                    <br />
+                    <div id="RAW_LOG_VISUALIZER_TABLE">
+
+                    </div>
+                </div>
+
+                <div class="TOOL_CONTENT" id="TTV_LOCAL_STORAGE_VIS">
+                    <div>
+                        <h2>INPUT</h2>
+                        <h2>OUTPUT<span id="TTV_LOCAL_STORAGE_VIS_TOTAL" style="float: right;"></span></h2>
+
+                        <div id="TTV_LOCAL_STORAGE_VIS_IN">
+                            <textarea id="TTV_LOCAL_STORAGE_VIS_IN_AREA" oninput="TTV_LOCAL_STORAGE_VIS_CONVERT(this.value)" placeholder="Visit twitch.tv -> open console -> go to appilcation -> local Storage -> search for twighlight.emote_picker_history -> right mouse on value -> edit value -> copy and paste it here"></textarea>
+                        </div>
+
+                        <div id="TTV_LOCAL_STORAGE_VIS_OUT">
+
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

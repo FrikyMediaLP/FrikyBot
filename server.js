@@ -37,7 +37,7 @@ const CONSTANTS = require('./Util/CONSTANTS.js');
 let INSTALLED_MODULES = {};
 
 //PACKAGES
-let INSTALLED_PACKAGES = { };
+let INSTALLED_PACKAGES = {};
 
 //SERVER STATUS DATA
 let Server_Status = {
@@ -67,25 +67,20 @@ SETUP()
         } catch (err) {
             return Promise.reject(err);
         }
+        
+        if (INSTALLED_MODULES['WebApp'] === undefined) {
+            return Promise.reject(new Error("WebServer not found! Missing Files?"));
+        }
 
         try {
             await POST_INIT();
         } catch (err) {
             return Promise.reject(err);
         }
-
-        //DONE
-        if (INSTALLED_MODULES['WebApp'] === undefined) {
-            Logger.server.error("Internal Error, WebServer wasnt started!");
-            console.log("Press any key to exit.");
-            process.stdin.on("data", data => {
-                shutdown(0);
-            });
-        }
     })
     .catch(err => {
         Logger.server.error(err.message);
-        console.log(err);
+        //console.log(err);
         console.log("Press any key to exit.");
         process.stdin.on("data", data => {
             shutdown(0);
@@ -144,6 +139,7 @@ async function SETUP() {
 
     //Load Modules
     for (let module in configs) {
+        if (module == '0') continue;
         loadModule(module, configs[module], ConfigHandler);
     }
 
@@ -266,7 +262,11 @@ async function INIT() {
                 await obj.Init(INSTALLED_MODULES['WebApp'].Object.GetInteractor());
             } else if (module === 'TwitchAPI') {
                 //Init
-                await obj.Init(INSTALLED_MODULES['WebApp'].Object.GetInteractor());
+                await obj.Init(INSTALLED_MODULES['WebApp'].Object.GetInteractor())
+                    .catch(err => {
+                        Logger[module].error(err.message);
+                        Server_Status.errors.outage[module] = err.message;
+                    });
 
                 //Authenticator
                 let auth = new (node_module).Authenticator(Logger, obj.GetConfig(false), INSTALLED_MODULES['TwitchAPI'].Object);
@@ -325,8 +325,8 @@ async function POST_INIT() {
 
     //WebApp Authenticator
     INSTALLED_MODULES['WebApp'].Object.autoSetAuthenticator();
-
-    Logger.server.info("BOT ONLINE AND READY!");
+    let address = INSTALLED_MODULES['WebApp'].Object.server.address();
+    Logger.server.info("BOT ONLINE AND READY! Visit http://" + (address.address === '::' ? 'localhost' : address.address) + ":" + address.port + ' to access Bot Settings!');
     
     return Promise.resolve();
 }
@@ -391,6 +391,11 @@ async function INIT_WEBAPP() {
         
         //MISC - API
         APIRouter.get('/BotStatus', API_BotStatus);
+
+        //LOGGER API
+        let LoggerAPIRouter = express.Router();
+        LoggerAPIRouter.get('/raw', LOGGER_RAW_API);
+        WebAppInteractor.addAuthAPIRoute('/logger', { user_level: 'staff' }, LoggerAPIRouter);
         
         WebAppInteractor.addAPIRoute('', APIRouter);
         
@@ -545,7 +550,6 @@ function GetPaginationString(first = 10, cursor = 0, options = {}) {
     return s;
 }
 
-
 /*
  *  ----------------------------------------------------------
  *                   EXPRESS MIDDLEWARE
@@ -624,8 +628,8 @@ function API_MODULE_CONTROL_START(req, res, next) {
 
     //set Enable
     INSTALLED_MODULES[module_name].Object.enable();
-    out.enable = INSTALLED_MODULES[module_name].Object.isEnabled() ? 'success' : 'failed';
-    out.status = INSTALLED_MODULES[module_name].Object.isEnabled();
+    out.enable = INSTALLED_MODULES[module_name].Object.isEnabled();
+    out.status = INSTALLED_MODULES[module_name].Object.isReady();
     return res.json(out);
 }
 function API_MODULE_CONTROL_STOP(req, res, next) {
@@ -639,8 +643,8 @@ function API_MODULE_CONTROL_STOP(req, res, next) {
 
     //set Enable
     INSTALLED_MODULES[module_name].Object.disable();
-    out.enable = INSTALLED_MODULES[module_name].Object.isEnabled() ? 'failed' : 'success';
-    out.status = INSTALLED_MODULES[module_name].Object.isEnabled();
+    out.enable = INSTALLED_MODULES[module_name].Object.isEnabled();
+    out.status = INSTALLED_MODULES[module_name].Object.isReady();
     return res.json(out);
 }
 function API_MODULE_CONTROL_REMOVE(req, res, next) {
@@ -765,7 +769,12 @@ async function API_PACKAGE_CONTROL_START(req, res, next) {
         await INSTALLED_PACKAGES[package_name].Object.enable();
         out.enable = 'success';
 
-        await INSTALLED_PACKAGES[package_name].Object.reload();
+        if (INSTALLED_PACKAGES[package_name].Object.SETUP_COMPLETE !== true) {
+            let packCfg = ConfigHandler.GetConfigs().find(elt => elt.GetName() === 'Packages');
+            await INSTALLED_PACKAGES[package_name].Object.Init(packCfg[package_name]);
+        } else {
+            await INSTALLED_PACKAGES[package_name].Object.reload();
+        }
 
         out.reload = 'success';
     } catch (err) {
@@ -835,12 +844,12 @@ async function API_PACKAGE_CONTROL_REMOVE(req, res, next) {
     const package_name = req.query['package_name'];
 
     if (!INSTALLED_PACKAGES[package_name]) {
-        res.status(400).json({ err: 'Bad Request. Package not found.' });
+        res.status(404).json({ err: 'Bad Request. Package not found.' });
         return Promise.resolve();
     }
 
     if (!INSTALLED_PACKAGES[package_name].Object) {
-        res.status(500).json({ err: 'Package not initiated.' });
+        res.status(406).json({ err: 'Package not initiated.' });
         return Promise.resolve();
     }
 
@@ -872,7 +881,7 @@ async function API_PACKAGE_CONTROL_ADD(req, res, next) {
     }
 
     if (INSTALLED_PACKAGES[package_name]) {
-        res.status(500).json({ err: 'Package allready installed.' });
+        res.status(406).json({ err: 'Package allready installed.' });
         return Promise.resolve();
     }
 
@@ -948,36 +957,57 @@ function API_PACKAGE_SETTINGS(req, res, next) {
 
 //Page Infos API
 async function PAGE_Navi(req, res, next) {
-    //Main - Section
-    let MainNavigationPackages = ["CommandHandler"];
-    let MainSection = [{ type: "icon", name: "Homepage", href: "/", icon: "images/icons/home.svg" }];
+    let maximum_userlevel = 'regular';
     
-    for (let pack of MainNavigationPackages) {
-        if (INSTALLED_PACKAGES[pack] && INSTALLED_PACKAGES[pack].Object && INSTALLED_PACKAGES[pack].Object.getWebNavigation()) {
-            let temp_Pck_Nav = INSTALLED_PACKAGES[pack].Object.getWebNavigation();
-            temp_Pck_Nav.type = "icon";
-            MainSection.push(temp_Pck_Nav);
+    let package_nagiation_elements = [];
+    const ALL_ELEMENTS = [
+        { data: { type: "icon", name: "Homepage", href: "/", icon: "images/icons/home.svg" }, categorie: 'Main' },
+        { data: { type: "icon", name: "Bot Details", href: "/bot", icon: "images/icons/FrikyBot.png" }, categorie: 'Settings', userlevel: 'staff' },
+        { data: { type: "icon", name: "Settings", href: "/settings", icon: "images/icons/gear.svg" }, categorie: 'Settings', userlevel: 'staff' }
+    ];
+
+    //Collect Package Navigation ELements
+    for (let pack in INSTALLED_PACKAGES) {
+        if (INSTALLED_PACKAGES[pack].Object && INSTALLED_PACKAGES[pack].Object.isEnabled() && INSTALLED_PACKAGES[pack].Object.getWebNavigation()) {
+            ALL_ELEMENTS.push(INSTALLED_PACKAGES[pack].Object.getWebNavigation());
         }
+    }
+
+    //Check Userlevel and Push
+    for (let element of ALL_ELEMENTS) {
+        if (element.userlevel) {
+            if (CONSTANTS.UserLevel[element.userlevel] === undefined) continue;
+
+            if (CONSTANTS.UserLevel[maximum_userlevel] < CONSTANTS.UserLevel[element.userlevel]) {
+                //Check Userlevel
+                try {
+                    await INSTALLED_MODULES['WebApp'].Object.GetInteractor().AuthorizeUser(res.locals.user, { user_level: element.userlevel });
+                    maximum_userlevel = element.userlevel;
+                } catch (err) {
+                    continue;
+                }
+            }
+        }
+
+        package_nagiation_elements.push(element);
+    }
+    
+    //Main - Section
+    let MainSection = [];
+    
+    for (let pack of package_nagiation_elements.filter(elt => elt.categorie === 'Main')) {
+        let temp_Pck_Nav = pack.data;
+        temp_Pck_Nav.type = "icon";
+        MainSection.push(temp_Pck_Nav);
     }
 
     //Packages - Section
     let PackageSection = [];
 
-    for (let pack in INSTALLED_PACKAGES) {
-        //Skip Packages already used in Main Nav
-        let skip = false;
-        for (let dont of MainNavigationPackages) {
-            if (dont == pack) {
-                skip = true; break;
-            }
-        }
-
-        //Add Data
-        if (!skip && INSTALLED_PACKAGES[pack].Object && INSTALLED_PACKAGES[pack].Object.getWebNavigation()) {
-            let temp_Pck_Nav = INSTALLED_PACKAGES[pack].Object.getWebNavigation();
-            temp_Pck_Nav.type = "icon";
-            PackageSection.push(temp_Pck_Nav);
-        }
+    for (let pack of package_nagiation_elements.filter(elt => elt.categorie === 'Packages')) {
+        let temp_Pck_Nav = pack.data;
+        temp_Pck_Nav.type = "icon";
+        PackageSection.push(temp_Pck_Nav);
     }
 
     //Add "More Packages"
@@ -986,16 +1016,12 @@ async function PAGE_Navi(req, res, next) {
     //Settings - Section
     let SettingsSection = [];
 
-    SettingsSection.push({ type: "icon", name: "Bot Details", href: "/bot", icon: "images/icons/FrikyBot.png" });
-
-    try {
-        //Settings Link
-        await INSTALLED_MODULES['WebApp'].Object.GetInteractor().AuthorizeUser(res.locals.user, { user_level: 'staff' });
-        SettingsSection.push({ type: "icon", name: "Settings", href: "/settings", icon: "images/icons/gear.svg" });
-    } catch (err) {
-
+    for (let pack of package_nagiation_elements.filter(elt => elt.categorie === 'Settings')) {
+        let temp_Pck_Nav = pack.data;
+        temp_Pck_Nav.type = "icon";
+        SettingsSection.push(temp_Pck_Nav);
     }
-
+    
     SettingsSection.push({ type: "icon", name: "Login", href: "/login", icon: "images/icons/twitch.svg" });
 
     //Return Data
@@ -1058,6 +1084,9 @@ async function PAGE_Settings_Setup(req, res, next) {
 
     if (TwitchIRC && TwitchIRC.isEnabled()) {
         ttv_irc = {};
+
+        ttv_irc['ready'] = TwitchIRC.isReady();
+
         try {
             let user = (await TwitchAPI.GetUsers({ login: TwitchIRC.Config.GetConfig()['login'] })).data[0];
 
@@ -1077,6 +1106,9 @@ async function PAGE_Settings_Setup(req, res, next) {
 
     if (TwitchAPI && TwitchAPI.isEnabled()) {
         ttv_api = {};
+
+        ttv_api['ready'] = TwitchAPI.isReady();
+
         try {
             ttv_api['user'] = await TwitchAPI.getUserTokenStatus();
             if (ttv_api['user'].sub) {
@@ -1292,6 +1324,8 @@ async function PAGE_Settings_Tools(req, res, next) {
         'API Router': WebApp.API_TREE_SIMPLYFIY(api)
     };
 
+    data['RAW_LOGS'] = Logger.GetAllRawLogNames();
+
     res.json({ data });
 }
 
@@ -1325,20 +1359,18 @@ async function API_BotStatus(req, res, next) {
         } else {
             delete Server_Status.errors.fatal.TwitchAPI;
             delete Server_Status.errors.outage.TwitchAPI;
+            
+            //EventSubs
+            let missing_ES = TwitchAPI.GetMissingEventSubs();
+            if (missing_ES.length > 1) {
+                Server_Status.errors.outage.TwitchAPI = "EventSubs not available!";
+            }
 
             //Tokens
             if (!TwitchAPI.UserAccessToken) {
                 Server_Status.errors.outage.TwitchAPI = "Only Basic API Access";
             } else if (!TwitchAPI.AppAccessToken) {
                 Server_Status.errors.outage.TwitchAPI = "No API Access";
-            }
-
-            //EventSubs
-            let missing_ES = TwitchAPI.GetMissingEventSubs();
-            if (missing_ES.length === 1) {
-                Server_Status.errors.outage.TwitchAPI = 'EventSub "' + TwitchAPI.GetMissingEventSubs()[0] + '" not available!';
-            } else if (missing_ES.length > 1) {
-                Server_Status.errors.outage.TwitchAPI = missing_ES.length + " EventSubs not available!";
             }
 
             if (TwitchIRC) {
@@ -1363,7 +1395,7 @@ async function API_BotStatus(req, res, next) {
                 }
             }
         }
-        
+
         //Check Status Level
         if (Object.getOwnPropertyNames(Server_Status.errors.fatal).length > 0) {
             Server_Status.status = "Fatal";
@@ -1379,6 +1411,18 @@ async function API_BotStatus(req, res, next) {
         } else {
             res.json({ err: "No Data was fetched" });
         }
+    } catch (err) {
+        res.json({ err: err.message });
+    }
+}
+
+//Logger API
+async function LOGGER_RAW_API(req, res, next) {
+    const raw_log_name = req.query['log_name'];
+    
+    try {
+        let response = await Logger.GetRawLog(raw_log_name);
+        res.json(response);
     } catch (err) {
         res.json({ err: err.message });
     }

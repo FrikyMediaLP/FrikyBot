@@ -128,9 +128,9 @@ function CONTROLS_WEBAPP_RESTART() {
 function CONTROLS_TWITCHIRC(module) {
     let s = '';
 
-    s += '<button onclick="CONTROLS_IRC_RECONNECT()">FORCE RECONNECT</button>';
-    s += '<button onclick="CONTROLS_IRC_DISCONNECT()">DISCONNECT</button>';
-    s += '<button onclick="CONTROLS_IRC_TEST()">SEND TEST MESSAGE</button>';
+    s += '<button onclick="CONTROLS_IRC_RECONNECT()"' + (module.ready && module.enabled ? '' : 'disabled') + '>FORCE RECONNECT</button>';
+    s += '<button onclick="CONTROLS_IRC_DISCONNECT()"' + (module.ready && module.enabled ? '' : 'disabled') + '>DISCONNECT</button>';
+    s += '<button onclick="CONTROLS_IRC_TEST()"' + (module.ready && module.enabled ? '' : 'disabled') + '>SEND TEST MESSAGE</button>';
 
     return s;
 }
@@ -174,8 +174,8 @@ function CONTROLS_IRC_TEST() {
 function CONTROLS_TWITCHAPI(module) {
     let s = '';
 
-    s += '<button onclick="CONTROLS_API_TOKENS()">CHECK TOKENS</button>';
-    s += '<button onclick="CONTROLS_API_EVENTSUB()">UPDATE EVENTSUBS</button>';
+    s += '<button onclick="CONTROLS_API_TOKENS()" ' + (module.ready && module.enabled ? '' : 'disabled') + '>CHECK TOKENS</button>';
+    s += '<button onclick="CONTROLS_API_EVENTSUB()" ' + (module.ready && module.enabled ? '' : 'disabled') + '>UPDATE EVENTSUBS</button>';
 
     return s;
 }
@@ -223,7 +223,7 @@ function createPackage(package) {
 
     s += '<div class="ctrl">';
     s += '<button onclick="CONTROL_ENABLE(\'' + package.name + '\', this);">' + (package.enabled ? 'STOP' : 'START') + '</button>';
-    s += '<button onclick="CONTROL_RELOAD(\'' + package.name + '\', this);">RELOAD</button>';
+    s += '<button class="RELOAD" onclick="CONTROL_RELOAD(\'' + package.name + '\', this);">RELOAD</button>';
     s += '</div>';
     
     s += '<div class="misc">';
@@ -258,6 +258,7 @@ function CONTROL_ENABLE(package_name, elt) {
             if (json.status === true) elt.parentElement.parentElement.removeAttribute('disabled');
             else elt.parentElement.parentElement.setAttribute('disabled', 'true');
             
+
             return Promise.resolve();
         })
         .catch(err => {

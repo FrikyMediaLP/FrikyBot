@@ -37,6 +37,7 @@ class PackageBase {
         this.Config.FillConfig();
 
         //INIT
+        this.SETUP_COMPLETE = false;
         this.Package_Interconnects = [];
         this.Requested_Package_Interconnects = [];
         this.Allowed_Package_Interconnects = [];
@@ -45,17 +46,22 @@ class PackageBase {
         this.TwitchIRC = twitchirc;
         this.TwitchAPI = twitchapi;
 
+        //WEBAPP
         this.USE_HTML_HOSTING = false;
         this.USE_API_HOSTING = false;
         this.RESTRICTED_HTML_HOSTING = null;
-
+        this.HTML_NAVIGATION_ELEMENT = null;
         this.WEB_COOKIES = {
             LocalStorage: [],
             SessionStorage: [],
             Cookies: []
         };
 
-        //Infos
+        //TCP
+        this.TCP_Clients = [];
+        this.TCP_MESSAGE_ACK = [];
+
+        //STATUS
         this.DISPLAYABELS = [];
         this.LOGS = [];
 
@@ -71,6 +77,7 @@ class PackageBase {
     
     async Init(startparameters) {
         this.setStartparameters(startparameters);
+        this.SETUP_COMPLETE = true;
         return Promise.resolve();
     }
     async PostInit() {
@@ -233,13 +240,12 @@ class PackageBase {
     }
     
     //WebApp Util
-    setWebNavigation(data) {
-        if (typeof (data) != "object" || data.length != "undefinded") {
-            this.getWebNavigation = () => data;
-        }
+    setWebNavigation(data, categorie = "Packages", userlevel) {
+        if (!userlevel) userlevel = this.RESTRICTED_HTML_HOSTING;
+        this.HTML_NAVIGATION_ELEMENT = { data, categorie, userlevel };
     }
     getWebNavigation() {
-        return null;
+        return this.HTML_NAVIGATION_ELEMENT;
     }
     setWebCookies(cookie_data = {}) {
         for (let cookie of cookie_data.LocalStorage || []) {
@@ -272,6 +278,87 @@ class PackageBase {
     }
     getWebSockets() {
         return this.WebAppInteractor.GetWebSockets("/" + this.getHTMLROOT());
+    }
+
+    /*
+     * /////////////////////////////////////////////////
+     *               TCP CONNECTIONS
+     * /////////////////////////////////////////////////
+     */
+    
+    TCPCallback(ws, type, data) {
+        //Add to TCP List
+        if (type === 'register') {
+            let client = { origin: data.origin, topic: data.topic, misc: data.misc, ws };
+
+            this.TCP_Clients.push(client);
+            this.TCPRegisterCallback(client);
+            return;
+        }
+
+        //Clear ACK Message
+        let ack_idx = -1;
+        this.TCP_MESSAGE_ACK.find((elt, idx) => {
+            if (elt.ws === ws) {
+                ack_idx = idx;
+                return true;
+            }
+            return false;
+        });
+
+        if (ack_idx > -1) {
+            this.TCP_MESSAGE_ACK.splice(ack_idx, 1);
+        }
+
+    }
+    TCPMassSend(origin, topic, data) {
+        if (typeof origin === 'string') origin = [origin];
+        
+        //Check last Message returns
+        for (let i = 0; i < this.TCP_MESSAGE_ACK.length; i++) {
+            let ack = this.TCP_MESSAGE_ACK[i];
+
+            if (!origin.find(elt => elt === 'all' || ack.origin === elt)) continue;
+            if (ack.ack === true) continue;
+
+            ack.tries++;
+            if (ack.tries < 3) continue;
+
+            this.Logger.warn("WebSocket to " + ack.origin + " TERMINATED! Reason: Timeout");
+            ack.ws.terminate();
+            this.TCP_MESSAGE_ACK.splice(i, 1);
+
+            let client_idx = -1;
+            this.TCP_Clients.find((elt, idx) => {
+                if (elt.ws === ack.ws) {
+                    client_idx = idx;
+                    return true;
+                }
+                return false;
+            });
+            this.TCP_Clients.splice(client_idx, 1);
+        }
+
+        //Send Message to All Connected Clients at the given origin
+        for (let client of this.TCP_Clients.filter(elt => origin.find(elt2 => elt2 === 'all' || elt.origin === elt2))) {
+
+            //Skip Custom Topic and Misc Eval
+            if (!this.TCPMiscEval(client)) continue;
+            
+            //Add ACK Checker when not already
+            if (!this.TCP_MESSAGE_ACK.find(elt => elt.ws === client.ws))
+                this.TCP_MESSAGE_ACK.push({ ws: client.ws, origin: client.origin, message: topic + ":" + JSON.stringify(data), ack: false, tries: 0 });
+
+            //Send Data
+            client.ws.send(topic + ":" + JSON.stringify(data));
+        }
+    }
+
+    TCPRegisterCallback(client) {
+        client.ws.send("settings:" + JSON.stringify(this.GetConfig()));
+    }
+    TCPMiscEval(client, origin, topic) {
+        return true;
     }
 
     /*
@@ -448,6 +535,8 @@ class PackageBase {
     async AccessNeDB(datastore, query = {}, pagination) {
         if (!datastore) return Promise.resolve([]);
 
+        if (pagination instanceof Object) pagination = this.GetPaginationString(pagination.first, pagination.cursor, pagination);
+
         return new Promise((resolve, reject) => {
             datastore.find(query, (err, docs) => {
                 if (err) {
@@ -464,7 +553,7 @@ class PackageBase {
                             cursor = pages[1] || 0;
                             opts = pages[2] || {};
                         }
-
+                        
                         if (first > 0) opts.pagecount = Math.ceil(docs.length / first);
 
                         if (opts.timesorted) docs.sort((a, b) => {
@@ -510,7 +599,7 @@ class PackageBase {
         return out;
     }
     GetPaginationString(first = 10, cursor = 0, options = {}) {
-        let s = "A" + first + "B" + cursor + "C";
+        let s = "A" + first + "B" + Math.min(cursor, (options.pagecount || (cursor + 1)) - 1) + "C";
         if (options.timesorted) s += "T";
         if (options.customsort) s += "CSS" + options.customsort + "CSE";
         if (options.pagecount !== undefined) s += "PS" + options.pagecount + "PE";
@@ -647,6 +736,47 @@ class PackageBase {
         }
 
         return string;
+    }
+    FillFormattedString(string = "", vars = {}) {
+        let outstring = "";
+
+        let i = 0;
+        while (string.indexOf('{', i) >= 0 && string.indexOf('}', string.indexOf('{', i)) >= 0) {
+            let varname = string.substring(string.indexOf('{', i) + 1, string.indexOf('}', string.indexOf('{', i)));
+
+            outstring += string.substring(i, string.indexOf('{', i));
+            outstring += vars[varname];
+
+            i = string.indexOf('}', string.indexOf('{', i)) + 1;
+        }
+        outstring += string.substring(i);
+
+        return outstring;
+    }
+
+    cloneJSON(json) {
+        let new_json = {};
+
+        for (let key in json) {
+            if (json[key] instanceof Array) new_json[key] = this.cloneJSONArray(json[key]);
+            else if (json[key] instanceof Function) new_json[key] = json[key];
+            else if (json[key] instanceof Object) new_json[key] = this.cloneJSON(json[key]);
+            else new_json[key] = json[key];
+        }
+
+        return new_json;
+    }
+    cloneJSONArray(arr) {
+        let new_arr = [];
+
+        for (let elt of arr) {
+            if (elt instanceof Array) new_arr.push(this.cloneJSONArray(elt));
+            else if (elt instanceof Function) new_arr.push(elt);
+            else if (elt instanceof Object) new_arr.push(this.cloneJSON(elt));
+            else new_arr.push(elt);
+        }
+
+        return new_arr;
     }
 }
 

@@ -52,6 +52,8 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
         this.client = undefined;
         this.eventHandlers = [];
 
+        this.USER_EMOTE_SETS = [];
+
         //Logs
         this.CONNECTION_LOG;
         this.Settings_LOG;
@@ -83,6 +85,20 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
     }
 
     async Init(WebInter) {
+
+        //File Structure Check
+        let cfg = this.Config.GetConfig();
+        const DIRS = [cfg.Log_Dir];
+        for (let dir of DIRS) {
+            if (!fs.existsSync(path.resolve(dir))) {
+                try {
+                    fs.mkdirSync(path.resolve(dir));
+                } catch (err) {
+                    return Promise.reject(err);
+                }
+            }
+        }
+
         //Setup API
         //Settings
         WebInter.addAuthAPIEndpoint('/settings/twitchirc/user', { user_level: 'staff' }, 'POST', async (req, res) => {
@@ -92,6 +108,7 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
             try {
                 await this.ChangeUser(req.body.login, req.body.oauth);
             } catch (err) {
+                console.log(err);
                 return res.json({ err: 'User change failed' });
             }
 
@@ -105,7 +122,7 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
                 });
             }
 
-            return res.json({ msg: 'User successfully changed' });
+            return res.sendStatus(200);
         });
         WebInter.addAuthAPIEndpoint('/settings/twitchirc/channel', { user_level: 'staff' }, 'POST', async (req, res) => {
             if (!this.isEnabled()) return res.status(503).json({ err: 'Twitch IRC is disabled' });
@@ -187,29 +204,14 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
                 return res.json({ err: err.message });
             }
         });
+        
+        //Init Logging Database
+        this.CONNECTION_LOG = new Datastore({ filename: path.resolve(cfg.Log_Dir + 'Connection_Log.db'), autoload: true });
+        this.Settings_LOG = new Datastore({ filename: path.resolve(cfg.Log_Dir + 'Settings_Logs.db'), autoload: true });
 
-        //Check Config
-        if (this.Config.check().length > 0) {
-            this.setEnabled(false);
-            this.Logger.error('Twitch IRC disabled: Config Errors!');
-        }
-
-        //File Structure Check
-        let cfg = this.Config.GetConfig();
-        const DIRS = [cfg.Log_Dir];
-        for (let dir of DIRS) {
-            if (!fs.existsSync(path.resolve(dir))) {
-                try {
-                    fs.mkdirSync(path.resolve(dir));
-                } catch (err) {
-                    return Promise.reject(err);
-                }
-            }
-        }
-
-        if (this.isEnabled() !== true) return Promise.reject(new Error('Twitch IRC is disabled!'));
-        if (this.isReady() !== true) return Promise.reject(new Error('Twitch IRC Config not ready!'));
-
+        this.addLog('Connection Logs', this.CONNECTION_LOG);
+        this.addLog('Settings Changes', this.Settings_LOG);
+        
         //Event Handlers
         this.on('connected', (addr, port) => {
             if (this.CONNECTION_LOG) {
@@ -256,16 +258,20 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
             if (this.Config.GetConfig()['console_print_join_message'] !== true) return;
             this.Logger.info(username + " joined!");
         });
-        
-        //Init Logging Database
-        this.CONNECTION_LOG = new Datastore({ filename: path.resolve(cfg.Log_Dir + 'Connection_Log.db'), autoload: true });
-        this.Settings_LOG = new Datastore({ filename: path.resolve(cfg.Log_Dir + 'Settings_Logs.db'), autoload: true });
 
-        this.addLog('Connection Logs', this.CONNECTION_LOG);
-        this.addLog('Settings Changes', this.Settings_LOG);
+        if (this.isEnabled() !== true) return Promise.reject(new Error('Twitch IRC is disabled!'));
+        if (this.isReady() !== true) return Promise.reject(new Error('Twitch IRC Config not ready!'));
 
         //Setup TMI.js Client and Connect
         return this.Connect();
+    }
+    enable() {
+        this.setEnabled(true);
+        this.Connect().catch(err => this.Logger.error(err.message));
+    }
+    disable() {
+        this.setEnabled(false);
+        this.Disconnect().catch(err => this.Logger.error(err.message));
     }
 
     SetupClient() {
@@ -342,6 +348,13 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
             this.client.on(eH.name, eH.callback);
         }
 
+        this.client.on('emotesets', (sets, obj) => {
+            if (sets !== this.USER_EMOTE_SETS.join(',')) {
+                this.Logger.info("Bot Emote Sets Updated! Enjoy your Emotes!");
+                this.USER_EMOTE_SETS = (sets || '').split(',');
+            }
+        });
+
         return true;
     }
 
@@ -355,11 +368,12 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
 
         try {
             await this.Disconnect();
+            this.client = null;
             this.SetupClient();
         } catch (err) {
             return Promise.reject(err);
         }
-
+        
         return this.Connect();
     }
     async ChangeChannel(channel) {
@@ -410,7 +424,7 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
             });
     }
 
-    async timeout(username, length, reason, channel = this.getChannel()) {
+    async timeout(username, length, reason = "", channel = this.getChannel()) {
         if (!this.client) return Promise.reject(new Error("Client not Setup correctly!"));
 
         return new Promise((resolve, reject) => {
@@ -419,7 +433,7 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
                 .catch(err => reject(new Error(err)));
         });
     }
-    timeoutSync(username, length, reason, channel = this.getChannel()) {
+    timeoutSync(username, length, reason = "", channel = this.getChannel()) {
         this.timeout(username, length, reason, channel)
             .then((data) => {
                 // data returns [channel, username, seconds, reason]
@@ -445,6 +459,24 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
                 //
             });
     }
+
+    async unban(username, channel = this.getChannel()) {
+        if (!this.client) return Promise.reject(new Error("Client not Setup correctly!"));
+
+        return new Promise((resolve, reject) => {
+            this.client.unban(channel, username)
+                .then(data => resolve())
+                .catch(err => reject(new Error(err)));
+        });
+    }
+    banSync(username, channel = this.getChannel()) {
+        this.unban(username, channel)
+            .then((data) => {
+                // data returns [channel]
+            }).catch((err) => {
+                //
+            });
+    }
     
     //CLIENT CONNECTION
     getUsername() {
@@ -454,18 +486,14 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
         return null;
     }
     getChannels() {
-        if (this.client)
-            return this.client.getChannels();
-
-        return null;
+        if (this.client) return this.client.getChannels();
+        let cfg = this.Config.GetConfig();
+        return cfg.channel ? ['#' + cfg.channel] : null;
     }
     getChannel(cut_hashtag = false) {
-        let channel = "";
-        if (this.client && this.client.getChannels().length > 0)
-            channel = this.client.getChannels()[0];
+        let channel = this.getChannels();
 
-        if (channel) return cut_hashtag ? channel.substring(1) : channel;
-
+        if (channel.length > 0) return cut_hashtag ? channel[0].substring(1) : channel[0];
         return null;
     }
     getOptions() {
@@ -480,6 +508,11 @@ class TwitchIRC extends require('./../Util/ModuleBase.js'){
 
         return null;
     }
+
+    //Emotes
+    GetAvailableEmotes() {
+        return this.USER_EMOTE_SETS || [];
+    }
 }
 
 class Message {
@@ -488,6 +521,7 @@ class Message {
         this.channel = channel;
         this.userstate = userstate;
         this.is_Follower = false;
+        this.cheermotes = null;
 
         //set Userlevel
         this.userLevel = "regular";
@@ -675,6 +709,7 @@ class Message {
     isEmoteOnly() {
         return this.userstate["emote-only"] == true;
     }
+
     async getFFZEmotes(ffz_room) {
         let emotes = {};
 
@@ -714,7 +749,7 @@ class Message {
 
             start += word.length + 1;
         }
-
+        
         return Promise.resolve(emotes);
     }
     async getBTTVEmotes(bttv_emotes) {
@@ -747,46 +782,20 @@ class Message {
 
             start += word.length + 1;
         }
-
+        
         return Promise.resolve(emotes);
     }
-    async ExtractTTVEmotes(API) {
-        //Get Global Emotes
-        let globals = [];
-
-        try {
-            globals = (await API.GetGlobalEmotes()).data;
-        } catch (err) {
-
-        }
-
-        //Get FollowEmotes
-        let follows = [];
-
-        try {
-            if (this.is_Follower) {
-                let channel_emotes = (await API.GetChannelEmotes({ broadcaster_id: this.getRoomID() })).data;
-                follows = channel_emotes.filter(elt => elt.emote_type === 'follower');
-
-                //Temporary until Twitch implements Subscription Checks
-                subs = channel_emotes.filter(elt => elt.emote_type === 'subscriptions' && elt.tier <= this.getSubTier() * 1000);
-            }
-        } catch (err) {
-
-        }
-
-        //Get SubEmotes - Currently not Supported by Twitch :(
-        let subs = [];
-
+    async getTTVEmotes(ttv_emotes = []) {
+        //Extract Emotes from Message
         let emotes = {};
 
         for (let i = 0; i < this.message.length; i++) {
             let next_space = this.message.indexOf(' ', i);
             if (next_space < 0) next_space = this.message.length;
             let word = this.message.substring(i, next_space);
-            
+
             //Check Emotes of all Types to match a word
-            let emote = globals.find(elt => elt.name === word) || follows.find(elt => elt.name === word) || subs.find(elt => elt.name === word);
+            let emote = ttv_emotes.find(elt => elt.name === word);
 
             if (emote) {
                 if (!emotes[emote.id]) emotes[emote.id] = [];
@@ -797,8 +806,104 @@ class Message {
             i = next_space;
         }
 
+
         if (Object.getOwnPropertyNames(emotes).length > 0) this.userstate['emotes'] = emotes;
         return emotes;
+    }
+
+    async ExtractTTVEmotes(API, includeCheers = true) {
+        let globals = [];
+        let follows = [];
+        let cheers = [];
+        let subs = [];
+
+        //Get Global Emotes
+        try {
+            globals = (await API.GetGlobalEmotes()).data;
+        } catch (err) {
+
+        }
+
+        //Get FollowEmotes
+        try {
+            if (this.is_Follower) {
+                let channel_emotes = (await API.GetChannelEmotes({ broadcaster_id: this.getRoomID() })).data;
+                follows = channel_emotes.filter(elt => elt.emote_type === 'follower');
+            }
+            
+            //Get Channel Sub Emotes - Temporary until Twitch implements Subscription Checks
+            if (this.isSubscriber()) {
+                subs = channel_emotes.filter(elt => elt.emote_type === 'subscriptions' && elt.tier <= this.getSubTier() * 1000);
+            }
+
+            if (includeCheers) cheers = channel_emotes.filter(elt => elt.emote_type === 'bitstier');
+        } catch (err) {
+
+        }
+
+        //Get All SubEmotes - Currently not Supported by Twitch :( dont know who you are subbed to
+
+
+        //Extract Emotes from Message
+        return this.getTTVEmotes([].concat(globals).concat(subs).concat(follows).concat(cheers));
+    }
+    async ExtractCheermotes(API) {
+        //Get Global-Cheer Emotes
+        let cheermotes = [];
+        try {
+            cheermotes = (await API.GetCheermotes({ broadcaster_id: this.getRoomID() })).data;
+        } catch (err) {
+            return Promise.reject(err);
+        }
+
+        //Extract Emotes from Message
+        let emotes = {};
+
+        for (let i = 0; i < this.message.length; i++) {
+            let next_space = this.message.indexOf(' ', i);
+            if (next_space < 0) next_space = this.message.length;
+            let word = this.message.substring(i, next_space);
+
+            //Check Emotes of all Types to match a word
+            let emote = cheermotes.find(elt => word.startsWith(elt.prefix) && !isNaN(word.substring(elt.prefix.length, next_space)));
+
+            if (emote) {
+                let bits = parseInt(word.substring(emote.prefix.length, next_space));
+                let tier = emote.tiers.sort((a, b) => a.min_bits - b.min_bits).find(elt => elt.min_bits >= bits);
+                if (!tier) tier = emote.tiers[0];
+
+                //Remove 1.5 (issues with some databases)
+                for (let theme in tier.images) {
+                    for (let format in tier.images[theme]) {
+                        delete tier.images[theme][format]['1.5'];
+                    }
+                }
+
+                //Push to List
+                if (!emotes[word]) emotes[word] = {
+                    images: tier.images,
+                    places: []
+                };
+                emotes[word].places.push(i + '-' + (next_space - 1));
+            }
+
+            i = next_space;
+        }
+        
+        if (Object.getOwnPropertyNames(emotes).length > 0) this.cheermotes = emotes;
+        return emotes;
+    }
+    async ExtractTTVEmotesFromSets(API, emote_sets = []) {
+        let emotes = [];
+
+        //Get Emotes from Sets
+        try {
+            emotes = (await API.GetEmoteSets({ emote_set_id: [emote_sets] })).data;
+        } catch (err) {
+
+        }
+
+        return this.getTTVEmotes(emotes);
     }
 
     getMessageDetails() {
@@ -867,6 +972,20 @@ class Message {
     }
     isFollower() {
         return this.is_Follower;
+    }
+    isVIP() {
+        if (this.userstate.badges && this.userstate.badges['vip']) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    isSubscriber(min_month = 0) {
+        if (this.userstate.badges && this.userstate.badges['subscriber'] && this.userstate['badge-info']['subscriber'] > min_month) {
+            return true;
+        } else {
+            return false;
+        }
     }
     getSubTier() {
         if (this.hasBadge('subscriber')) return parseInt(this.userstate.badges['subscriber'] / 1000);

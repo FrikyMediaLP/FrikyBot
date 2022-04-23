@@ -137,3 +137,48 @@ button, input, textarea{
 .darkmode #TTV_SCOPES_TRANSLATOR_WRAPPER textarea {
     background: none;
 }
+
+
+/* RAW LOG VISUALIZER */
+#RAW_LOG_VISUALIZER_TABLE [INFO] {
+    color: black;
+}
+#RAW_LOG_VISUALIZER_TABLE [WARN] {
+    color: orange;
+}
+#RAW_LOG_VISUALIZER_TABLE [ERROR] {
+    color: red;
+}
+#RAW_LOG_VISUALIZER_TABLE tablecontent[right] {
+    text-align: left;
+}
+/* TTV LOCAL STORAGE VIS */
+#TTV_LOCAL_STORAGE_VIS > div{
+    width: 100%;
+    height: 84vh;
+    overflow: scroll;
+    display: grid;
+    grid-template-columns: 50% 50%;
+}
+#TTV_LOCAL_STORAGE_VIS #TTV_LOCAL_STORAGE_VIS_IN textarea {
+    width: calc(100% - 10px);
+    height: 73vh;
+}
+
+#TTV_LOCAL_STORAGE_VIS #TTV_LOCAL_STORAGE_VIS_OUT ol > li {
+    display: grid;
+    grid-template-columns: 28px auto auto;
+    grid-gap: 10px;
+    position: relative;
+    margin-bottom: 5px;
+}
+
+#TTV_LOCAL_STORAGE_VIS #TTV_LOCAL_STORAGE_VIS_OUT ol > li > div{
+    position: relative;
+}
+
+#TTV_LOCAL_STORAGE_VIS #TTV_LOCAL_STORAGE_VIS_OUT li span {
+    position: absolute;
+    top: 50%;
+    transform: translate(0, -50%);
+}

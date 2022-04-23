@@ -142,9 +142,9 @@ SWITCHBUTTON {
     cursor: pointer;
 }
 
-SWITCHBUTTON[disabled] {
-    cursor: default !important;
-}
+    SWITCHBUTTON[disabled] {
+        cursor: default !important;
+    }
 
     SWITCHBUTTON SWITCHBUTTONCURSOR {
         background-color: white;
@@ -480,7 +480,7 @@ SWITCHBUTTON[disabled] {
 
         z-index: 1;
         position: absolute;
-        top: 100%;
+        /* top: 100%; */
         background-color: white;
     }
 
@@ -567,8 +567,8 @@ customtable {
 
     customtable tablegrid {
         display: grid;
-        width: 100%;
-        padding: 0 5px;
+        width: calc(100% - -7px);
+        padding: 0 5px 0 0;
         grid-template-columns: auto auto;
         grid-template-rows: auto auto;
         position: relative;
@@ -599,8 +599,7 @@ customtable {
     customtable tableheader {
         width: calc(100% - 9px) !important;
         display: block;
-        border: 1px solid #00497a;
-        border-right: none;
+        border: none;
         text-align: center;
         text-transform: uppercase;
         font-weight: bold;
@@ -615,14 +614,14 @@ customtable {
     }
 
     customtable customtable tableheader {
-        width: calc(100% - 8px) !important;
+        width: calc(100% - 7px) !important;
         font-size: 1em;
         filter: hue-rotate(-45deg);
         font-weight: 400;
     }
 
     customtable tableheader:last-of-type {
-        border-right: 1px solid #00497a;
+        width: calc(100% - 7px) !important;
     }
 
     customtable tablecontent {
@@ -656,14 +655,14 @@ customtable {
         width: calc(100% - 6px) !important;
     }
     customtable customtable tablecontent[right] {
-        width: calc(100% - 5px) !important;
+        width: calc(100% - 6px) !important;
     }
         customtable tablecontent[bottom] {
             border-bottom: 1px solid gray;
         }
 
     customtable customtable tablecontent[left][right] {
-        width: calc(100% - 6px) !important;
+        width: calc(100% - 7px) !important;
     }
 
     customtable tablecontent img {
@@ -887,9 +886,11 @@ customtable {
             color: white;
         }
 
+        /* LIST */
+
     .MISC_FILE_LIBRARY .FILE_LIST {
         display: grid;
-        grid-template-columns: repeat(auto-fit, 170px);
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
         grid-row-gap: 5px;
         grid-column-gap: 10px;
         padding: 5px;
@@ -924,8 +925,8 @@ customtable {
                 position: absolute;
                 left: 50%;
                 transform: translate(-50%, 0);
-                width: calc(100% - 25px);
-                max-width: 85px;
+                max-width: calc(100% - 20px);
+                max-height: calc(100% - 25px);
             }
 
             .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT.MP4 img, .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT.BIGGER img {
@@ -934,7 +935,9 @@ customtable {
 
             .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT.MP4 video {
                 max-width: 150px;
-                padding-left: 10px;
+                position: absolute;
+                left: 50%;
+                transform: translate(-50%, 0);
             }
 
             .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT {
@@ -951,35 +954,30 @@ customtable {
             .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT img {
                 position: absolute;
                 top: 45%;
-                transform: translate(0, -50%);
+                left: 50%;
+                transform: translate(-50%, -50%);
                 height: 40px;
                 width: 40px;
                 opacity: 0.8;
                 padding: 10px;
             }
 
-            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT.MP4 .HOVER_ELT img {
-                top: -50%;
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT.BIGGER img:first-child {
+                transform: translate(-100%, -50%);
             }
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT.BIGGER:not(.missing) img:last-child {
+                transform: translate(0, -50%);
+            }
+
 
             .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT img:hover {
                 background-color: gray;
             }
 
-            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT img:first-child {
-                left: 20px;
-            }
-
-            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT.SINGLE img:first-child {
-                left: 55px;
-            }
-
             .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT img:first-child:hover {
                 background-color: red;
-            }
-
-            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT img:nth-child(2) {
-                left: 90px;
             }
 
                 .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT img:nth-child(2):hover {

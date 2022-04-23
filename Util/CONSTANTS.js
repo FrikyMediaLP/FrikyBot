@@ -7,7 +7,8 @@ const CONSTANTS = {
         MODULES_INSTALL_ROOT: "Modules/",
         UTIL_INSTALL_ROOT: "UTIL/",
         ThirdrdPary_INSTALL_ROOT: "3rdParty/",
-        DATA_STORAGE_ROOT: "DATA/"
+        DATA_STORAGE_ROOT: "DATA/",
+        PUBLIC_ROOT: "public/"
     },
     Package_Status: ["Operational", "Outages", "Fatal"],
     UserLevel: {                       //Twitch User Levels

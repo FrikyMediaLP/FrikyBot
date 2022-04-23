@@ -1,3 +1,5 @@
+let DETECTED = [];
+
 async function Packages_init() {
 	//Data
 	try {
@@ -7,7 +9,12 @@ async function Packages_init() {
             createPackage(package);
         }
 
-        UI_init(data.auto_detected.filter(elt => !data.Packages.find(elt2 => elt2.details.name === elt)));
+        DETECTED = data.auto_detected.filter(elt => !data.Packages.find(elt2 => elt2.details.name === elt));
+
+        UI_init(DETECTED);
+
+        SWITCHBUTTON_AUTOFILL();
+        MISC_SELECT_WidthCheck_All();
     } catch (err) {
         console.log(err);
 		OUTPUT_showError(err.message);
@@ -56,8 +63,10 @@ async function CONTROL_ACCESS(package_name, type, startparameters) {
 
 //UI
 function UI_init(detected = []) {
+    detected = cloneJSONArray(detected);
     detected.push('Custom');
     detected.push('Select Package');
+    if (document.getElementById('UI_SELECT')) document.getElementById('UI_SELECT').remove();
     document.getElementById('UI').innerHTML = MISC_SELECT_create(detected, detected.length-1, 'UI_SELECT', 'UI_selectChange()', '', '', true) + document.getElementById('UI').innerHTML;
     MISC_SELECT_WidthCheck(document.getElementById('UI_SELECT'));
 }
@@ -169,7 +178,11 @@ function createSetting(name, id, value, options = {}, packageName) {
         return createSettingSWITCH(name, id, value, options, packageName);
     } else if (options['type'] === 'string') {
         return createSettingINPUT(name, id, value, options, packageName);
+    } else if (options['type'] === 'array') {
+        return createSettingARRAY(name, id, value, options, packageName);
     }
+
+    return "";
 }
 
 function createSettingNUMBER(name, id, value, options = {}, packageName) {
@@ -218,6 +231,19 @@ function createSettingSWITCH(name, id, value, options = {}, packageName) {
 
     s += '<div class="Setting SWITCH">';
     s += '<p>' + name + '</p>' + SWITCHBUTTON_CREATE(value, options.disabled, "changeSettings('" + packageName + "')", id, 'class="SETTING_PACKAGE_' + packageName + '" data-name="' + name + '"');
+    s += '</div>';
+
+    return s;
+}
+function createSettingARRAY(name, id, value, options = {}, packageName) {
+    let s = '';
+
+    value = value || options['default'] || [];
+    if (options['title']) value.unshift(options['title']);
+    if (value.length === '0') value.push('NONE');
+    
+    s += '<div class="Setting ARRAY">';
+    s += '<p>' + name + '</p>' + MISC_SELECT_create(value, 0, id, "changeSettings('" + packageName + "')", null, null, true);
     s += '</div>';
 
     return s;
@@ -466,6 +492,18 @@ function CONTROL_ADD() {
             if (json.package_name === package_name && (json.added === 'success' || json.added === 'partial')) {
                 OUTPUT_showInfo('Package Added! ' + (json.added === 'partial' ? 'But not installed. Files are missing.' : ''));
                 if (json.added === 'success') createPackage(json.package);
+
+                let idx = -1;
+                DETECTED.find((elt, index) => {
+                    if (elt === package_name) {
+                        idx = index;
+                        return true;
+                    }
+                    return false;
+                });
+
+                if (idx >= 0) DETECTED.splice(idx, 1);
+                UI_init(DETECTED);
             } else {
                 return Promise.reject(new Error('Adding Package Failed!'));
             }

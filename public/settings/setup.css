@@ -633,6 +633,44 @@ body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > span, body.darkmode #TWITCHAPI_USERL
         grid-row-gap: 2px;
     }
 
+    #TWITCHAPI_API_ENABLES p.beta {
+        color: orange;
+    }
+
+    #TWITCHAPI_API_ENABLES > .ENDPOINT_CAT {
+        display: grid;
+        grid-template-columns: auto 52px;
+        grid-row-gap: 2px;
+    }
+
+        #TWITCHAPI_API_ENABLES > .ENDPOINT_CAT > span > span {
+            margin-left: 5px;
+        }
+
+#TWITCHAPI_API_LEGEND {
+    margin-top: 20px;
+}
+
+    #TWITCHAPI_API_LEGEND p {
+        position: relative;
+    }
+
+.TTVAPI_API_LEGEND_IDX {
+    color: #028deb;
+    font-size: 12px;
+    position: absolute;
+    top: -2px;
+    position: relative;
+}
+
+    .TTVAPI_API_LEGEND_IDX.missing {
+        color: #de3333;
+    }
+
+    .TTVAPI_API_LEGEND_IDX.beta {
+        color: orange;
+    }
+
 /* EventSubs */
 #TWITCHAPI_EVENTSUB_ENABLES {
     margin-top: 20px;

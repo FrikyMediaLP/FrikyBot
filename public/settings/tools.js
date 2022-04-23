@@ -2,12 +2,33 @@ const TOOLS = [
     {
         name: 'FRIKYBOT API VISUALISER',
         description: 'FrikyBot API Structure Visualized as a Tree spanning every API/Routing Endpoint as a Branch.',
-        targetid: 'API_TREE_WRAPPER'
+        targetid: 'API_TREE_WRAPPER',
+        init_func: (data) => {
+            APITREE_INIT(data['api_tree'])
+        }
     },
     {
         name: 'Twitch API Scopes Translation',
         description: 'Translate a list of Scope names and descriptions into usable formats.',
         targetid: 'TTV_SCOPES_TRANSLATOR_WRAPPER'
+    },
+    {
+        name: 'RAW LOG VISUALIZER',
+        description: 'Visualize a Raw Log File in a neat Table.',
+        targetid: 'RAW_LOG_VISUALIZER',
+        init_func: (data) => {
+            let s = '<option hidden selected>Select Log File</option>';
+            for (let elt of data['RAW_LOGS']) s += '<option>' + elt.split('.')[0] + '</option>';
+            document.getElementById('RAW_LOG_VISUALIZER_SELECT').innerHTML = s;
+        }
+    },
+    {
+        name: 'Twitch Local Storage Emote History',
+        description: 'Visualizes a Local Storage Dump of Emote Information from twitch.tv',
+        targetid: 'TTV_LOCAL_STORAGE_VIS',
+        init_func: (data) => {
+
+        }
     },
     {
         name: 'Config JSON Modifier',
@@ -38,14 +59,17 @@ const TOOLS = [
 async function Tools_init() {
 	//Data
 	try {
-		let data = await FetchSettings();
+        let data = await FetchSettings();
 
-        APITREE_INIT(data['api_tree']);
+        for (let tool of TOOLS) {
+            if (tool.init_func === undefined) continue;
+            tool.init_func(data);
+        }
     } catch (err) {
         OUTPUT_showError(err.message);
         return Promise.resolve();
     }
-
+    
     UI_createList(TOOLS);
 
 	//DONE
@@ -215,5 +239,60 @@ function TTV_Scopes_Translation_update_prev2(elt) {
         TTV_Scopes_Translation_update();
     } catch (err) {
 
+    }
+}
+
+//RAW LOG VISUALIZER
+async function RAW_LOG_VISULIZER_SHOW(log_name) {
+    if (log_name === 'Select Log File') return Promise.resolve();
+    
+    return fetch("/api/logger/raw?log_name=" + log_name, getAuthHeader())
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+
+            if (json.err) OUTPUT_showError(json.err);
+            else {
+                json.sort((a, b) => (document.getElementById('RAW_LOG_VISUALIZER_INVERT').checked ? -1 : 1) * (a.time - b.time));
+                let options = {
+                    headers: ['time', 'source', 'type', 'message'],
+                    content_translation: {
+                        type: (x) => '<b ' + x + '>' + x + '</b>'
+                    },
+                    timestamps: { time: 'other' }
+                };
+                document.getElementById('RAW_LOG_VISUALIZER_TABLE').innerHTML = MISC_createTable(json, options);
+            }
+        })
+}
+
+//TTV VIZ
+function TTV_LOCAL_STORAGE_VIS_CONVERT(str) {
+    try {
+        let json = JSON.parse(str);
+
+        let emotes = [];
+        let total = 0;
+        for (let idx in json) {
+            let emote = json[idx];
+            emotes.push({ token: emote.emote.token, id: emote.emote.id, uses: emote.uses });
+            total += emote.uses;
+        }
+        
+        let s = "<ol>";
+        for (let emote of emotes.sort((a,b) => b.uses - a.uses )) {
+            s += '<li><img src="https://static-cdn.jtvnw.net/emoticons/v2/' + emote.id + '/default/dark/1.0" /><div><span title="' + emote.id + '">' + emote.token + '</span></div> <div><span style="text-align:right; width: 100%; display: inline-block;">' + emote.uses + '</span></div></li>';
+        }
+        s += '</ol>';
+        document.getElementById('TTV_LOCAL_STORAGE_VIS_OUT').innerHTML = s;
+        document.getElementById('TTV_LOCAL_STORAGE_VIS_IN_AREA').innerHTML = JSON.stringify(json, null, 4);
+        document.getElementById('TTV_LOCAL_STORAGE_VIS_TOTAL').innerHTML = "Total Emotes Used: " + total + ' from ' + emotes.length + ' unique';
+
+        OUTPUT_hideError();
+    } catch (err) {
+        console.log(err);
+        OUTPUT_showError('JSON not valid!');
+        document.getElementById('TTV_LOCAL_STORAGE_VIS_OUT').innerHTML = "";
+        document.getElementById('TTV_LOCAL_STORAGE_VIS_TOTAL').innerHTML = "";
+        return;
     }
 }
