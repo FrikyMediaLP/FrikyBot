@@ -1,0 +1,137 @@
+#grid #content {
+    background-color: #f5f5f5;
+}
+
+#grid #content #LOGS> center {
+    border-bottom: 1px solid gray;
+}
+    #grid #content #LOGS > center:not(:first-child) {
+        margin-top: 50px;
+    }
+
+#LOGS {
+    display: none;
+}
+
+    #LOGS .CAPTION {
+        text-align: center;
+        text-transform: uppercase;
+        margin: 0 auto;
+        margin-top: 20px;
+        padding: 10px;
+        background-color: white;
+        font-weight: bold;
+        font-size: 30px;
+        cursor: pointer;
+        width: 100%;
+
+        /* DISABLE SELECT */
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+.darkmode #LOGS .CAPTION {
+    background-color: #4f4f4f !important;
+}
+        #LOGS .CAPTION:hover {
+            filter: brightness(0.8);
+        }
+
+    #LOGS .CAPTION_CONTENT:not(.SHOW_CAPTION_CONTENT) {
+        animation-name: CAPTION_CONTENT_RETRACT;
+        animation-duration: 0.1s;
+        animation-fill-mode: forwards;
+    }
+
+#LOGS .CAPTION_CONTENT {
+    background-color: white;
+    border-top: 1px solid gray;
+    z-index: 0;
+}
+    #LOGS .CAPTION_CONTENT .MISC_SELECT_OPTIONS {
+        z-index: 2;
+    }
+.darkmode #LOGS .CAPTION_CONTENT {
+    background: none !important;
+}
+
+        #LOGS .CAPTION_CONTENT.SHOW_CAPTION_CONTENT {
+            animation-name: CAPTION_CONTENT_EXPAND;
+            animation-duration: 1s;
+            animation-fill-mode: forwards;
+        }
+
+@keyframes CAPTION_CONTENT_EXPAND {
+    0% {
+        max-height: 0px;
+        padding: 0px;
+        overflow-y: hidden;
+    }
+
+    10% {
+        padding: 5px;
+    }
+
+    90% {
+        padding: 5px;
+        max-height: 1000px;
+    }
+
+    100% {
+        padding: 5px;
+        max-height: 50000px;
+        overflow-y: visible;
+    }
+}
+
+@keyframes CAPTION_CONTENT_RETRACT {
+    0% {
+        max-height: 50000px;
+        padding: 5px;
+        overflow-y: visible;
+    }
+
+    10% {
+        max-height: 1000px;
+        padding: 5px;
+    }
+
+    90% {
+        padding: 5px;
+    }
+
+    100% {
+        padding: 0px;
+        max-height: 0px;
+        overflow-y: hidden;
+    }
+}
+
+#LOGS .CAPTION_CONTENT .CONTENT_TABLE {
+    display: grid;
+    padding: 5px;
+}
+
+    #LOGS .CAPTION_CONTENT .CONTENT_TABLE > div {
+        text-align: center;
+        border-bottom: 1px solid lightgray;
+        border-right: 1px solid lightgray;
+    }
+        #LOGS .CAPTION_CONTENT .CONTENT_TABLE > div[data-tablec="0"] {
+            border-left: 1px solid lightgray;
+        }
+
+    #LOGS .CAPTION_CONTENT .CONTENT_TABLE .CONTENT_TABLE_HEADER {
+        border-bottom: 1px solid dimgray;
+        border-right: 1px solid dimgray;
+        border-top: 1px solid dimgray;
+
+        font-weight: bold;
+        font-size: 20px;
+    }
+
+        #LOGS .CAPTION_CONTENT .CONTENT_TABLE .CONTENT_TABLE_HEADER[data-tablec="0"] {
+            border-left: 1px solid dimgray;
+        }

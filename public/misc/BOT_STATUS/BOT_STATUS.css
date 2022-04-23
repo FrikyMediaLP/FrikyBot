@@ -12,6 +12,11 @@
     border-radius: 5px;
     background-color: white;
 }
+.darkmode #BOT_STATUS_DETAILS_NORMAL {
+    border: none;
+    background-color: #363636;
+    color: white;
+}
 
     #BOT_STATUS_DETAILS_NORMAL #top {
         padding: 15px;
@@ -39,12 +44,26 @@
             font-size: 15px;
             font-weight: lighter;
         }
+        .darkmode #BOT_STATUS_DETAILS_NORMAL #top .Detail .top {
+            color: white;
+        }
 
         #BOT_STATUS_DETAILS_NORMAL #top .Detail .bottom {
             margin: 0;
             font-size: 18px;
             font-weight: bold;
         }
+
+            #BOT_STATUS_DETAILS_NORMAL #top .Detail .bottom.LIVE a{
+                color: red;
+                border: 1px red solid;
+                border-radius: 5px;
+                padding: 0 5px;
+                font-weight: 400;
+            }
+            #BOT_STATUS_DETAILS_NORMAL #top .Detail .bottom.OFFLINE {
+                color: gray;
+            }
 
     #BOT_STATUS_DETAILS_NORMAL #bottom {
         margin-top: 10px;
@@ -68,6 +87,7 @@
             position: relative;
             border-bottom-left-radius: 4px;
             border-bottom-right-radius: 4px;
+            cursor: help;
         }
 
             #BOT_STATUS_DETAILS_NORMAL #bottom #Bot_Status_Bar #Info {

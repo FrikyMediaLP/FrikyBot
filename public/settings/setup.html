@@ -1,0 +1,454 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Settings - FrikyBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- GENERAL CSS -->
+    <link href="../styles/standard.css" rel="stylesheet">
+    <link href="../styles/Grid/Grid_Foundation.css" rel="stylesheet">
+
+    <!-- PAGE CSS-->
+    <link href="../styles/Grid/Grid_Default.css" rel="stylesheet">
+    <link href="../settings/settings.css" rel="stylesheet">
+    <link href="../settings/setup.css" rel="stylesheet">
+
+    <!-- GENERAL JS-->
+    <script src="../scripts/standard.js"></script>
+
+    <!-- PAGE JS-->
+    <script src="../settings/settings.js"></script>
+    <script src="../settings/setup.js"></script>
+
+    <!-- MISC -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+
+    <script src="../misc/NavigationV2/NavigationV2.js"></script>
+    <link href="../misc/NavigationV2/NavigationV2.css" rel="stylesheet">
+
+    <script src="../misc/OUTPUT/OUTPUT.js"></script>
+    <link href="../misc/OUTPUT/OUTPUT.css" rel="stylesheet">
+
+    <script src="../misc/Login/Login.js"></script>
+    <link href="../misc/Login/Login.css" rel="stylesheet">
+
+    <script src="../misc/SwitchButton/SwitchButton.js"></script>
+    <link href="../misc/SwitchButton/SwitchButton.css" rel="stylesheet">
+</head>
+<body onload="Standard_Page_Init({ NAVIGATION_ENABLE_DEFAULT: false }); init(); Setup_init();">
+    <!-- MAIN GRID -->
+    <div id="grid">
+        <!-- NAVI HEADER -->
+        <div class="cellM" id="naviHeader">
+            <a href="./../">FRIKY<span>BOT</span></a>
+        </div>
+
+        <!-- CONTENT HEADER -->
+        <div class="cellM" id="contentHeader">
+            <div id="HEADER"></div>
+        </div>
+
+        <!-- NAVI -->
+        <div class="cellM" id="navi">
+            <div id="mainNavi">
+
+            </div>
+            <button id="LightModeButton" onclick="toggleLightMode()">DarkMode</button>
+            <div id="license"> - <a href="https://fontawesome.com/license" target="_blank">Icon license</a> - </div>
+        </div>
+
+        <!-- ACTUAL CONTENT -->
+        <div class="cellM" id="content" onscroll="NAVIGATIONV2_SCROLL_HL_CHECK()">
+            <output></output>
+
+            <div id="WAITING_FOR_DATA">
+                <div class="LOADING_RING">
+                    <div class="LOADING_RING_SPINNER"></div>
+                </div>
+            </div>
+
+            <div id="SETUP">
+                <div id="WIZARD">
+                    <div id="WIZ_NAV">
+                        <div id="WIZ_NAV_MODULES" onclick="WIZARD_NAV_MODULE(event)"></div>
+                        <div id="WIZ_NAV_GROUPS" onclick="WIZARD_NAV_GROUP(event)"></div>
+                    </div>
+                    <div id="WIZ_CONTENT">
+                        <div class="Con_Cat WIZ_GROUP_FrikyBot">
+                            <div>
+                                <h3>Introduction</h3>
+                                <p>The FrikyBot is a combined Interface for you Twitch Streams. Chat Moderation, Collecting Stats and Handling advanced API Integration. Packages expand the Core Features of the Bot and provide even more ways to controll/influence your Streaming Experience.</p>
+                                <p>The Bot currently only checks messages from ONE channel. Thats why you have to deploy this on your on Server/PC and need your own API Application and Twitch User Account.</p>
+                                <p>Not all Core Modules need to be used, but some Packages require e.g. a Twitch Chat Connection. All Packages are optional, some are even only to be used by developers.</p>
+                                <p>The Bot is currently still in Development, so some Features might be missing/unfinished. Please share your thoughts and help improve the Bot. I´d also like to say, that i dont actually know much of Server Handling/... I do this for a Hobby and keep learning along the way. Some parts like Storing UserData/... is still a thing i´d like to avoid! I just dont want to be responsible for leaks. But we will see how much I can grow this ;)</p>
+                                <p>Thanks for reading this and even using the Bot. Means a lot and I try to make it as User friendly as possible.</p>
+                                <p style="font-weight:bold;">Now please go ahead and setup your Bot :)</p>
+                            </div>
+                        </div>
+
+                        <div class="Con_Cat WIZ_GROUP_WebApp" hidden>
+                            <div>
+                                <h3>Introduction</h3>
+                                <p>The WebApp handles the Webpage/WebService you are using right NOW!</p>
+                                <p>From Interfaces, APIs and Settings - everything is passed through the WebApp at some point. Thats why Authentication is a big part and we actually have multiple Versions of it (more about that later).</p>
+                                <p>The Webserver is mounted to your localhost at a specific <b>PORT</b>. You can change this in the following settings, but remember: Everything is mounted to this Port (Settings, Cookies, ...)! So, if you change the Port, remember to change/update every other related Setting.</p>
+                                <p>If your not using the Twith API Module, <b>Authentication/Authorization</b> is handled by the WebApp itself. This isn´t really recomended as Twitch is just way better at handling User Access/Storing them. Thats why we <b>ADVICE YOU TO</b> use the Twitch Authenticator later in the Settings.</p>
+                            </div>
+                        </div>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_WebApp" hidden>
+                            <div>
+                                <h3>Change Websocket Port (opt)</h3>
+                                <p>You can change the Port the Webserver is mounted on here.</p>
+                                <p><b>Remember:</b> Everything is mounted to this Port (Settings, Cookies, ...)! So, if you change the Port, remember to change/update every other related Setting.</p>
+
+                                <h3>Change Upload Limit (opt)</h3>
+                                <p>Changing the Upload Limit of Images/Sounds/Videos/etc. might decrease Performance.</p>
+                            </div>
+                            <div>
+                                <h4>Hostname</h4>
+                                <input id="SETTING_WebApp_Hostname" type="text" value="localhost" placeholder="Default: localhost" oninput="hostname_change(this.value)" />
+                                <button id="WebApp_Hostname_Save" disabled onclick="hostname_save();">SAVE</button>
+                                <p id="SETTING_WebApp_Hostname_Hint" hidden>This is just a dummy Text, used by Packages an Modules to redirect Webhooks back to the deployed Server location. This doesnt change the Servers WebApp Deployment! Keep in mind to update the Twitch Application URL and use the 'Update EventSubs Button' in the Module Overview to update requested EventSubs to the new URL!</p>
+
+                                <h4>Port</h4>
+                                <input id="SETTING_WebApp_Port" type="number" value="8080" max="9999" placeholder="Default: 8080" oninput="port_change(this.value)" />
+                                <p id="SETTING_WebApp_Port_Hint" hidden>Changing this setting requires a restart!</p>
+
+                                <h4>Upload Limit</h4>
+                                <input id="SETTING_WebApp_upload_limit" type="text" value="3mb" placeholder="Default: 3mb" oninput="upload_limit_change(this.value)" />
+                                <p id="SETTING_WebApp_upload_limit_Hint" hidden>Changing this setting requires a restart!</p>
+
+                            </div>
+                        </div>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_WebApp" hidden>
+                            <div>
+                                <h3>FrikyBot Authentication</h3>
+                                <p>Authentication/Authorization is needed to access sensitive Data or change settings. I advice you to use the Twitch API Authenticator instead of my own tho!! (more about that later)</p>
+
+                                <h3>Codes and Secret</h3>
+                                <p>Authentication Codes are generated using Javascript Web Tokens (JWT). They are based on a Token-Secret, you can change/regenerate a new Secret, <b>BUT</b> you have to log in again, since the Token also changes.</p>
+                                <p>Since all generated Codes have no expiration dates, changing the Secret is the only way to revoke a token.</p>
+                            </div>
+                            <div>
+                                <h3>Current Authenticator</h3>
+                                <div style="position: relative; margin-top: 5px;">
+                                    Switch WebApp Authenticator
+                                    <select id="SETTING_WebApp_selectedAuthenticator" onchange="FrikyBot_Auth_switch(this)" style="position: absolute; right: 0;">
+                                        <option>No Authnticator available</option>
+                                    </select>
+                                </div>
+
+                                <h3>FrikyBot Auth.</h3>
+                                <div style="position: relative; margin-top: 5px;">
+                                    Enable/Disable FrikyBot Authenticatior
+                                    <switchbutton id="SETTING_WebApp_Authenticator_enabled" value="true" OverWriteonclick="FrikyBot_Auth_enable(this);" style="position: absolute; right: 0;"></switchbutton>
+                                </div>
+
+                                <h4 style="margin-top: 20px;">FrikyBot Authentication Secret</h4>
+                                <input value="" id="SETTING_WebApp_Authenticator_secret" type="password" />
+                                <button onclick="FrikyBot_Auth_show(this)">SHOW SECRET</button>
+                                <button onclick="FrikyBot_Auth_regen()">REGENERATE SECRET</button>
+                            </div>
+                        </div>
+
+                        <div class="Con_Cat WIZ_GROUP_TwitchIRC" hidden>
+                            <div>
+                                <h3>Introduction</h3>
+                                <p>The Twitch IRC connects to the Chat and displays Messages, Events, ... All Messages (Events,...) can be reveived without a supplied User, BUT to send Messages (e.g. for Commands) you need a BotUser Account (can also be the Broadcaster or an other). This Account can be connecting by loggin in using the FrikyBot Twitch API Module or by an OAuth Token generated by an external Service.</p>
+                                <p>The FrikyBot also directly comes with the FrankerFaceZ and BTTV APIs. Theses are nativly supported by all Core Modules and provide even more Capabilities in Chat Moderation and Data Collection.</p>
+
+                                <h3>Login using Twitch</h3>
+                                <p>Login using Twitch requieres Setup of the Twitch API! If you havent already, pls <a onclick="WIZARD_show(WIZARD_CURSOR[0]+1, WIZARD_CURSOR[1])" style="cursor: pointer;">setup your Twitch Dev Application</a> first!</p>
+                            </div>
+                        </div>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchIRC" hidden>
+                            <div>
+                                <h3>User Login</h3>
+                                <p>To be able to send Messages/Moderate Chat/... the FrikyBot requieres a Twitch User Account. This can be your own or a second one created as the Bot User.</p>
+                                <p>If you have Twitch API already set up, you can directly Log in using Twitch with the Account of your Choice. Otherwise you can use a third Party Service to obtain a Twitch OAuth Token and use that one.</p>
+
+                                <h3>Token Origin / Status</h3>
+                                <p>The Token needed to authenticate you to the Twitch Chat isn´t requiered to originate from your Twitch API Application (thats why you can use third Party Sevices), BUT if you change any Setting to the Twitch API Application or your third Party Service might force you to regenerate this OAuth Token!</p>
+
+                                <h3>Login using Twitch</h3>
+                                <p>Make sure your Twitch Dec Application is setup and valid. A Token with rights to "read/write Chat Messages", "moderate Chat" and "read/write Whispers" will be requested, <b>NOTHING MORE!</b></p>
+                                <p><b>BUT</b>, unless you give us permission to check your <b>Subscriptions</b> too, we wont be able to check the Bots (Sub)Emotes and cant track them! <b>Twitch currently doesnt support looking up an individuals Subscription - we hope they add this soon!</b> </p>
+                                <p>This Login will redirect you to Twitch and then back here (you MIGHT need to navigate to this step again tho)</p>
+                            </div>
+                            <div style="position: relative;">
+                                <h3>User Login Information</h3>
+                                <br />
+                                <label>Twitch Username:  <input value="" id="SETTING_TwitchIRC_login" type="text" oninput="TwitchIRC_User_change();" style="width: 50%;" /> </label>
+                                <br />
+                                <label>Twitch OAuth Token: <input value="" id="SETTING_TwitchIRC_oauth" type="password" oninput="TwitchIRC_User_change();" style="width: 50%;" /></label>
+                                <button onclick="TwitchIRC_OAuth_show(this)">SHOW OAUTH TOKEN</button>
+                                <button id="TwitchIRC_USER_TEST" onclick="TwitchIRC_USER_TEST()">TEST</button>
+                                <button id="TwitchIRC_OAUTH_SAVE" onclick="TwitchIRC_User_Save()" style="display: none;">SAVE EXTERNAL OAUTH TOKEN</button>
+                                <div id="TwitchIRC_ALLOW_SUBSCRIPTION_WRAPPER"><span  title="Twitch currently doesnt support looking up an individuals Subscription - we hope they add this soon!">Allow reading Subscriptions: </span><input type="checkbox" onclick="TwitchIRC_User_Subscription_toggle(this)" title="Twitch currently doesnt support looking up an individuals Subscription - we hope they add this soon!" disabled/></div>
+
+                                <div class="TTV_LOGIN TTV_LOGIN_FALSE" id="TwitchIRC_User" style="position: absolute; bottom: 5px; left: 50%; transform: translate(-50%);" disabled  title="Only available when Twitch API is setup!">
+                                    <div class="TTV_LOGIN_DATA">
+
+                                    </div>
+                                    <div class="TTV_LOGIN_BUTTON">
+                                        <center onclick="TTV_LOGIN_CLICKED(this, 'user', TWITCHIRC_USER_SCOPES)">
+                                            <span>LOG IN USING TWITCH</span>
+                                            <img src="../images/icons/twitch.svg" data-type="svg" />
+                                        </center>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchIRC" hidden>
+                            <div>
+                                <h3>Twitch Channel</h3>
+                                <p>The FrikyBot currently only supports one Channel at a time.</p>
+                                <p>Please enter the channel the Bot should join and listen for Messages/Events. A list of Twitch Channel will appear, click on one to auto-fill. <b>Note: </b>Not all Channels appear in this list!</p>
+                                <p><b>Note:</b> Twitch removed the ability to follow Channels as a bot - if you need the bot to be a follower, you have to log in the Bot Account on Twitch and follow manually!</p>
+                            </div>
+                            <div>
+                                <h3>Twitch Channel</h3>
+                                <br />
+                                <label>
+                                    Twitch Channel Name:
+                                    <input id="SETTING_TwitchIRC_channel" type="text" autocomplete="off" oninput="TwitchIRC_Channel_input(this.value);" style="width: 50%; text-transform: lowercase;" />
+                                </label>
+                                <div id="TwitchIRC_Channel_Selector" class="CHANNEL_SELECTOR" onclick="TwitchIRC_Channel_Selected(event);">
+
+                                </div>
+                                <button id="TwitchIRC_CHANNEL_SAVE" onclick="TwitchIRC_Channel_Save()" style="display: none;">SAVE CHANNEL</button>
+                            </div>
+                        </div>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchIRC" hidden>
+                            <div>
+                                <h3>BTTV Emotes</h3>
+                                <p>The FrikyBot nativly supports BetterTwitchTV. This CAN slow down some responses, because we have to check the BTTV external Database, but mostly its fine. Anyway, you can disable it here overall.</p>
+                                <h3>FFZ Emotes</h3>
+                                <p>The FrikyBot nativly supports FrankerFaceZ. This CAN slow down some responses, because we have to check the FFZ external Database, but mostly its fine. Anyway, you can disable it here overall.</p>
+                                <h3>Console Output</h3>
+                                <p>The FrikyBot is mainly controlled using the Web Interface, but the Server Console might still be usefulll / necessary in some circumstances. Debugging the IRC Conncection and Events can be helpfull.</p>
+                            </div>
+                            <div>
+                                <h3>Third Party Emotes</h3>
+                                <div style="display: grid; grid-template-columns: auto 52px;">
+                                    <p>BTTV Support: </p>
+                                    <switchbutton id="SETTING_TwitchIRC_support_BTTV" value="true" onclick="TwitchIRC_MISC_Switch(this)"></switchbutton>
+                                </div>
+                                <div style="display: grid; grid-template-columns: auto 52px;">
+                                    <p>FFZ Support: </p>
+                                    <switchbutton id="SETTING_TwitchIRC_support_FFZ" value="true" onclick="TwitchIRC_MISC_Switch(this)"></switchbutton>
+                                </div>
+
+                                <h3>Console Output</h3>
+                                <div style="display: grid; grid-template-columns: auto 52px;">
+                                    <p>Print Join Messages: </p>
+                                    <switchbutton id="SETTING_TwitchIRC_console_print_join_message" value="true" onclick="TwitchIRC_MISC_Switch(this)"></switchbutton>
+                                </div>
+                                <div style="display: grid; grid-template-columns: auto 52px;">
+                                    <p>Print Messages: </p>
+                                    <switchbutton id="SETTING_TwitchIRC_console_print_message" value="true" onclick="TwitchIRC_MISC_Switch(this)"></switchbutton>
+                                </div>
+                                <div style="display: grid; grid-template-columns: auto 52px;">
+                                    <p>Print Connection Status: </p>
+                                    <switchbutton id="SETTING_TwitchIRC_console_print_connection" value="true" onclick="TwitchIRC_MISC_Switch(this)"></switchbutton>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="Con_Cat WIZ_GROUP_TwitchAPI" hidden>
+                            <div>
+                                <h3>Introduction</h3>
+                                <p>The Twitch API is used to get extra information about Users/Streams/Games/... This requires you to set up your own Twitch Dev Application and Bot Client. How to do this is show on the next pages.</p>
+                                <p>API Access is split into two Tiers: AppAccess and UserAccess. User Access expandes the Bots authorization to acces your User specific privileges (Setting Titles/Games, access User Settings/...).</p>
+                                <h3>IMPORTANT</h3>
+                                <p>The FrikyBot WebInterface also uses your Twitch Accounts to Authenticate you on this site. <b>YOU HAVE TO ADD an Admin User to access settings and other interfaces!</b></p>
+                            </div>
+                        </div>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchAPI" hidden>
+                            <div>
+                                <h3>Twitch Dev Application</h3>
+                                <p>To Access the Twitch API you need a to register your own <a href="https://dev.twitch.tv/">Twitch Dev Application</a> and fill in the following Information.</p>
+                                <br />
+                                <h3>Client ID</h3>
+                                <p>A Public ID of your Twitch Dev Application.</p>
+                                <br />
+                                <h3>Client Secret</h3>
+                                <p>A Private Token used to request Access Tokens for you Application. <b>YOU SHOULDNT SHARE THIS, but ... we need it</b></p>
+                                <br />
+                                <h3>Redirect URL</h3>
+                                <p>You have to set your Redirect URL in your Application Settings to redirect Logins using Twitch to the Bot.</p>
+                                <b style="color: red;">Remember to update this URL every time you change the FrikyBot Webserver Port!!</b>
+                            </div>
+                            <div>
+                                <h4>Client ID</h4>
+                                <input id="SETTING_TwitchAPI_ClientID" type="text" autocomplete="off" placeholder="your applications Client ID" oninput="TwitchAPI_Application_change()" />
+                                <h4>Client Secret</h4>
+                                <input id="SETTING_TwitchAPI_Secret" type="password" autocomplete="off" placeholder="your applications Client Secret" oninput="TwitchAPI_Application_change()" />
+                                <button onclick="TwitchAPI_Secret_change(this)">SHOW SECRET</button>
+                                <button id="TwitchAPI_Application_Save" onclick="TwitchAPI_Application_Save()" style="display: none;">SAVE APPLICATION SETTINGS</button>
+
+                                <h4 style="margin-top: 10px;">Redirect URL <button class="COPY_CAT_BUTTON" onclick="copyToClipboard(document.getElementById('TwitchAPI_Redirect_URL').value)">copy</button></h4>
+                                <input id="TwitchAPI_Redirect_URL" type="text" autocomplete="off" placeholder="Default: http://localhost:8080/Twitch-Redirect" value="http://localhost:8080/Twitch-Redirect" disabled />
+                            </div>
+                        </div>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchAPI" hidden>
+                            <div>
+                                <h3>Twitch User Login</h3>
+                                <p>To Access the full Twitch API you need to log in using your Twitch Account. In return the Bot gets a Code Token, converted into an Access Token by the FrikyBot Server to access the Twitch Helix API.</p>
+                                <p>This Login will redirect you to Twitch and then back here (you might need to navigate to this step again tho)</p>
+                            </div>
+                            <div>
+                                <button id="TwitchAPI_Login_Mode" onclick="TwitchAPI_Login_Mode();" style="display: none;">CUSTOMIZE ACCESS</button>
+                                <h3 id="TwitchAPI_Login_Scope_Header">Customize Access Scope</h3>
+                                <div id="TWITCHAPI_USERLOGIN_SCOPES" style="display: none">
+
+                                </div>
+                                <div class="TTV_LOGIN TTV_LOGIN_FALSE" id="TwitchAPI_CustomUserLogin" style="display: none" disabled title="Only available when Twitch API is setup!">
+                                    <div class="TTV_LOGIN_DATA">
+
+                                    </div>
+                                    <div class="TTV_LOGIN_BUTTON">
+                                        <center onclick="TTV_LOGIN_CLICKED(this, 'bot', TwitchAPI_UserLogin_getScopes())">
+                                            <span>LOG IN USING TWITCH</span><img src="../images/icons/twitch.svg" data-type="svg" />
+                                        </center>
+                                    </div>
+                                </div>
+                                <div class="TTV_LOGIN TTV_LOGIN_FALSE" id="TwitchAPI_UserLogin">
+                                    <div class="TTV_LOGIN_DATA">
+
+                                    </div>
+                                    <div class="TTV_LOGIN_BUTTON">
+                                        <center onclick="TTV_LOGIN_CLICKED(this, 'bot', TwitchAPI_UserLogin_getScopes())">
+                                            <span>LOG IN USING TWITCH</span><img src="../images/icons/twitch.svg" data-type="svg" />
+                                        </center>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchAPI" hidden>
+                            <div>
+                                <h3 style="margin-bottom: 5px;">Authentication</h3>
+                                <b>THIS IS A VERY IMPORTANT STEP.</b>
+                                <p>I advice you to use the Twitch API Authenticator instead of the FrikyBot Authenticator! The are based on the same architecture, but Twitch has just much more experience and knowledge :D</p>
+                                <p>To use the TTV Authenticator, you NEED to add an Admin User first. Use the Login on the left or directly add a Admin User ID, if you know it, but <b>remember, you have to have access to the Twitch Account to access any further settings!</b></p>
+
+                                <h3>TTV Authenticator</h3>
+                                <p>For the Twitch Authenticator to be selectable as a Authenticator in the <a style="cursor: pointer;" onclick="WIZARD_show(GetModuleIndex('WebApp'), GetGroupIndex('WebApp', 'Authenticator'));">WebApp Settings</a> you MUST have atleast ONE Admin User!</p>
+                                <p>Just a technical info: Disabling the TTV Authenticator shuts down all these "Login using Twitch"-Buttons. Keep that in mind!</p>
+                            </div>
+                            <div style="position: relative;">
+                                <h3>Twitch Authenticator Settings</h3>
+                                <div style="position: relative; margin-top: 5px !important;">
+                                    Enable/Disable TTV Authenticatior
+                                    <switchbutton id="SETTING_TwitchAPI_Authenticator_enabled" value="true" OverWriteonclick="TwitchAPI_Auth_enable(this);" style="position: absolute; right: 0;"></switchbutton>
+                                </div>
+                                <div style="position: relative; margin-top: 5px !important;">
+                                    Set TTV Auth as current Athenticator
+                                    <a style="position: absolute; right: 0; cursor: pointer;" onclick="WIZARD_show(GetModuleIndex('WebApp'), GetGroupIndex('WebApp', 'Authenticator'));">switch to WebApp Settings</a>
+                                </div>
+
+                                <div id="TwitchAPI_Authenticator_Database">
+                                    <h3>Twitch Authenticator User Database</h3>
+                                    <div id="TwitchAPI_Authenticator_Users">
+
+                                    </div>
+                                </div>
+
+                                <button id="TwitchAPI_Authenticator_Interface_Toggle" onclick="TwitchAPI_Auth_Interface_Mode(this)">ADD USER</button>
+
+                                <div id="TwitchAPI_Authenticator_Interface">
+                                    <h3>Add Twitch Authenticator User</h3>
+                                    <div id="TwitchAPI_Authenticator_Interface_Set">
+                                        <input id="TwitchAPI_Authenticator_Interface_Name" type="text" autocomplete="off" placeholder="Twitch Username" oninput="TwitchAPI_Auth_DB_Channel_change(this.value);" />
+                                        <select id="TwitchAPI_Authenticator_Interface_Select"></select>
+                                        <div class="TwitchAPI_Authenticator_Users_BTN" data-type="save" onclick="TwitchAPI_Auth_DB_Add();"><img /></div>
+                                    </div>
+
+                                    <div id="TwitchAPI_Auth_DB_Channel_Selector" class="CHANNEL_SELECTOR" onclick="TwitchAPI_Auth_DB_Channel_Selected(event);">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchAPI" hidden>
+                            <div>
+                                <h3 style="margin-bottom: 5px;">API Endpoints</h3>
+                                <p>The Twitch API provides various API Endpoints to control, get and manipulate Data. Some Endpoints require specific Access Privilieges. All details can be read in the <a href="https://dev.twitch.tv/docs/api/reference" target="_blank">Twitch API Documentation</a>.</p>
+                            </div>
+                            <div style="position: relative;">
+                                <h3 style="margin-bottom: 5px;">Twitch API Endpoints</h3>
+                                <span><input type="checkbox" id="SETTING_TwitchAPI_log_api_calls" onchange="TwitchAPI_Endpoint_Log(this);" /> Log API Calls</span>
+                                <button style="float: right;" onclick="TwitchAPI_Endpoint_Control_All('enable')">Enable All</button>
+                                <button style="float: right;" onclick="TwitchAPI_Endpoint_Control_All('disable')">Disable All</button>
+                                <div id="TWITCHAPI_API_ENABLES">
+
+                                </div>
+
+                                <h3 style="margin-bottom: 5px;">Undocumented/Unofficial Twitch API Endpoints</h3>
+                                <button style="float: right;" onclick="TwitchAPI_Endpoint_Control_All('enable', true)">Enable All</button>
+                                <button style="float: right;" onclick="TwitchAPI_Endpoint_Control_All('disable', true)">Disable All</button>
+                                <div id="TWITCHAPI_API_ENABLES_UNOFF">
+
+                                </div>
+                                <h3 style="margin-bottom: 5px;">Twitch API Scope Legend</h3>
+                                <div id="TWITCHAPI_API_LEGEND">
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchAPI" hidden>
+                            <div>
+                                <h3 style="margin-bottom: 5px;">EventSub Topics</h3>
+                                <p>EventSubs are the way Twitch can relay events using Webhooks to an Application/Bot. Using these enables a realtime tracking of Subs, Stream Updates and Chat Events.</p>
+                                <p>All of these are used by default and are very usefull - but you can turn them off if you want to.</p>
+                                <p>For more information visit the <a href="https://dev.twitch.tv/docs/eventsub" target="_blank">Twitch EventSub Documentation</a>!</p>
+
+                                <h3>Beta EventSub Topics</h3>
+                                <p>As the Name implies <b style="color: orange">Beta Topics</b> are still in development by Twitch and can change at any time! We will always be a step behind these changes until Twitch provides new Updates on their Documentation!</p>
+                            </div>
+                            <div style="position: relative;">
+                                <h3 style="margin-bottom: 5px;">Twitch EventSub Topics</h3>
+                                <button style="float: right;" onclick="TwitchAPI_EventSub_Control_All('enable')">Enable All</button>
+                                <button style="float: right;" onclick="TwitchAPI_EventSub_Control_All('disable')">Disable All</button>
+                                <div id="TWITCHAPI_EVENTSUB_ENABLES">
+
+                                </div>
+                                <div id="TWITCHAPI_EVENTSUB_LEGEND">
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="Con_Cat WIZ_GROUP_Packages" hidden>
+                            <div>
+                                <h3>Introduction</h3>
+                                <p>Packages expand the Core FrikyBot Modules into powerfull and creative Features. This Packages can vary from simple Commands to all out Chat Games and User Interfaces.</p>
+                                <p>Packages are optional, but Packages provide the actual Features of the Bot. If you want to create your own Package, check the <a href="../Docs">Docs</a> for more information.</p>
+                            </div>
+                        </div>
+                        <div class="Con_Cat Con_Cat_Description WIZ_GROUP_Packages" hidden>
+                            <div>
+                                <h3>Adding Packages</h3>
+                                <p>The Bot auto-detects Packages placed in the Packages Folder, but you can also add a Package by simply entering the Packages Name. Since there is currently no public archive for ALL Packages, you can enter anything here. Only on Boot/Restart will these Package Names be checked for what even is currently installed.</p>
+                                <p>Packages provide their own Settings/Configs. Here you are only installing a Package to the Bots Boot Option.</p>
+                            </div>
+                            <div>
+                                <p>Manage your Packages <a href="Packages">here</a></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="WIZ_UI">
+                        <div id="WIZ_UI_GRID">
+                            <button onclick="WIZARD_prev()" id="WIZ_UI_BACK" class="WIZ_UI_BTN" hidden>BACK</button>
+                            <button onclick="WIZARD_next()" id="WIZ_UI_NEXT" class="WIZ_UI_BTN">NEXT</button>
+                            <button onclick="WIZARD_onRestart()" id="WIZ_UI_RESTART" class="WIZ_UI_BTN" hidden>RESTART</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

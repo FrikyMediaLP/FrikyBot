@@ -1,0 +1,141 @@
+﻿#grid #content {
+    background-color: #f5f5f5;
+    position: relative;
+}
+
+.darkmode #grid #content {
+    background-color: #292929;
+    color: white;
+}
+
+    #grid #content h1 {
+        font-weight: bold;
+        background-color: white;
+        padding: 5px;
+        margin: 0;
+    }
+.darkmode #grid #content h1 {
+    background-color: #4f4f4f;
+}
+
+.contentDiv {
+    margin: 20px 0;
+    padding: 10px;
+    background-color: white;
+}
+.darkmode #grid #content > div {
+    background-color: #292929 !important;
+}
+
+    .contentDiv h2 {
+        margin: 0;
+    }
+
+    .contentDiv .WAITING_PARENT > div{
+        width: 30px;
+        margin: 10px auto 0 auto;
+    }
+
+        .contentDiv > div > center, .contentDiv .WAITING_PARENT > center {
+            padding: 5px 10px;
+            border: 1px solid lightgray;
+        }
+
+#ALL_BUTTONS {
+    position: absolute;
+    right: 10px;
+}
+
+    #ALL_BUTTONS button, .BUTTON {
+        cursor: pointer;
+        font-weight: bold;
+        padding: 5px 20px;
+        border: 1px solid lightgray;
+    }
+        #ALL_BUTTONS button:disabled, .BUTTON:disabled {
+            cursor: default;
+            filter: grayscale(1);
+        }
+
+        #ALL_BUTTONS button:nth-child(1) {
+            color: green;
+            border-color: rgba(0,255, 0, 0.1);
+        }
+
+        #ALL_BUTTONS button:hover:nth-child(1) {
+            background-color: rgba(0,255, 0, 0.1);
+        }
+
+        #ALL_BUTTONS button:nth-child(2) {
+            color: red;
+            border-color: rgba(255, 0, 0, 0.1);
+        }
+        #ALL_BUTTONS button:hover:nth-child(2) {
+            background-color: rgba(255, 0, 0, 0.1);
+        }
+
+        #ALL_BUTTONS button:nth-child(3) {
+            color: green;
+            border-color: rgba(0,255, 0, 0.4);
+            background-color: rgba(0,255, 0, 0.4);
+        }
+
+        #ALL_BUTTONS button:hover:nth-child(3):not(:disabled) {
+            background-color: rgba(0,255, 0, 0.6);
+        }
+
+customtable tablecontent > div {
+    padding-top: 5px;
+    width: calc(100% + 8px);
+    height: calc(100% + 3px);
+    transform: translate(-4px, -4px);
+}
+
+customtable tablecontent > div[highlighted] {
+    background-color: yellow;
+}
+
+customtable tablecontent .INFO {
+    display: inline-block;
+    margin-left: 5px;
+    transform: translate(0, -5px);
+}
+
+customtable tablecontent .INFO > span {
+    border-radius: 5px;
+    padding: 0 5px;
+    color: white;
+    font-size: 10px;
+}
+    customtable tablecontent .INFO > span.NEW {
+        background-color: #2aad51;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    customtable tablecontent .INFO > span.frikybot {
+        background-color: #19a3ff;
+        text-transform: lowercase;
+        margin-right: 3px;
+    }
+    customtable tablecontent .INFO > span.package {
+        background-color: #fcad2d;
+        text-transform: lowercase;
+        margin-right: 3px;
+    }
+
+customtable tablecontent[right] {
+    position: relative;
+}
+
+customtable input[type="checkbox"] {
+    cursor: pointer;
+    border: none !important;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: scale(2) translate(-40%, -35%);
+}
+
+    customtable input[type="checkbox"]:disabled {
+        cursor: default;
+    }

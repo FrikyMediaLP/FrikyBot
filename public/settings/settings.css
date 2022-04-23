@@ -1,0 +1,22 @@
+﻿#content {
+    width: calc(100% - 10px) !important;
+}
+
+#WAITING_FOR_DATA {
+    margin: 0 auto;
+    margin-top: 10vh;
+    width: 25%;
+}
+
+body.darkmode #content {
+    background-color: #1f1f1f !important;
+    color: white;
+}
+
+#grid #content a {
+    color: #2ee6c0;
+}
+
+    #grid #content a:hover {
+        color: #2ab89b;
+    }

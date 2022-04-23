@@ -1,11 +1,15 @@
 #grid #content {
     background-color: #f5f5f5;
 }
+.darkmode #grid #content {
+    background-color: #292929;
+    color: white;
+}
 
-    #grid #content h1 {
-        margin: 0;
-        font-weight: 400;
-    }
+#grid #content h1 {
+    margin: 0;
+    font-weight: 400;
+}
 
     #grid #content > h2 {
         padding: 5px;
@@ -14,11 +18,19 @@
         background-color: white;
     }
 
-        #grid #content > h2 a {
-            text-decoration: none;
-            color: black;
-        }
+.darkmode #grid #content > h2 {
+    background-color: #4f4f4f;
+    color: white;
+}
 
+#grid #content > h2 a {
+    text-decoration: none;
+    color: black;
+}
+.darkmode #grid #content > h2 a {
+    text-decoration: none;
+    color: white;
+}
 
     #grid #content p {
         font-weight: 300;
@@ -39,8 +51,15 @@
                 border: 1px solid orange;
             }
 
-
-
-
-/*NAVIGATIONV2*/
-
+#NEWS_SWITCH {
+    display: none;
+    margin-top: 3px;
+    float: right;
+    font-size: 15px;
+    position: relative;
+}
+#NEWS_SWITCH > span{
+    position: absolute;
+    top: 4px;
+    left: -90px;
+}

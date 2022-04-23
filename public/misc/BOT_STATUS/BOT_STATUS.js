@@ -51,6 +51,16 @@ let Bot_Status_Details_Settings = {
 
 //Fetch
 async function Bot_Status_Details_Fetch() {
+    if (Bot_Status_Details_Settings.Use_Cookies) {
+        let dta = BOT_STATUS_DETAILS_getCookiesData();
+        try {
+            if (dta && Date.now() - parseInt(dta.updated_at) < 1000 * 60 * 10) return Promise.resolve(dta);
+            else BOT_STATUS_DETAILS_resetCookiesData();
+        } catch (err) {
+            BOT_STATUS_DETAILS_resetCookiesData();
+        }
+    }
+    
     return fetch("/api/BotStatus")
         .then(data => data.json())
         .then(json => {
@@ -63,21 +73,13 @@ async function Bot_Status_Details_Fetch() {
             }
         })
         .catch(err => {
-            return Promise.reject(new Error(err));
+            return Promise.reject(err);
         });
 }
 
 //Fetch + Create
 async function BOT_STATUS_DETAILS_NORMAL() {
     if (document.getElementById("BOT_STATUS_DETAILS_NORMAL")) {
-        if (Bot_Status_Details_Settings.Use_Cookies) {
-            let dta = BOT_STATUS_DETAILS_getCookiesData();
-            if (dta) {
-                BOT_STATUS_DETAILS_createNormal(dta);
-                return;
-            }
-        }
-
         //Init if not present
         BOT_STATUS_DETAILS_createNormal(null);
 
@@ -94,16 +96,6 @@ async function BOT_STATUS_DETAILS_NORMAL() {
 }
 async function BOT_STATUS_DETAILS_MINI() {
     if (document.getElementById("BOT_STATUS_DETAILS_MINI")) {
-        if (Bot_Status_Details_Settings.Use_Cookies) {
-            let dta = BOT_STATUS_DETAILS_getCookiesData();
-            if (dta && dta.updated_at && dta.updated_at + 1000 * 60 * 1 > Date.now()) {
-                BOT_STATUS_DETAILS_createMini(dta);
-                return;
-            } else {
-                BOT_STATUS_DETAILS_resetCookiesData();
-            }
-        }
-
         //Init if not present
         BOT_STATUS_DETAILS_createMini(null);
 
@@ -124,7 +116,7 @@ function BOT_STATUS_DETAILS_createNormal(data) {
     if (document.getElementById("BOT_STATUS_DETAILS_NORMAL") && !document.getElementById("Bot_Status_Detail_Username")) {
         let s = '<div id="top"><div id="left"><div class="Detail"><p class="top">BOT USERNAME</p><p class="bottom" id="Bot_Status_Detail_Username">- - - - -</p></div><br /><div class="Detail"><p class="top">CURRENT CHANNEL</p>';
         s += '<p class="bottom" id="Bot_Status_Detail_Channel">- - - - -</p></div><br /><div class="Detail">';
-        s += '<p class="top">BOT USER DESCRIPTION</p><p class="bottom" id="Bot_Status_Detail_Description">- - - - -</p></div></div><div id="right"><img id="Bot_Status_Detail_Image" src="images/no_image_found.png" /></div></div>';
+        s += '<p class="top">CHANNEL STATUS</p><p class="bottom" id="Bot_Status_Detail_Live">- - - - -</p></div></div><div id="right"><img id="Bot_Status_Detail_Image" src="' + PROFILE_IMAGES((new Date()).getDate(), true) + '" /></div></div>';
         s +=  '<div id="bottom"><p style="grid-area: title;"><b>STATUS</b></p><p id="Bot_Status_Bar_Title" style="grid-area: value; text-align: right;">-</p><div id="Bot_Status_Bar"><center>-</center><span id="Info">NO DATA FETCHED</span></div></div>';
         document.getElementById("BOT_STATUS_DETAILS_NORMAL").innerHTML = s;
         BOT_STATUS_DETAILS_createNormal(data);
@@ -138,11 +130,13 @@ function BOT_STATUS_DETAILS_createNormal(data) {
                 document.getElementById("Bot_Status_Detail_Username").innerHTML += " ✅";
             }
         }
-
+        
         if (data.Channel)
             document.getElementById("Bot_Status_Detail_Channel").innerHTML = data.Channel;
-        if (data.Description)
-            document.getElementById("Bot_Status_Detail_Description").innerHTML = data.Description;
+        if (data.Live !== null) {
+            document.getElementById("Bot_Status_Detail_Live").innerHTML = data.Live === true ? '<a href="http://www.twitch.tv/' + data.Channel + '">LIVE</span>' : 'OFFLINE';
+            document.getElementById("Bot_Status_Detail_Live").classList.add(data.Live === true ? 'LIVE' : 'OFFLINE');
+        }
         if (data.Image)
             document.getElementById("Bot_Status_Detail_Image").src = data.Image;
 
@@ -198,7 +192,7 @@ function BOT_STATUS_DETAILS_createNormal(data) {
 function BOT_STATUS_DETAILS_createMini(data) {
     if (document.getElementById("BOT_STATUS_DETAILS_MINI") && !document.getElementById("BOT_STATUS_DETAILS_STATUS")) {
         let s = '<span>Status: </span> <a href="Bot" id="BOT_STATUS_DETAILS_STATUS">-</a><div>';
-        s += '<img id="BOT_STATUS_DETAILS_MINI_IMG" src="images/no_image_found.png"/>';
+        s += '<img id="BOT_STATUS_DETAILS_MINI_IMG" src="' + PROFILE_IMAGES((new Date()).getDate(), true) + '"/>';
         s += '<div id="BOT_STATUS_DETAILS_MINI_TEXT">-</div></div>';
 
         document.getElementById("BOT_STATUS_DETAILS_MINI").innerHTML = s;
@@ -257,7 +251,7 @@ function BOT_STATUS_DETAILS_getCookiesData() {
         try {
             return JSON.parse(getCookie("BOT_STATUS_DETAILS", true));
         } catch{
-            return null
+            return null;
         }
     } else {
         return null;

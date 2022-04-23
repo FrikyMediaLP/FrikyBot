@@ -1,153 +1,18 @@
 ﻿#grid #content {
     background-color: #f5f5f5;
 }
+.darkmode #grid #content {
+    background-color: #292929;
+    color: white;
+}
 
 #grid #content h1 {
-    margin-top: 20px;
-    font-weight: 400
-}
-
-/*
-    CHAT MODAERATION SETTINGS V1
-*/
-
-#ChatModerationSettingsV1 #first {
-    padding-left: 0px !important;
-    border-bottom: 1px solid black;
-}
-
-#ChatModerationSettingsV1 .Object_Wrapper {
-    padding-left: 20px;
-    border-left: 1px solid black;
-}
-
-    #ChatModerationSettingsV1 .Object_Wrapper[data-level='0'] {
-        border-left: none;
-    }
-
-    #ChatModerationSettingsV1 .Object_Wrapper .Object_Key {
-        position: relative;
-    }
-
-    #ChatModerationSettingsV1 .Object_Wrapper .endvalue:hover .Object_Key_Name {
-        background-color: lightblue;
-    }
-
-    #ChatModerationSettingsV1 .Object_Wrapper .Object_Key .Object_Key_Name {
-        border-bottom: 1px solid black;
-        border-left: 1px solid black;
-        padding: 5px;
-    }
-
-    #ChatModerationSettingsV1 .Object_Wrapper .Object_Key .LIGHT {
-        background-color: #f2f2f2;
-    }
-
-    #ChatModerationSettingsV1 .Object_Wrapper .Object_Key .DARK {
-        background-color: #e3e3e3;
-    }
-
-    #ChatModerationSettingsV1 .Object_Wrapper .Object_Key .Value {
-        position: absolute;
-        right: 0;
-        top: 0;
-        padding: 5px;
-    }
-
-    #ChatModerationSettingsV1 .Object_Wrapper .Object_Key .DISABLED {
-        background-color: lightcoral;
-    }
-
-/*
-    CHAT MODAERATION SETTINGS V2
-*/
-
-#ChatModerationSettingsV2 {
+    padding: 10px 0 !important;
+    margin: 10px 0;
     background-color: white;
-    margin-top: 30px;
-    padding: 5px;
+    text-align: center;
 }
 
-#ChatModerationSettingsV2 h2{
-    margin: 0;
+.darkmode #grid #content h1 {
+    background-color: #4f4f4f;
 }
-
-    #ChatModerationSettingsV2 .Object_Wrapper[data-level="0"] {
-        margin-top: 10px;
-    }
-    #ChatModerationSettingsV2 .Object_Wrapper > h3 {
-        margin: 0;
-        border-bottom: 1px solid black;
-        position: relative;
-        padding: 5px;
-    }
-        #ChatModerationSettingsV2 .Object_Wrapper > h3 span {
-            cursor: pointer;
-            position: absolute;
-            right: 5px;
-        }
-
-    #ChatModerationSettingsV2 .Object_Wrapper[data-show="false"] > h3:not(.DISABLED) span::after {
-        content: "▼";
-    }
-    #ChatModerationSettingsV2 .Object_Wrapper[data-show="true"] > h3:not(.DISABLED) span::after {
-        content: "▲";
-    }
-
-    #ChatModerationSettingsV2 .Object_Wrapper .DISABLED {
-        background-color: lightcoral;
-    }
-
-    #ChatModerationSettingsV2 .Object_Wrapper > h3:not(.DISABLED) {
-        background-color: #edffef;
-    }
-
-        #ChatModerationSettingsV2 .Object_Wrapper .Object_Content {
-            padding: 15px;
-            display: none;
-        }
-
-    #ChatModerationSettingsV2 .Object_Wrapper[data-show="true"] > .Object_Content {
-        display: block !important;
-    }
-    #ChatModerationSettingsV2 .Object_Wrapper[data-show="true"] > .FINAL {
-        display: grid !important;
-        grid-template-columns: repeat(auto-fill, 150px);
-        grid-template-rows: auto;
-        grid-column-gap: 15px;
-        grid-row-gap: 15px;
-    }
-
-        #ChatModerationSettingsV2 .Setting {
-            background-color: #f5f5f5;
-            padding: 5px;
-            height: 140px
-        }
-
-            #ChatModerationSettingsV2 .Setting .Value {
-                height: calc(100% - 20px);
-                margin: 0 auto;
-            }
-
-                #ChatModerationSettingsV2 .Setting .Value > span {
-                    display: inline-block;
-                }
-
-            #ChatModerationSettingsV2 .Setting .Name {
-                height: 20px !important;
-                white-space: nowrap;
-                margin: 0 auto;
-            }
-
-                #ChatModerationSettingsV2 .Setting .Name > span {
-                    display: inline-block;
-                }
-
-
-
-        #ChatModerationSettingsV2 .Object_Wrapper .ON {
-            background-color: limegreen;
-        }
-        #ChatModerationSettingsV2 .Object_Wrapper .OFF {
-            background-color: red;
-        }

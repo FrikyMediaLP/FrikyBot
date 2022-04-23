@@ -31,6 +31,20 @@
 #grid #navi {
     background-color: #2b353b;
 }
+    #grid #navi button {
+        height: 50px;
+        width: 200px;
+        position: absolute;
+        bottom: 30px;
+        left: 15px;
+        background-color: lightgray;
+        cursor: pointer;
+        outline: none;
+    }
+
+        #grid #navi button:hover {
+            border: 1px solid orange;
+        }
 
 /* 
     ////////////////////////////////////
@@ -40,8 +54,11 @@
 
 #grid #contentHeader {
     background-color: #19a3ff;
+    z-index: 1;
 }
-
+    #grid #contentHeader .HOVERPROFILE {
+        float: right;
+    }
 /* 
     ////////////////////////////////////
             MAIN GRID CONTENT

@@ -4,7 +4,7 @@
  *
  *      <div id="OUTPUT"></div>
  *      
- *  - or auto init by calling ERROR_OUTPUT_create() to fill in css
+ *  - or auto init by calling OUTPUT_create() to fill in css
  *      <div id="OUTPUT" onload="OUTPUT_create()"></div>
  * 
  * //////////////////////////////////////////////////////////
@@ -17,55 +17,68 @@
  * 
  */
 
-function OUTPUT_hideError() {
-    if (document.getElementById("OUTPUT"))
-        document.getElementById("OUTPUT").hidden = true;
+function OUTPUT_create(elt) {
+    let elts = document.getElementsByTagName("OUTPUT");
+    if (elt) elts = [elts];
+
+    for (let target of elts) {
+        if (target.innerHTML !== "") continue;
+        target.innerHTML = '<div onclick="OUTPUT_hideError(this.parentElement)">x</div><center></center>';
+    }
 }
-
-function OUTPUT_create() {
-    OUTPUT_hideError();
-    document.getElementById("OUTPUT").className = "OUTPUT";
-    document.getElementById("OUTPUT").innerHTML = '<div onclick="OUTPUT_hideError()">x</div><center></center>';
+function OUTPUT_hideError(elt) {
+    OUTPUT_hide(elt);
 }
-
-function OUTPUT_showInfo(text) {
-    document.getElementById("OUTPUT").className = "OUTPUT INFO_OUTPUT";
-
-    if (document.getElementById("OUTPUT").childNodes.length == 4) {
-        document.getElementById("OUTPUT").childNodes[2].innerHTML = text;
-    }
-
-    if (document.getElementById("OUTPUT").childNodes.length == 2) {
-        document.getElementById("OUTPUT").childNodes[1].innerHTML = text;
-    }
-
-    document.getElementById("OUTPUT").hidden = false;
+function OUTPUT_hide(elt) {
+    if (!elt) elt = document.getElementsByTagName("OUTPUT")[0];
+    if (!elt) return;
+    elt.setAttribute('show', 'hidden');
 }
+function OUTPUT_showInfo(text, elt) {
+    if (!elt) elt = document.getElementsByTagName("OUTPUT")[0];
+    if (!elt) return;
 
-function OUTPUT_showWarning(text) {
-    document.getElementById("OUTPUT").className = "OUTPUT WARN_OUTPUT";
+    elt.dataset.type = "INFO";
 
-    if (document.getElementById("OUTPUT").childNodes.length == 4) {
-        document.getElementById("OUTPUT").childNodes[2].innerHTML = text;
+    if (elt.childNodes.length == 4) {
+        elt.childNodes[3].innerHTML = text;
     }
 
-    if (document.getElementById("OUTPUT").childNodes.length == 2) {
-        document.getElementById("OUTPUT").childNodes[1].innerHTML = text;
+    if (elt.childNodes.length == 2) {
+        elt.childNodes[1].innerHTML = text;
     }
 
-    document.getElementById("OUTPUT").hidden = false;
+    elt.setAttribute('show', 'visible');
 }
+function OUTPUT_showWarning(text, elt) {
+    if (!elt) elt = document.getElementsByTagName("OUTPUT")[0];
+    if (!elt) return;
 
-function OUTPUT_showError(text) {
-    document.getElementById("OUTPUT").className = "OUTPUT ERROR_OUTPUT";
+    elt.dataset.type = "WARN";
 
-    if (document.getElementById("OUTPUT").childNodes.length == 4) {
-        document.getElementById("OUTPUT").childNodes[3].innerHTML = text;
+    if (elt.childNodes.length == 4) {
+        elt.childNodes[3].innerHTML = text;
     }
 
-    if (document.getElementById("OUTPUT").childNodes.length == 2) {
-        document.getElementById("OUTPUT").childNodes[1].innerHTML = text;
+    if (elt.childNodes.length == 2) {
+        elt.childNodes[1].innerHTML = text;
     }
 
-    document.getElementById("OUTPUT").hidden = false;
+    elt.setAttribute('show', 'visible');
+}
+function OUTPUT_showError(text, elt) {
+    if (!elt) elt = document.getElementsByTagName("OUTPUT")[0];
+    if (!elt) return;
+    
+    elt.dataset.type = "ERROR";
+
+    if (elt.childNodes.length == 4) {
+        elt.childNodes[3].innerHTML = text;
+    }
+
+    if (elt.childNodes.length == 2) {
+        elt.childNodes[1].innerHTML = text;
+    }
+
+    elt.setAttribute('show', 'visible');
 }

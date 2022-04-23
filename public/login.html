@@ -1,0 +1,112 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>FrikyBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- GENERAL CSS -->
+    <link href="styles/standard.css" rel="stylesheet">
+    <link href="styles/Grid/Grid_Foundation.css" rel="stylesheet">
+
+    <!-- PAGE CSS-->
+    <link href="styles/Grid/Grid_Default.css" rel="stylesheet">
+    <link href="styles/login.css" rel="stylesheet">
+
+    <!-- GENERAL JS-->
+    <script src="scripts/standard.js"></script>
+
+    <!-- PAGE JS-->
+    <script src="scripts/login.js"></script>
+
+    <!-- MISC -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+
+    <script src="misc/NavigationV2/NavigationV2.js"></script>
+    <link href="misc/NavigationV2/NavigationV2.css" rel="stylesheet">
+
+    <script src="misc/OUTPUT/OUTPUT.js"></script>
+    <link href="misc/OUTPUT/OUTPUT.css" rel="stylesheet">
+
+    <script src="misc/BOT_STATUS/BOT_STATUS.js"></script>
+    <link href="misc/BOT_STATUS/BOT_STATUS.css" rel="stylesheet">
+
+    <script src="misc/Login/Login.js"></script>
+    <link href="misc/Login/Login.css" rel="stylesheet">
+
+    <script src="misc/SwitchButton/SwitchButton.js"></script>
+    <link href="misc/SwitchButton/SwitchButton.css" rel="stylesheet">
+</head>
+<body onload="Standard_Page_Init({ NAVIGATION_ENABLE_DEFAULT: false }); init();">
+    <!-- MAIN GRID -->
+    <div id="grid">
+        <!-- NAVI HEADER -->
+        <div class="cellM" id="naviHeader">
+            <a href="./">FRIKY<span>BOT</span></a>
+        </div>
+
+        <!-- CONTENT HEADER -->
+        <div class="cellM" id="contentHeader">
+
+        </div>
+
+        <!-- NAVI -->
+        <div class="cellM" id="navi">
+            <div id="BOT_STATUS_DETAILS_MINI">
+
+            </div>
+            <div id="mainNavi">
+
+            </div>
+            <button id="LightModeButton" onclick="toggleLightMode()">DarkMode</button>
+            <div id="license"> - <a href="https://fontawesome.com/license" target="_blank">Icon license</a> - </div>
+        </div>
+
+        <!-- ACTUAL CONTENT -->
+        <div class="cellM" id="content" onscroll="NAVIGATIONV2_SCROLL_HL_CHECK()">
+            <output></output>
+
+            <div id="TWITCH_LOGIN_WRAP">
+                <h2>Twitch Login</h2>
+                <p>Using Twitch to Login authenticates your Twitch ID to the Server. You Userlevel (your access level) is set by an admin or defaulted as a viewer.</p>
+                <p>
+                    To Authenticate you have to login and give us access to request an <b>ID TOKEN</b>
+                    <!--or an <b>ACCESS TOKEN</b>-->
+                    :
+                </p>
+                <ul>
+                    <li><b>ID TOKEN</b>: Authenticates that YOU just logged in. Only valid for 15 Minutes.</li>
+                    <!--<li><b>ACCESS TOKEN</b>: Authorizes the Website Client (not the server) to access (some) actions on behalf of your account (e.g. send Chat Messages). This Token remains valid FOREVER or until you remove the Bot Connection in your Twitch Settings.</li> -->
+
+                </ul>
+                <p>For Authentication to work across sites, you <b>NEED to allow Cookies</b> to be used! Otherwise, the Website just doesnt know who you are! <a href="Cookies">Read Cookie Usage</a></p>
+
+                <div class="TTV_LOGIN TTV_LOGIN_FALSE" id="TTV_MASTER_LOGIN">
+                    <div class="TTV_LOGIN_DATA">
+
+                    </div>
+                    <div class="TTV_LOGIN_BUTTON">
+                        <center onclick="TTV_LOGIN_CLICKED(this, 'user')">
+                            <span>LOG IN USING TWITCH</span>
+                            <img src="../images/icons/twitch.svg" data-type="svg" />
+                        </center>
+                    </div>
+                </div>
+            </div>
+
+            <div id="AuthorizationCode">
+                <center id="AuthorizationCode_Header">Authorization Code</center>
+                <center><input id="AuthorizationCode_Input" type="text" /><button onclick="AuthorizationCode(this)">CHECK</button></center>
+                <center>This is only available when TTV Login isnt and only used for Bot Setup. You need Console access, to request a Code.</center>
+
+                <center id="AuthorizationCode_LogOut"><button onclick="LOGIN_logout(); this.style.display = 'none';">LogOut</button></center>
+            </div>
+
+            <div id="CookieSite">
+                <a href="/Cookies">Cookie Info and Settings</a>
+            </div>
+        </div>
+    </div>
+ </body>
+ </html>

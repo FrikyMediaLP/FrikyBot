@@ -1,0 +1,719 @@
+﻿
+/* GENERAL */
+#SECTION_SETUP, #SETUP {
+    margin-top: 10px;
+    display: none;
+}
+
+#SECTION_SETUP #HEADER {
+    font-family: Roboto, sans-serif;
+    color: white;
+    font-size: 30px;
+    padding: 7px 15px;
+}
+
+    /*MISC*/
+    #SECTION_SETUP h2 {
+        text-transform: uppercase;
+        color: black;
+        border-bottom-width: 2px;
+        border-bottom-style: solid;
+    }
+
+    #SECTION_SETUP h3 {
+        font-weight: 400;
+        border-bottom: 1px solid gray;
+    }
+
+    #SECTION_SETUP button {
+        outline: none;
+        cursor: pointer;
+        background-color: lightgray;
+        border: 2px solid lightgray;
+    }
+
+        #SECTION_SETUP button.SAVE {
+            background-color: lightgreen;
+            border: 2px solid #59eb28;
+        }
+
+        #SECTION_SETUP button:hover {
+            filter: brightness(0.9);
+        }
+
+/*WIZARD*/
+#WIZARD {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 100%;
+    grid-template-rows: 58px auto;
+    overflow: hidden;
+    font-family: 'Roboto', sans-serif;
+}
+
+    /* NAV */
+    #WIZARD #WIZ_NAV {
+        display: grid;
+        grid-template-columns: 100%;
+        grid-template-rows: 30px 28px;
+    }
+
+        /* MAIN */
+        #WIZARD #WIZ_NAV #WIZ_NAV_MODULES {
+            display: grid;
+            grid-template-columns: 20% 20% 20% 20% 20%;
+            grid-template-rows: 30px;
+            background-color: #19a3ff;
+            color: white;
+            justify-content: center;
+            border-bottom: 1px solid rgb(245,245,245);
+        }
+
+            #WIZARD #WIZ_NAV #WIZ_NAV_MODULES .WIZ_NAV_MODULE {
+                display: inline-block;
+                padding: 5px;
+                text-align: center;
+                cursor: pointer;
+                border-right: 1px solid white;
+                border-bottom: 1px solid white;
+                text-transform: uppercase;
+            }
+
+                #WIZARD #WIZ_NAV #WIZ_NAV_MODULES .WIZ_NAV_MODULE[complete] {
+                    color: lime !important;
+                }
+
+                #WIZARD #WIZ_NAV #WIZ_NAV_MODULES .WIZ_NAV_MODULE:last-child {
+                    border-right: none;
+                }
+
+                #WIZARD #WIZ_NAV #WIZ_NAV_MODULES .WIZ_NAV_MODULE:hover {
+                    color: #00497a;
+                }
+
+                #WIZARD #WIZ_NAV #WIZ_NAV_MODULES .WIZ_NAV_MODULE[selected] {
+                    color: white;
+                    border-bottom: none;
+                    background-color: #028deb;
+                }
+
+        /* DET */
+        #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS {
+            background-color: #028deb;
+        }
+
+            #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS .WIZ_NAV_GROUP {
+                display: grid;
+                grid-template-rows: 100%;
+                justify-content: center;
+            }
+
+                #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS .WIZ_NAV_GROUP[hidden] {
+                    display: none;
+                }
+
+                #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS .WIZ_NAV_GROUP > div {
+                    text-align: center;
+                    cursor: pointer;
+                    padding: 5px;
+                    font-size: 15px;
+                    color: #ededed;
+                    text-transform: uppercase;
+                }
+
+                    #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS .WIZ_NAV_GROUP > div:not([disabled]):hover {
+                        color: #00497a;
+                    }
+
+                    #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS .WIZ_NAV_GROUP > div[selected] {
+                        color: white;
+                        background-color: #0098ff;
+                    }
+
+                    #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS .WIZ_NAV_GROUP > div[disabled] {
+                        background-color: gray;
+                        cursor: default;
+                    }
+
+                    #WIZARD #WIZ_NAV #WIZ_NAV_GROUPS .WIZ_NAV_GROUP > div[complete] {
+                        color: lime;
+                    }
+
+    /* CONTENT */
+    #WIZARD #WIZ_CONTENT {
+        overflow: hidden;
+        background-color: white;
+        width: 100%;
+        height: 500px;
+    }
+
+        #WIZARD #WIZ_CONTENT ::-webkit-scrollbar {
+            width: 15px;
+        }
+
+
+        #WIZARD #WIZ_CONTENT .Con_Cat {
+            overflow-y: scroll;
+            height: 100%;
+            width: 100%;
+            margin-bottom: 35px;
+            position: relative;
+        }
+            #WIZARD #WIZ_CONTENT .Con_Cat[hidden] {
+                display: none;
+            }
+
+            #WIZARD #WIZ_CONTENT .Con_Cat > div {
+                padding: 5px;
+            }
+
+            #WIZARD #WIZ_CONTENT .Con_Cat .LOADING_RING_WRAPPER {
+                margin: 0 auto;
+                margin-top: 10vh;
+                width: 20%;
+            }
+
+        #WIZARD #WIZ_CONTENT h3 {
+            margin: 0px;
+            margin-top: 10px;
+            text-align: center;
+            border-bottom: 1px solid lightgray;
+        }
+}
+
+body.darkmode#WIZARD #WIZ_CONTENT h3 {
+    border-color: dimgray;
+}
+
+        #WIZARD #WIZ_CONTENT h4 {
+            margin: 0px;
+        }
+
+        #WIZARD #WIZ_CONTENT p {
+            margin-top: 5px;
+            margin-bottom: 0px;
+        }
+
+        #WIZARD #WIZ_CONTENT button {
+            cursor: pointer;
+        }
+
+        #WIZARD #WIZ_CONTENT a {
+            color: #2ee6c0;
+        }
+
+        #WIZARD #WIZ_CONTENT a:hover {
+            color: #2ab89b;
+        }
+
+#WIZARD #WIZ_CONTENT input:not([type="checkbox"]) {
+    margin-bottom: 10px;
+    width: 90%;
+    outline: none;
+    border: 1px solid lightgray;
+}
+
+#WIZARD #WIZ_CONTENT input[type="checkbox"] {
+    cursor: pointer;
+}
+
+        #WIZARD #WIZ_CONTENT input.missing {
+            color: red;
+            border-color: red;
+        }
+
+        #WIZARD #WIZ_CONTENT select {
+            outline: none;
+            cursor: pointer;
+        }
+            #WIZARD #WIZ_CONTENT select option {
+                outline: none;
+                cursor: pointer;
+            }
+            #WIZARD #WIZ_CONTENT select option:disabled{
+                color: red;
+            }
+
+        #WIZARD #WIZ_CONTENT .Wiz_Hint {
+            color: red;
+            display: none;
+        }
+
+    #WIZARD #WIZ_CONTENT button.COPY_CAT_BUTTON {
+        color: #2ee6c0;
+        border: none;
+        text-decoration: underline;
+        background: none !important;
+        cursor: pointer;
+    }
+
+            #WIZARD #WIZ_CONTENT button.COPY_CAT_BUTTON:hover {
+                color: #2ab89b;
+            }
+
+        #WIZARD #WIZ_CONTENT .Con_Cat_Description {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 50% 50%;
+            grid-template-rows: 100%;
+            overflow: hidden;
+        }
+
+            #WIZARD #WIZ_CONTENT .Con_Cat_Description > div {
+                height: calc(100% - 10px);
+                width: calc(100% - 15px);
+                padding: 5px;
+                margin-left: 5px;
+                overflow-y: scroll;
+                overflow-x: hidden;
+            }
+
+                #WIZARD #WIZ_CONTENT .Con_Cat_Description > div:first-child {
+                    border-right: 1px solid lightgray;
+                }
+
+                #WIZARD #WIZ_CONTENT .Con_Cat_Description > div:last-child {
+                    padding: 5px 20px 5px 0px;
+                }
+
+        #WIZARD #WIZ_CONTENT .ARRAY_SELECTION {
+            width: 100%;
+            display: grid;
+            grid-template-columns: auto 50px;
+            grid-row-gap: 15px;
+        }
+
+/* DARKMODE */
+body.darkmode .Con_Cat {
+    background-color: #242424;
+    color: white !important;
+    font-family: sans-serif;
+}
+
+
+    body.darkmode #WIZARD .Con_Cat input {
+        color: white !important;
+        background: none;
+        border-left: none !important;
+        border-top: none !important;
+        border-right: none !important;
+        outline: none;
+    }
+
+/* UI */
+#WIZARD #WIZ_UI {
+    border-top: 1px solid lightgray;
+    border-bottom: 1px solid lightgray;
+    padding: 10px;
+}
+
+    #WIZARD #WIZ_UI #WIZ_UI_GRID{
+        margin: 0 auto;
+        display: grid;
+        width: 90px;
+        grid-template-columns: 90px;
+        grid-column-gap: 10px;
+    }
+
+    #WIZARD #WIZ_UI .WIZ_UI_BTN {
+        cursor: pointer;
+    }
+
+/* DARKMODE */
+body.darkmode #WIZARD #WIZ_UI {
+    background-color: #242424 !important;
+    border-color: dimgray;
+}
+
+/* WEBAPP */
+#WEBAPP_HOSTNAME_VERIFY {
+    float: right;
+    transform: translate(-20px, -2px);
+}
+
+/* Twitch IRC */
+#TwitchIRC_ALLOW_SUBSCRIPTION_WRAPPER {
+    margin-top: 50px;
+}
+
+/* CHANNEL SELECTOR */
+.CHANNEL_SELECTOR {
+    display: none;
+    width: calc(100% - 10px);
+    padding: 5px;
+    grid-template-columns: 100%;
+    grid-template-rows: 40px;
+    grid-row-gap: 2px;
+    background-color: #424242;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+    .CHANNEL_SELECTOR > div {
+        border: 1px solid dimgray;
+        border-radius: 5px;
+        background-color: #333333;
+        padding: 3px;
+    }
+
+        .CHANNEL_SELECTOR > div > div {
+            display: grid;
+            grid-template-columns: 32px auto;
+            grid-column-gap: 10px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .CHANNEL_SELECTOR > div:hover {
+            background-color: #434343;
+        }
+
+        .CHANNEL_SELECTOR > div > div .name {
+            position: absolute;
+            top: 6px;
+            left: 40px;
+            color: white;
+        }
+
+        .CHANNEL_SELECTOR > div > div .live {
+            position: absolute;
+            top: 6px;
+            right: 5px;
+            padding: 0 5px;
+            color: white;
+            background-color: red;
+            text-transform: uppercase;
+            font-weight: 400;
+            border-radius: 5px;
+        }
+
+    .CHANNEL_SELECTOR img {
+        width: 100%;
+        border-radius: 50%;
+    }
+
+/* Twitch API */
+/* SCOPES */
+#TWITCHAPI_USERLOGIN_SCOPES {
+    margin-top: 5px;
+    width: calc(100% - 2px);
+    max-height: 300px;
+    overflow-y: scroll;
+    display: grid;
+    grid-template-columns: auto 57px;
+    grid-template-rows: auto;
+}
+
+    #TWITCHAPI_USERLOGIN_SCOPES::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    #TWITCHAPI_USERLOGIN_SCOPES::-webkit-scrollbar-track {
+        background: none;
+    }
+
+    #TWITCHAPI_USERLOGIN_SCOPES::-webkit-scrollbar-thumb {
+        background: #888;
+    }
+
+    #TWITCHAPI_USERLOGIN_SCOPES > div {
+        padding: 5px 0px;
+    }
+
+        #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(2n+1) {
+            padding-top: 8px;
+            padding-left: 5px;
+        }
+
+        #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+3), #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+4) {
+            background-color: #fefaff;
+        }
+
+        #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+1), #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+2) {
+            background-color: #f2f0f2;
+        }
+
+        #TWITCHAPI_USERLOGIN_SCOPES > span, #TWITCHAPI_USERLOGIN_SCOPES > div:nth-last-child(-n+2) {
+            background-color: white;
+            border-bottom: none;
+        }
+
+body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+3), body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+4) {
+    background-color: #2e2e2e;
+}
+body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+1), body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+2) {
+    background-color: #2e2e2e;
+}
+body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > span, body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > div:nth-last-child(-n+2) {
+    background-color: #2e2e2e;
+}
+
+/* Authenticator */
+#TwitchAPI_Authenticator_Database {
+    margin-top: 10px;
+}
+
+#TwitchAPI_Authenticator_Users {
+    margin-top: 5px;
+    height: 350px;
+    overflow-y: scroll !important;
+    display: grid;
+    grid-template-columns: auto auto auto auto;
+    grid-template-rows: repeat(auto-fill, 37px);
+    grid-template-areas: 'nouser nouser nouser nouser';
+}
+
+    #TwitchAPI_Authenticator_Users > center {
+        border-bottom: 1px solid lightgray;
+        padding: 5px 0;
+        padding-top: 10px;
+        cursor: default;
+    }
+
+    #TwitchAPI_Authenticator_Users > select {
+        border: none;
+        border-bottom: 1px solid lightgray;
+        color: orange;
+        background: none;
+    }
+
+    #TwitchAPI_Authenticator_Users > select option {
+        color: black;
+    }
+
+        #TwitchAPI_Authenticator_Users > center:nth-last-child(-n + 1),
+        #TwitchAPI_Authenticator_Users > center:nth-last-child(-n + 2),
+        #TwitchAPI_Authenticator_Users > center:nth-last-child(-n + 3),
+        #TwitchAPI_Authenticator_Users > center:nth-last-child(-n + 4) {
+            border-bottom: none;
+        }
+
+    #TwitchAPI_Authenticator_Users .NOUSER {
+        grid-area: nouser;
+        cursor: text;
+        padding: 0px;
+    }
+
+.TwitchAPI_Authenticator_Users_LEVEL::after {
+    font-weight: bold;
+    text-transform: uppercase;
+    content: attr(data-level) !important;
+}
+
+.TwitchAPI_Authenticator_Users_LEVEL[data-level="admin"]::after {
+    color: #db0000;
+}
+
+.TwitchAPI_Authenticator_Users_LEVEL[data-level="staff"]::after {
+    color: #ffd000;
+}
+
+.TwitchAPI_Authenticator_Users_LEVEL[data-level="moderator"]::after {
+    color: #03bf00;
+}
+
+.TwitchAPI_Authenticator_Users_LEVEL[data-level="subscriber"]::after {
+    color: #9803fc;
+}
+
+.TwitchAPI_Authenticator_Users_LEVEL[data-level="viewer"]::after {
+    color: gray;
+}
+
+.TwitchAPI_Authenticator_Users_SETTINGS {
+    padding-top: 5px !important;
+}
+
+.TwitchAPI_Authenticator_Users_BTN {
+    display: inline-block;
+    padding: 5px;
+    margin: 0 5px;
+    cursor: pointer;
+    height: 1rem;
+    transition: border-radius 0.3s ease;
+    border-radius: 0%;
+}
+
+    .TwitchAPI_Authenticator_Users_BTN img {
+        height: 100%;
+        filter: invert(1);
+    }
+
+    .TwitchAPI_Authenticator_Users_BTN:hover {
+        transition: border-radius 0.3s ease;
+        border-radius: 25%;
+    }
+
+    .TwitchAPI_Authenticator_Users_BTN[data-type="delete"] {
+        background-color: red;
+    }
+
+        .TwitchAPI_Authenticator_Users_BTN[data-type="delete"] img {
+            content: url('/images/icons/trash-alt-solid.svg');
+        }
+
+    .TwitchAPI_Authenticator_Users_BTN[data-type="edit"] {
+        background-color: orange;
+    }
+
+        .TwitchAPI_Authenticator_Users_BTN[data-type="edit"] img {
+            content: url("/images/icons/pencil-ruler-solid.svg");
+        }
+
+    .TwitchAPI_Authenticator_Users_BTN[data-type="save"] {
+        background-color: green;
+        display: none;
+    }
+
+        .TwitchAPI_Authenticator_Users_BTN[data-type="save"] img {
+            content: url("/images/icons/server-solid.svg");
+        }
+
+
+#TwitchAPI_Authenticator_Interface_Toggle{
+    padding: 5px 20px;
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translate(-50%);
+}
+
+#TwitchAPI_Authenticator_Interface {
+    width: 100%;
+    display: none;
+}
+
+#TwitchAPI_Authenticator_Interface_Set {
+    width: auto;
+    margin: 5px auto;
+    max-width: 400px !important;
+    display: grid;
+    grid-template-columns: 40% auto 36px;
+    grid-template-rows: 20px;
+    grid-column-gap: 5px;
+}
+
+    #TwitchAPI_Authenticator_Interface_Set input {
+        height: 100%;
+        width: calc(100% - 10px) !important;
+    }
+
+    #TwitchAPI_Authenticator_Interface_Set input.missing{
+        border: 1px solid red;
+        color: red;
+    }
+
+    #TwitchAPI_Authenticator_Interface_Set select {
+        font-size: 1rem;
+        height: 25px;
+        border-color: lightgray;
+    }
+
+    #TwitchAPI_Authenticator_Interface_Set .TwitchAPI_Authenticator_Users_BTN {
+        display: inline-block !important;
+    }
+#TwitchAPI_Authenticator_Interface .CHANNEL_SELECTOR {
+    margin-top: 10px;
+}
+
+/* API ENDPOINTS */
+#TWITCHAPI_API_ENABLES, #TWITCHAPI_API_ENABLES_UNOFF {
+    margin-top: 20px;
+}
+
+    #TWITCHAPI_API_ENABLES p, #TWITCHAPI_API_ENABLES_UNOFF p {
+        border-bottom: 1px solid gray;
+        font-weight: bold;
+        margin-bottom: 5px !important;
+    }
+
+    #TWITCHAPI_API_ENABLES > .ENDPOINT_CAT, #TWITCHAPI_API_ENABLES_UNOFF > .ENDPOINT_CAT {
+        display: grid;
+        grid-template-columns: auto 52px;
+        grid-row-gap: 2px;
+    }
+
+    #TWITCHAPI_API_ENABLES p.beta {
+        color: orange;
+    }
+
+    #TWITCHAPI_API_ENABLES > .ENDPOINT_CAT {
+        display: grid;
+        grid-template-columns: auto 52px;
+        grid-row-gap: 2px;
+    }
+
+        #TWITCHAPI_API_ENABLES > .ENDPOINT_CAT > span > span {
+            margin-left: 5px;
+        }
+
+#TWITCHAPI_API_LEGEND {
+    margin-top: 20px;
+}
+
+    #TWITCHAPI_API_LEGEND p {
+        position: relative;
+    }
+
+.TTVAPI_API_LEGEND_IDX {
+    color: #028deb;
+    font-size: 12px;
+    position: absolute;
+    top: -2px;
+    position: relative;
+}
+
+    .TTVAPI_API_LEGEND_IDX.missing {
+        color: #de3333;
+    }
+
+    .TTVAPI_API_LEGEND_IDX.beta {
+        color: orange;
+    }
+
+/* EventSubs */
+#TWITCHAPI_EVENTSUB_ENABLES {
+    margin-top: 20px;
+}
+
+    #TWITCHAPI_EVENTSUB_ENABLES p {
+        border-bottom: 1px solid gray;
+        font-weight: bold;
+        margin-bottom: 5px !important;
+    }
+        #TWITCHAPI_EVENTSUB_ENABLES p.beta {
+            color: orange;
+        }
+
+    #TWITCHAPI_EVENTSUB_ENABLES > .EVENTSUB_CAT {
+        display: grid;
+        grid-template-columns: auto 52px;
+        grid-row-gap: 2px;
+    }
+
+        #TWITCHAPI_EVENTSUB_ENABLES > .EVENTSUB_CAT > span > span {
+            margin-left: 5px;
+        }
+
+#TWITCHAPI_EVENTSUB_LEGEND {
+    margin-top: 20px;
+}
+
+#TWITCHAPI_EVENTSUB_LEGEND p {
+    position: relative;
+}
+
+.EVENTSUB_LEGEND_IDX {
+    color: #028deb;
+    font-size: 12px;
+    position: absolute;
+    top: -2px;
+    position: relative;
+}
+
+    .EVENTSUB_LEGEND_IDX.missing {
+        color: #de3333;
+    }
+    .EVENTSUB_LEGEND_IDX.beta {
+        color: orange;
+    }

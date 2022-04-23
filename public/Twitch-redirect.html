@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Twitch Redirect - FrikyBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- GENERAL CSS -->
+    <link href="styles/standard.css" rel="stylesheet">
+
+    <!-- GENERAL JS-->
+    <script src="scripts/standard.js"></script>
+
+    <!-- MISC JS-->
+    <script src="misc/Login/Login.js"></script>
+
+    <!-- MISC -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+</head>
+<body onload="init();">
+    <script>
+        function init() {
+            let origin = LOGIN_getOriginPageCookie();
+            let newURI = origin || 'index';
+            
+            //SEARCH
+            if (window.location.search) {
+                if (HasURLSearch('code')) newURI = '/settings/setup#_m=3&_g=2';
+
+                if (newURI.indexOf('?') < 0) {
+                    newURI += window.location.search;
+                } else {
+                    newURI = newURI.split('?')[0] + window.location.search + '&' + newURI.split('?')[1];
+                }
+            }
+
+            //HASH
+            if (window.location.hash) {
+                if (newURI.indexOf('#') < 0) {
+                    newURI += window.location.hash;
+                } else {
+                    newURI = newURI.split('#')[0] + window.location.hash + '&' + newURI.split('#')[1];
+                }
+            }
+
+            //Reorder
+            let splittedHash = newURI.split('#');
+            if (splittedHash.length > 1) {
+                let splittedSearch = splittedHash[1].split('?');
+                if (splittedSearch.length > 1) {
+                    newURI = splittedHash[0] + "?" + splittedSearch[1] + "#" + splittedSearch[0];
+                }
+            }
+            
+            window.location.href = newURI;
+        }
+    </script>
+    <center style="font-size: 80px; transform: translateY(400%); position: relative;">
+        <img src="images/Profiles/blue_transparent.png" style="height: 100px; position: absolute; top: -90px; left: 46%;"/>
+        WAITING FOR REDIRECT
+    </center>
+</body>
+</html>

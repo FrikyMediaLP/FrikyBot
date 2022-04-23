@@ -261,5 +261,15 @@ paket-files/
 __pycache__/
 *.pyc
 
-#OWN STUFF
+######################
+##    OWN STUFF		##
+######################
+/DATA/
 TOKENS/
+Logs/
+config.json
+
+# Package Specific
+Packages/*/data/
+
+!Packages/Docs/Data

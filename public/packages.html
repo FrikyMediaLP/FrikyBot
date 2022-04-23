@@ -32,8 +32,8 @@
     <script src="../misc/BOT_STATUS/BOT_STATUS.js"></script>
     <link href="../misc/BOT_STATUS/BOT_STATUS.css" rel="stylesheet">
 
-    <script src="../misc/HoverProfile/HoverProfile.js"></script>
-    <link href="../misc/HoverProfile/HoverProfile.css" rel="stylesheet">
+    <script src="../misc/Login/Login.js"></script>
+    <link href="../misc/Login/Login.css" rel="stylesheet">
 
     <script src="../misc/SwitchButton/SwitchButton.js"></script>
     <link href="../misc/SwitchButton/SwitchButton.css" rel="stylesheet">
@@ -59,20 +59,23 @@
             <div id="mainNavi">
 
             </div>
+            <button id="LightModeButton" onclick="toggleLightMode()">DarkMode</button>
             <div id="license"> - <a href="https://fontawesome.com/license/free" target="_blank">Icon license</a> - </div>
         </div>
 
         <!-- ACTUAL CONTENT -->
         <div class="cellM" id="content">
-
-            <div id="OUTPUT">
-
-            </div>
-
+            <output></output>
             <center><h1>Currently Installed Packages</h1></center>
 
             <div id="InstalledPackages">
 
+            </div>
+
+            <div id="WAITING_WRAPPER">
+                <div class="LOADING_RING lightmode">
+                    <div class="LOADING_RING_SPINNER"></div>
+                </div>
             </div>
         </div>
     </div>

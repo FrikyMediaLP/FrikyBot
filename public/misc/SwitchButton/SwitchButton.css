@@ -1,3 +1,10 @@
+
+/* 
+    ------------------
+        SWITCH BUTTON
+    ------------------
+*/
+
 .SWITCH_BUTTON{
     background-color: white;
     border-radius: 5px;
@@ -117,3 +124,862 @@
         left: 28px;
     }
 }
+
+/* 
+    -----------------------
+       Switch Button V2
+    -----------------------
+*/
+
+SWITCHBUTTON {
+    display: inline-block;
+    background-color: white;
+    border-radius: 5px;
+    border: 1px solid gray;
+    width: 50px;
+    height: 20px;
+    position: relative;
+    cursor: pointer;
+}
+
+    SWITCHBUTTON[disabled] {
+        cursor: default !important;
+    }
+
+    SWITCHBUTTON SWITCHBUTTONCURSOR {
+        background-color: white;
+        border-radius: 5px;
+        border: 1px solid gray;
+        width: 20px;
+        height: 18px;
+        position: absolute;
+        top: 0;
+        left: 28px;
+    }
+
+    SWITCHBUTTON[value=true] {
+        background-color: green;
+    }
+
+        SWITCHBUTTON[value=true] SWITCHBUTTONCURSOR {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+    SWITCHBUTTON[value=false] {
+        background-color: #d42828;
+    }
+
+    SWITCHBUTTON[value=false] SWITCHBUTTONCURSOR {
+        position: absolute;
+        top: 0;
+        left: 28px;
+    }
+
+/* 
+    -----------------------
+        Trash Button
+    -----------------------
+*/
+.MISC_TRASH_BUTTON {
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+}
+
+    .MISC_TRASH_BUTTON img {
+        height: 100%;
+        filter: invert(37%) sepia(71%) saturate(3543%) hue-rotate(338deg) brightness(101%) contrast(104%);
+    }
+
+    .MISC_TRASH_BUTTON:hover img {
+        filter: invert(45%) sepia(25%) saturate(6262%) hue-rotate(332deg) brightness(110%) contrast(115%);
+    }
+
+/* 
+    -----------------------
+        Edit Button
+    -----------------------
+*/
+
+.MISC_EDIT_BUTTON {
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+}
+
+    .MISC_EDIT_BUTTON img {
+        height: 100%;
+        filter: invert(58%) sepia(87%) saturate(408%) hue-rotate(135deg) brightness(93%) contrast(93%);
+    }
+
+    .MISC_EDIT_BUTTON:hover img {
+        filter: invert(72%) sepia(22%) saturate(1514%) hue-rotate(143deg) brightness(107%) contrast(101%);
+    }
+    
+/* 
+    -----------------------
+        Save Button
+    -----------------------
+*/
+
+.MISC_SAVE_BUTTON {
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+}
+
+    .MISC_SAVE_BUTTON img {
+        height: 100%;
+        filter: invert(58%) sepia(49%) saturate(1967%) hue-rotate(79deg) brightness(98%) contrast(91%);
+    }
+
+    .MISC_SAVE_BUTTON:hover img {
+        filter: invert(71%) sepia(100%) saturate(914%) hue-rotate(64deg) brightness(110%) contrast(116%);
+    }
+
+/* 
+    -----------------------
+        LOADING RING
+    -----------------------
+*/
+.LOADING_RING {
+    width: 100%;
+    padding-top: 100%;
+    position: relative;
+    border-radius: 10%;
+}
+
+    .LOADING_RING .LOADING_RING_SPINNER {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        width: calc(100% - 4px);
+        height: calc(100% - 4px);
+        border: 2px solid rgba(255,255,255,0.2);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: LOADING_RING_SPIN 1s infinite;
+    }
+
+    .LOADING_RING.lightmode .LOADING_RING_SPINNER, body:not(.darkmode) .LOADING_RING .LOADING_RING_SPINNER {
+        border: 2px solid rgba(0,0,0,0.2);
+        border-top-color: gray;
+    }
+
+@keyframes LOADING_RING_SPIN {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* 
+    -----------------------
+        LOADING CHECKMARK
+    -----------------------
+*/
+
+.CHECKMARK {
+    width: 21px;
+    height: 21px;
+    border: 1px solid black;
+    background-color: #212121;
+    border-radius: 10%;
+}
+
+    .CHECKMARK .CHECKMARK_SPINNER {
+        margin: 20% auto;
+        width: 40%;
+        height: 40%;
+        border: 2px solid rgba(255,255,255,0.2);
+        border-radius: 50%;
+        border-top-color: white;
+    }
+
+    .CHECKMARK.WAITING .CHECKMARK_SPINNER {
+        display: block;
+        animation: CHECKMARK_SPIN 1s infinite;
+    }
+
+    .CHECKMARK:not(.WAITING) .CHECKMARK_SPINNER {
+        display: none;
+    }
+
+
+    .CHECKMARK .CHECKMARK_X {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+
+        .CHECKMARK .CHECKMARK_X div {
+            position: absolute;
+            top: 8px;
+            right: 50%;
+            height: 5px;
+            width: 0;
+            background-color: red;
+            border-bottom-left-radius: 2px;
+            border-bottom-right-radius: 2px;
+            border-top-left-radius: 2px;
+            border-top-right-radius: 2px;
+        }
+
+        .CHECKMARK .CHECKMARK_X .left {
+            transform: rotate(-45deg);
+        }
+
+        .CHECKMARK .CHECKMARK_X .right {
+            transform: rotate(45deg);
+        }
+
+    .CHECKMARK.FAILED {
+        animation: CHECKMARK_X_backg 1s;
+        animation-fill-mode: forwards;
+    }
+
+        .CHECKMARK.FAILED .CHECKMARK_X {
+            display: block;
+        }
+
+            .CHECKMARK.FAILED .CHECKMARK_X div {
+                animation: CHECKMARK_X 1s;
+                animation-fill-mode: forwards;
+            }
+
+    .CHECKMARK:not(.FAILED) .CHECKMARK_X {
+        display: none;
+    }
+
+    .CHECKMARK .CHECKMARK_CHECK {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+
+        .CHECKMARK .CHECKMARK_CHECK div {
+            position: absolute;
+            height: 5px;
+            background-color: lime;
+            border-bottom-left-radius: 2px;
+            border-bottom-right-radius: 2px;
+        }
+
+        .CHECKMARK .CHECKMARK_CHECK .short {
+            transform: rotate(35deg);
+            border-top-left-radius: 2px;
+            width: 0%;
+            top: 11px;
+            right: 11px;
+        }
+
+        .CHECKMARK .CHECKMARK_CHECK .long {
+            width: 0%;
+            border-top-right-radius: 2px;
+            transform: rotate(-65deg);
+            top: 10px;
+            right: 10px;
+        }
+
+    .CHECKMARK.SUCCESS {
+        animation: CHECKMARK_CHECK_backg 1s;
+        animation-fill-mode: forwards;
+    }
+
+        .CHECKMARK.SUCCESS .CHECKMARK_CHECK {
+            display: block;
+        }
+
+            .CHECKMARK.SUCCESS .CHECKMARK_CHECK .short {
+                animation: CHECKMARK_CHECK_S 0.5s;
+                animation-fill-mode: forwards;
+            }
+
+            .CHECKMARK.SUCCESS .CHECKMARK_CHECK .long {
+                animation: CHECKMARK_CHECK_L 0.5s;
+                animation-fill-mode: forwards;
+            }
+
+    .CHECKMARK:not(.SUCCESS) .CHECKMARK_CHECK {
+        display: none;
+    }
+
+@keyframes CHECKMARK_SPIN {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes CHECKMARK_X {
+    100% {
+        width: 100%;
+        top: 8px;
+        right: 0px;
+    }
+}
+
+@keyframes CHECKMARK_X_backg {
+    100% {
+        border-color: red;
+        background-color: darkred;
+    }
+}
+
+@keyframes CHECKMARK_CHECK_S {
+    100% {
+        width: 35%;
+        top: 11px;
+        right: 11px;
+    }
+}
+
+@keyframes CHECKMARK_CHECK_L {
+    100% {
+        width: 80%;
+        top: 8px;
+        right: 0;
+    }
+}
+
+@keyframes CHECKMARK_CHECK_backg {
+    100% {
+        border-color: lime;
+        background-color: darkgreen;
+    }
+}
+
+/* 
+    -----------------------
+            SELECT
+    -----------------------
+*/
+
+.MISC_SELECT {
+    display: inline-block;
+    position: relative;
+    cursor: pointer;
+}
+.MISC_SELECT[disabled] {
+    filter: grayscale(1);
+    cursor: default;
+}
+    .MISC_SELECT .MISC_SELECT_CURSOR {
+        border: 1px solid #028deb;
+        padding: 0px 5px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .MISC_SELECT .MISC_SELECT_OPTIONS {
+        height: 0;
+        overflow: hidden;
+        display: grid;
+
+        z-index: 1;
+        position: absolute;
+        /* top: 100%; */
+        background-color: white;
+    }
+
+    .MISC_SELECT:not([disabled]):hover .MISC_SELECT_OPTIONS, .MISC_SELECT:not([disabled]).extend .MISC_SELECT_OPTIONS {
+        height: auto;
+        border: 1px solid #028deb;
+        border-top: none;
+    }
+
+    .MISC_SELECT .MISC_SELECT_OPTIONS > div {
+        padding: 0px 5px;
+    }
+    .darkmode .MISC_SELECT .MISC_SELECT_OPTIONS > div {
+        color: black;
+    }
+
+    .MISC_SELECT .MISC_SELECT_OPTIONS > div[hidden] {
+        display: none;
+    }
+        .MISC_SELECT .MISC_SELECT_OPTIONS > div:hover {
+            background-color: lightgray;
+            cursor: pointer;
+        }
+/* 
+    -----------------------
+            USERCONFIRM
+    -----------------------
+*/
+
+userconfirm {
+    position: absolute;
+    top: calc(20% + 50px);
+    left: 239px;
+    width: calc(100% - 270px);
+    z-index: 3 !important;
+    padding: 5px;
+    margin: 5px;
+    background-color: white;
+    font-family: 'Roboto', sans-serif;
+    border: 3px solid darkred;
+    box-shadow: rgba(100, 0, 0, 0.2) 5px 5px;
+}
+
+    userconfirm .userconfirm_question .head{
+        font-size: 30px;
+        color: darkred;
+        font-weight: bold;
+    }
+    userconfirm .userconfirm_question .sub {
+        font-size: 20px;
+    }
+
+    userconfirm .userconfirm_answers {
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, 200px);
+        grid-template-rows: 30px;
+        grid-column-gap: 10px;
+        grid-row-gap: 10px;
+        justify-content: center;
+    }
+
+    userconfirm .userconfirm_answer {
+        cursor: pointer;
+        border: none;
+        border-radius: 0;
+        outline: none;
+    }
+    userconfirm .userconfirm_answer:hover {
+        filter: brightness(0.9);
+    }
+
+/* 
+    -----------------------
+         CUSTOM TABLE
+    -----------------------
+*/
+
+customtable {
+    display: block;
+    width: 100% !important;
+    position: relative;
+}
+
+    customtable tablegrid {
+        display: grid;
+        width: calc(100% - -7px);
+        padding: 0 5px 0 0;
+        grid-template-columns: auto auto;
+        grid-template-rows: auto auto;
+        position: relative;
+        align-content: center !important;
+        overflow: scroll;
+    }
+        customtable tablegrid::-webkit-scrollbar {
+            width: 10px !important;
+            height: 10px !important;
+        }
+
+        customtable tablegrid::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        customtable tablegrid::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+        customtable tablegrid::-webkit-scrollbar-corner {
+            background: rgba(0,0,0,0);
+        }
+        customtable tablegrid customtable tablegrid {
+            margin: 5px auto;
+            padding: 0 5px;
+            width: calc(100% - 10px) !important;
+        }
+
+    customtable tableheader {
+        width: calc(100% - 9px) !important;
+        display: block;
+        border: none;
+        text-align: center;
+        text-transform: uppercase;
+        font-weight: bold;
+        font-size: 1.3em;
+        background-color: #028deb;
+        color: white;
+        padding: 0 5px;
+    }
+
+    customtable.blocked_caps_headers tableheader {
+        text-transform: none;
+    }
+
+    customtable customtable tableheader {
+        width: calc(100% - 7px) !important;
+        font-size: 1em;
+        filter: hue-rotate(-45deg);
+        font-weight: 400;
+    }
+
+    customtable tableheader:last-of-type {
+        width: calc(100% - 7px) !important;
+    }
+
+    customtable tablecontent {
+        width: calc(100% - 8px) !important;
+        display: block;
+        border: 1px solid lightgray;
+        border-left: none;
+        border-top: none;
+        text-align: center;
+        padding: 4px;
+        min-height: 1.3em;
+    }
+
+    customtable customtable tablecontent {
+        font-size: 1em;
+    }
+        customtable tablecontent[no-split] {
+            border-right: none;
+            padding: 4px;
+            color: gray;
+        }
+    customtable tablecontent[left] {
+        border-left: 1px solid gray;
+        width: calc(100% - 8px) !important;
+    }
+    customtable customtable tablecontent[left] {
+        width: calc(100% - 9px) !important;
+    }
+    customtable tablecontent[right] {
+        border-right: 1px solid gray;
+        width: calc(100% - 6px) !important;
+    }
+    customtable customtable tablecontent[right] {
+        width: calc(100% - 6px) !important;
+    }
+        customtable tablecontent[bottom] {
+            border-bottom: 1px solid gray;
+        }
+
+    customtable customtable tablecontent[left][right] {
+        width: calc(100% - 7px) !important;
+    }
+
+    customtable tablecontent img {
+        max-width: 100%;
+    }
+
+    customtable tablecontent tableemptytext{
+        position: absolute;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+
+    /* VERTICAL TABLE */
+    customtable.vertical > tablegrid {
+        grid-template-columns: calc(1.3em + 5px) auto !important;
+    }
+        customtable.vertical > tablegrid > tableheader {
+            width: calc(100% - 12px) !important;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            word-break: break-all;
+            text-orientation: upright !important;
+            border: 1px solid #00497a !important;
+            border-bottom: none !important;
+        }
+            customtable.vertical > tablegrid > tableheader:last-child {
+                border-bottom: 1px solid #00497a !important;
+            }
+
+        customtable.vertical > tablegrid > tablecontent {
+            border: 1px solid lightgray;
+            border-left: none;
+        }
+
+        /* UI */
+    customtable tableinterface {
+        display: block;
+        padding: 5px;
+        padding-bottom: 2px;
+    }
+
+    customtable tableinterfaceleft {
+    }
+
+    customtable tableinterfaceright {
+        float: right;
+    }
+        customtable tableinterfaceright input {
+            width: 50px;
+            text-align: center;
+            border: none;
+            border-bottom: 1px solid gray;
+            margin: 0 5px;
+        }
+
+        customtable tableinterfaceright button {
+            margin: 0 5px;
+        }
+
+/* 
+    -----------------------
+             TIMER
+    -----------------------
+*/
+.MISC_TIMER {
+    width: 20px;
+    height: 20px;
+    padding: 2px;
+    position: relative;
+}
+    .MISC_TIMER .MISC_TIMER_SPINNER {
+        width: 16px;
+        height: 16px;
+        border: 2px solid #ffffff;
+        border-top: 2px solid #19a3ff;
+        border-radius: 50%;
+        animation: MISC_TIMER_SPIN 1s linear infinite;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+    }
+    .MISC_TIMER .MISC_TIMER_TEXT {
+        text-align: center;
+        color: white;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: none;
+        font-size: 12px;
+        font-family: Roboto;
+    }
+
+@keyframes MISC_TIMER_SPIN {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* 
+    -----------------------
+         FILE LIBRARY
+    -----------------------
+*/
+.MISC_FILE_LIBRARY {
+    width: 100%;
+    border: 1px solid gray;
+}
+    .MISC_FILE_LIBRARY > .HIDDEN_AUDIO_CLUB {
+        display: none;
+    }
+
+    .MISC_FILE_LIBRARY .MISC_FILE_LIB_HEADER {
+        height: calc(1em + 5px);
+        width: calc(100% - 10px);
+        border-bottom: 1px solid gray;
+        padding: 5px;
+        display: grid;
+        grid-template-columns: auto calc(1em + 5px) 122px;
+        overflow: visible;
+        position: relative;
+    }
+
+        .MISC_FILE_LIBRARY .MISC_FILE_LIB_HEADER > img {
+            height: 15px;
+            padding: 3px;
+            background-color: #fd7214;
+            filter: invert(1);
+            cursor: pointer;
+        }
+            .MISC_FILE_LIBRARY .MISC_FILE_LIB_HEADER > img:hover {
+                filter: invert(1) brightness(0.8);
+            }
+
+    .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD {
+        max-width: 112px;
+        max-height: 1em;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 112px;
+        grid-template-rows: calc(1em + 5px) 107px auto calc(1em + 5px);
+        grid-row-gap: 5px;
+        position: absolute;
+        right: 5px;
+        top: 5px;
+        background-color: #028deb;
+        padding-bottom: 5px;
+        border: 1px solid black;
+        z-index: 1;
+    }
+
+        .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD :hover {
+            filter: brightness(0.8);
+        }
+
+        .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD.expanded {
+            max-height: 180px;
+        }
+            .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD.expanded button:first-child {
+                border-bottom: 1px solid #00497a;
+            }
+
+        .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD input[type="file"] {
+            display: none;
+        }
+
+        .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD img[src=""] {
+            display: none;
+        }
+        .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD .show {
+            display: block !important;
+        }
+        .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD span {
+            font-size: 12px;
+            font-weight: 100;
+            text-align: center;
+        }
+            .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD span:hover {
+                filter: brightness(1);
+            }
+
+            .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD span.big {
+                color: white;
+                font-weight: 800;
+                background-color: red;
+            }
+
+        .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD img, .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD video {
+            margin-top: 5px;
+            margin-left: 5px;
+            cursor: pointer;
+            border: 1px solid white;
+            height: 100px;
+            width: 100px;
+        }
+        .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD video, .FILE_LIB_HEADER_UPLOAD audio {
+            display: none;
+        }
+
+        .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD button[disabled] {
+            filter: grayscale(1);
+            cursor: default;
+        }
+
+        .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD button:first-of-type {
+            width: 100%;
+            background-color: #028deb;
+            border: none;
+            color: white;
+        }
+
+        .MISC_FILE_LIBRARY .FILE_LIB_HEADER_UPLOAD button:not(:first-of-type) {
+            margin-left: 5px;
+            width: calc(100% - 10px);
+            border: none;
+            background-color: #2ab89b;
+            color: white;
+        }
+
+        /* LIST */
+
+    .MISC_FILE_LIBRARY .FILE_LIST {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        grid-row-gap: 5px;
+        grid-column-gap: 10px;
+        padding: 5px;
+    }
+
+        .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT {
+            width: 100%;
+            height: 110px;
+            border: 1px solid gray;
+            position: relative;
+        }
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT[selected] {
+                background-color: #00ff1e !important;
+            }
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT:hover {
+                background-color: rgba(25, 163, 255, 0.4);
+                cursor: pointer;
+            }
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT span {
+                display: block;
+                padding: 0 5px;
+                text-align: center;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT img {
+                position: absolute;
+                left: 50%;
+                transform: translate(-50%, 0);
+                max-width: calc(100% - 20px);
+                max-height: calc(100% - 25px);
+            }
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT.MP4 img, .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT.BIGGER img {
+                max-width: 150px;
+            }
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT.MP4 video {
+                max-width: 150px;
+                position: absolute;
+                left: 50%;
+                transform: translate(-50%, 0);
+            }
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT {
+                display: none;
+                width: 100%;
+                height: calc(100% - 19px);
+                position: relative;
+            }
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT:hover .HOVER_ELT {
+                display: block;
+            }
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT img {
+                position: absolute;
+                top: 45%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                height: 40px;
+                width: 40px;
+                opacity: 0.8;
+                padding: 10px;
+            }
+
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT.BIGGER img:first-child {
+                transform: translate(-100%, -50%);
+            }
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT.BIGGER:not(.missing) img:last-child {
+                transform: translate(0, -50%);
+            }
+
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT img:hover {
+                background-color: gray;
+            }
+
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT img:first-child:hover {
+                background-color: red;
+            }
+
+                .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT img:nth-child(2):hover {
+                    background-color: green;
+                }
