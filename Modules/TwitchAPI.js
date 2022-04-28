@@ -824,7 +824,7 @@ const TTV_EVENTSUB_TOPICS = {
     "channel.raid": {
         version: '1',
         name: 'Channel Raid',
-        description: 'A broadcaster raids another broadcaster’s channel.',
+        description: 'A broadcaster raids another broadcasterÂ’s channel.',
         conditions: ['from_broadcaster_user_id'],
         resource: 'Channel'
     },
@@ -981,7 +981,7 @@ const TTV_EVENTSUB_TOPICS = {
     "channel.goal.progress": {
         version: '1',
         name: 'Goal Progress',
-        description: 'Get notified when progress (either positive or negative) is made towards a broadcaster’s goal.',
+        description: 'Get notified when progress (either positive or negative) is made towards a broadcasterÂ’s goal.',
         conditions: ['broadcaster_user_id'],
         scope: 'channel:read:goals',
         resource: 'Channel'
@@ -1035,14 +1035,14 @@ const TTV_EVENTSUB_TOPICS = {
     "user.authorization.grant": {
         version: '1',
         name: 'User Authorization Grant',
-        description: 'A user’s authorization has been granted to your client id.',
+        description: 'A userÂ’s authorization has been granted to your client id.',
         conditions: ['client_id'],
         resource: 'User'
     },
     "user.authorization.revoke": {
         version: '1',
         name: 'User Authorization Revoke',
-        description: 'A user’s authorization has been revoked for your client id.',
+        description: 'A userÂ’s authorization has been revoked for your client id.',
         conditions: ['client_id'],
         resource: 'User'
     },
