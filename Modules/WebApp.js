@@ -764,7 +764,7 @@ class WebApp extends require('./../Util/ModuleBase.js') {
 
                 if (Ematch) {
                     //Its a File
-                    return res.sendFile(path.resolve(folder + '/' + step + ext));
+                    return res.sendFile(path.resolve(folder + '/' + Ematch));
                 }
             }
         }
@@ -1002,7 +1002,7 @@ class WebAppInteractor {
         return this.Port;
     }
     GetHostnameAndPort() {
-        return this.Hostname + ':' + this.Port;
+        return this.Hostname === 'localhost' ? (this.Hostname + ':' + this.Port) : this.Hostname;
     }
 }
 

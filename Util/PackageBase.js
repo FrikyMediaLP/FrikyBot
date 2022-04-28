@@ -511,22 +511,38 @@ class PackageBase {
     getFilesFromDir(path, options = {}) {
         return fs.readdirSync(path, options);
     }
-    HTMLFileExists(URL_PATH) {
+    HTMLFileExists(URL_PATH, origin = this.getMainPackageRoot() + this.getName() + "/html") {
         //Cut extra / at the end
         if (URL_PATH.charAt(URL_PATH.length - 1) == "/") URL_PATH = URL_PATH.substring(0, URL_PATH.length - 1);
-        let pathRes = path.resolve(CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + this.getName() + "/html" + URL_PATH);
+        let pathRes = path.resolve(origin + URL_PATH);
         
         //ALREADY EXISTS
-        if (URL_PATH != "" && fs.existsSync(pathRes) && fs.statSync(pathRes).isFile())
-            return pathRes;
+        if (URL_PATH != "" && fs.existsSync(pathRes) && fs.statSync(pathRes).isFile()) return pathRes;
+
+        //Check CaseSensitive
+        let steps = URL_PATH.split('/').filter(elt => elt !== "");
+        let last = steps.pop() || '';
+        let cur_path = origin;
+
+        //Check Folder Path up to file
+        for (let folder of steps) {
+            let dirs = fs.readdirSync(path.resolve(cur_path));
+            let match = dirs.find(dir => dir.toLowerCase() === folder.toLowerCase());
+            if (!match) return "";
+            cur_path += "/" + match;
+        }
+
+        //Final File found?
+        let dirs = fs.readdirSync(cur_path);
+        let match = dirs.find(dir => dir.toLowerCase() === last.toLowerCase());
+        if (match && fs.statSync(path.resolve(cur_path + "/" + match)).isFile()) return path.resolve(cur_path + "/" + match);
 
         //Check File Endnings .html .js or .css
-        let FILE_ENDINGS = ["/index.html", "/index.htm",".html", ".htm"];
+        let FILE_ENDINGS = ["index.html", "index.htm",".html", ".htm"];
 
-        for (let ending of FILE_ENDINGS) {
-            pathRes = path.resolve(CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + this.getName() + "/html" + URL_PATH + ending);
-            if (fs.existsSync(pathRes) && fs.statSync(pathRes).isFile())
-                return pathRes;
+        for (let ext of FILE_ENDINGS) {
+            let Ematch = dirs.find(dir => dir.toLowerCase() === last.toLowerCase() + ext);
+            if (Ematch) return path.resolve(cur_path + '/' + Ematch);
         }
 
         return "";

@@ -340,7 +340,9 @@ function GetPaginationString(first = 10, cursor = 0, options = {}) {
 
 //WEBSOCKET
 function StartWebsocket(register_info) {
-    const socket = new WebSocket('ws://' + window.location.hostname + (window.location.port ? ":" + window.location.port : ""));
+    let is_secure = window.location.protocol === 'https';
+
+    const socket = new WebSocket((is_secure ? 'wss' : 'ws') + '://' + window.location.hostname + (window.location.port ? ":" + window.location.port : ""));
     
     socket.addEventListener('message', function (event) {
         if (event.data.toString() === 'Error') {

@@ -5,7 +5,7 @@ const CONSTANTS = {
         CONFIG_FILE_PATH: "config.json",
         PACKAGES_INSTALL_ROOT: "Packages/",
         MODULES_INSTALL_ROOT: "Modules/",
-        UTIL_INSTALL_ROOT: "UTIL/",
+        UTIL_INSTALL_ROOT: "Util/",
         ThirdrdPary_INSTALL_ROOT: "3rdParty/",
         DATA_STORAGE_ROOT: "DATA/",
         PUBLIC_ROOT: "public/"

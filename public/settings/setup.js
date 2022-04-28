@@ -926,7 +926,7 @@ function TwitchAPI_Application_setURL(hostname, port) {
     if (!hostname) hostname = CUR_CONFIG['WebApp'].Hostname;
     if (!port) port = CUR_CONFIG['WebApp'].Port;
 
-    document.getElementById("TwitchAPI_Redirect_URL").value = "http://" + hostname + ":" + port + "/Twitch-Redirect";
+    document.getElementById("TwitchAPI_Redirect_URL").value = "http" + ( hostname === 'localhost' ? '' : 's') + "://" + hostname + ":" + port + "/twitch-redirect";
 }
 function TwitchAPI_Secret_change(btn) {
     if (btn.innerHTML === 'SHOW SECRET') {

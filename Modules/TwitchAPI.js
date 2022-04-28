@@ -1806,13 +1806,12 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
     }
 
     // USER ACCESS
-    generateUserAccessLinkCode(scopes = [], claims = []) {
+    generateUserAccessLinkCode(scopes = [], claims = [], hostname, port) {
         let cfg = this.Config.GetConfig();
-        let port = this.Config.parent.GetConfigJSON()['WebApp']['Port'];
 
         let query = "https://id.twitch.tv/oauth2/authorize";
         query += "?client_id=" + cfg.ClientID;
-        query += "&redirect_uri=http://localhost:" + port + "/Twitch-redirect";
+        query += "&redirect_uri=http" + (hostname === 'localhost' ? '' : 's') + "://" + hostname + (hostname === 'localhost' ? port : '') + "/twitch-redirect";
         query += "&response_type=code";
         query += "&scope=";
 
@@ -1834,13 +1833,12 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
 
         return query;
     }
-    generateUserAccessLinkToken(scopes = [], claims = []) {
+    generateUserAccessLinkToken(scopes = [], claims = [], hostname, port) {
         let cfg = this.Config.GetConfig();
-        let port = this.Config.parent.GetConfigJSON()['WebApp']['Port'];
 
         let query = "https://id.twitch.tv/oauth2/authorize"
         query += "?client_id=" + cfg.ClientID;
-        query += "&redirect_uri=http://localhost:" + port + "/Twitch-redirect";
+        query += "&redirect_uri=http" + (hostname === 'localhost' ? '' : 's') + "://" + hostname + (hostname === 'localhost' ? port : '') + "/twitch-redirect";
         query += "&response_type=" + (scopes.length > 0 ? 'token+' : '') + "id_token";
         query += "&scope=openid";
         
@@ -3080,7 +3078,7 @@ class Authenticator extends WEBAPP.Authenticator {
             let cfg = this.Config.GetConfig();
 
             return res.json({
-                data: this.TwitchAPI.generateUserAccessLinkToken(req.body.scopes, req.body.claims || cfg['Claims'])
+                data: this.TwitchAPI.generateUserAccessLinkToken(req.body.scopes, req.body.claims || cfg['Claims'], webInt.GetHostname(), webInt.GetPort())
             });
         });
         webInt.addAuthAPIEndpoint('/TwitchAPI/login/bot', { user_level: 'admin' }, 'POST', (req, res) => {
@@ -3092,7 +3090,7 @@ class Authenticator extends WEBAPP.Authenticator {
             let scopes = req.body['scopes'] || this.TwitchAPI.GetScopes();
 
             res.send({
-                data: this.TwitchAPI.generateUserAccessLinkCode(scopes, claims)
+                data: this.TwitchAPI.generateUserAccessLinkCode(scopes, claims, webInt.GetHostname(), webInt.GetPort())
             });
         });
     }
