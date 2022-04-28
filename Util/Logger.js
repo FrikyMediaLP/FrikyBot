@@ -26,7 +26,7 @@ class Logger {
 
             }
         };
-
+        
         //Ensure settings is an object
         if (typeof settings == "object" && settings.length == undefined) {
             for (let setting in settings) {
@@ -41,12 +41,13 @@ class Logger {
             }
         }
 
+        this.CURRENT_RAW_FILE = this.GetTodaysRAWPath();
+
         if (this.Settings.enableFileOutput == true) {
             try {
-                let raw_path_comb = this.Settings.FileStructure.ROOT + this.Settings.FileStructure.RAW + new Date().toLocaleDateString() + ".db";
-                this.LogDataBase = new Datastore({ filename: path.resolve(raw_path_comb), autoload: true });
+                this.LogDataBase = new Datastore({ filename: path.resolve(this.CURRENT_RAW_FILE), autoload: true });
             } catch (err) {
-                console.log(err);
+                this.warn(err.message);
             }
             this.ResetLatest();
         }
@@ -342,16 +343,24 @@ class Logger {
         }
     }
     Save2DB(time = new Date(), source, type, message) {
-        if (this.LogDataBase && this.Settings.enableFileOutput) {
-            if ((this.Settings.Sources[source] && this.Settings.Sources[source].enableFileOutput != false) || !this.Settings.Sources[source]) {
-                this.LogDataBase.insert({
-                    time: time.getTime(),
-                    source: source,
-                    type: type,
-                    message: message
-                });
+        if (!this.LogDataBase || !this.Settings.enableFileOutput) return;
+        if (this.Settings.Sources[source] && this.Settings.Sources[source].enableFileOutput == false) return;
+
+        try {
+            if (this.GetTodaysRAWPath(time) !== this.CURRENT_RAW_FILE) {
+                this.CURRENT_RAW_FILE = this.GetTodaysRAWPath(time);
+                this.LogDataBase = new Datastore({ filename: path.resolve(this.CURRENT_RAW_FILE), autoload: true });
             }
+        } catch (err) {
+            return;
         }
+
+        this.LogDataBase.insert({
+            time: time.getTime(),
+            source: source,
+            type: type,
+            message: message
+        });
     }
 
     ResetLatest() {
@@ -468,6 +477,9 @@ class Logger {
         }
 
         return string;
+    }
+    GetTodaysRAWPath(time) {
+        return this.Settings.FileStructure.ROOT + this.Settings.FileStructure.RAW + this.replaceAll(this.replaceAll((time || new Date()).toLocaleDateString(), '/', '_'), '.', '_') + ".db";
     }
 }
 

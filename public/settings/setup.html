@@ -279,7 +279,8 @@
                                 <br />
                                 <h3>Redirect URL</h3>
                                 <p>You have to set your Redirect URL in your Application Settings to redirect Logins using Twitch to the Bot.</p>
-                                <b style="color: red;">Remember to update this URL every time you change the FrikyBot Webserver Port!!</b>
+                                <b style="color: red;">Remember to update this URL every time you change the Hostname (or Port when using localhost).</b>
+                                <b style="color: red;">NOTE: The Redirect URL is <b>CASE SENSITIVE</b>! Make sure you match it EXACTLY!</b>
                             </div>
                             <div>
                                 <h4>Client ID</h4>
@@ -290,7 +291,7 @@
                                 <button id="TwitchAPI_Application_Save" onclick="TwitchAPI_Application_Save()" style="display: none;">SAVE APPLICATION SETTINGS</button>
 
                                 <h4 style="margin-top: 10px;">Redirect URL <button class="COPY_CAT_BUTTON" onclick="copyToClipboard(document.getElementById('TwitchAPI_Redirect_URL').value)">copy</button></h4>
-                                <input id="TwitchAPI_Redirect_URL" type="text" autocomplete="off" placeholder="Default: http://localhost:8080/Twitch-Redirect" value="http://localhost:8080/Twitch-Redirect" disabled />
+                                <input id="TwitchAPI_Redirect_URL" type="text" autocomplete="off" placeholder="Default: http://localhost:8080/twitch-redirect" value="http://localhost:8080/twitch-redirect" disabled />
                             </div>
                         </div>
                         <div class="Con_Cat Con_Cat_Description WIZ_GROUP_TwitchAPI" hidden>

@@ -268,8 +268,3 @@ __pycache__/
 TOKENS/
 Logs/
 config.json
-
-# Package Specific
-Packages/*/data/
-
-!Packages/Docs/Data

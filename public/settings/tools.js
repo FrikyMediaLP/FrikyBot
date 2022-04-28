@@ -31,6 +31,11 @@ const TOOLS = [
         }
     },
     {
+        name: 'Database Visualzier',
+        description: 'Visualizes Database Data in a Grid Table.',
+        targetid: 'DATABASE_VISUALIZER'
+    },
+    {
         name: 'Config JSON Modifier',
         description: 'SoonTM'
     },
@@ -295,4 +300,25 @@ function TTV_LOCAL_STORAGE_VIS_CONVERT(str) {
         document.getElementById('TTV_LOCAL_STORAGE_VIS_TOTAL').innerHTML = "";
         return;
     }
+}
+
+//DATABASE VISUALIZER VIZ
+function DATABASE_VISUALIZER_CONVERT(str) {
+    let arr = [];
+
+    for (let elt of str.split("\n")) {
+        if (elt === "") continue;
+        try {
+            arr.push(JSON.parse(elt));
+        } catch (err) {
+            console.log(elt);
+            console.log(err);
+        }
+    }
+
+    const options = {
+
+    };
+
+    document.getElementById('DATABASE_VISUALIZER_OUT').innerHTML = MISC_createTable(arr || [], options);
 }

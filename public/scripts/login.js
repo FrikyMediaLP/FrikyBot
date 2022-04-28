@@ -26,8 +26,7 @@
         else SHOW_NONE();
     } catch (err) {
         SHOW_NONE();
-    }
-    
+      
     //Default Navigation - has to be after TTV Login Check
     NAVIVATION_init()
         .then(json => {
