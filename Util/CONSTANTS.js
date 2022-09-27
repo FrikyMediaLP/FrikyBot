@@ -23,7 +23,8 @@ const CONSTANTS = {
         partner: 2,
         other: 1,
         follower: 1,
-        regular: 0
+        regular: 0,
+        viewer: 0
     }
 };
 

@@ -72,11 +72,7 @@ function calculateROOT() {
 //NAVIGATION
 async function NAVIVATION_init() {
     //FETCH NAVI
-    let opt = {};
-    if (LOGIN_getCookies())
-        opt = { headers: { "authorization": "Bearer " + LOGIN_getCookies().id_token } };
-
-    return fetch("/api/pages/navigation", opt)
+    return fetch("/api/pages/navigation", getAuthHeader())
         .then(data => data.json())
         .then(json => {
             if (json.err) {
@@ -120,9 +116,13 @@ function setCookie(name, value, session) {
         else localStorage.setItem(name, value);
     } else if (!DISABLE_COOKIE_BLOCKED_NOTIFICATION) {
         if (document.getElementsByTagName('output')) {
-            OUTPUT_showError('Cookie "' + name + '" was not saved, because you didnt allowed that Cookie! <a href="/Cookies#highlighted=' + name + '" target="_blank">Change Cookie Settings!</a>');
+            let s = 'Cookie "' + name + '" was not saved, because you didnt allowed that Cookie!';
+            OUTPUT_showError(s + ' <a href="/Cookies#highlighted=' + name + '" target="_blank">Change Cookie Settings!</a>');
+            return s;
         }
     }
+    
+    return true;
 }
 function setCookieNoOverwrite(name, value, session) {
     if (COOKIE_ACCEPT && !hasCookie(name, session))
@@ -190,8 +190,18 @@ async function STANDARD_FETCH_RESPONSE_CHECKER(response) {
     }
 }
 function getAuthHeader() {
-    if (LOGIN_getCookies && LOGIN_getCookies())
-        return { headers: { "Authorization": "Bearer " + LOGIN_getCookies().id_token } };
+    if (LOGIN_getCookies && LOGIN_getCookies()) {
+        let cookies = LOGIN_getCookies();
+        let opts = {};
+
+        if (cookies.oauth_token) {
+            opts['headers'] = { 'authorization': 'OAuth ' + cookies.oauth_token  }
+        } else {
+            opts['headers'] = { 'authorization': 'Bearer ' + cookies.id_token  }
+        }
+
+        return opts;
+    }
 
     return { headers: {} };
 }
@@ -331,7 +341,7 @@ function GetPaginationValues(pagination = "") {
     return out;
 }
 function GetPaginationString(first = 10, cursor = 0, options = {}) {
-    let s = "A" + first + "B" + Math.min(cursor, (options.pagecount || (cursor + 1)) - 1) + "C";
+    let s = "A" + first + "B" + Math.max(0, Math.min(cursor, (options.pagecount === undefined ? (cursor + 1) : options.pagecount) - 1)) + "C";
     if (options.timesorted) s += "T";
     if (options.customsort) s += "CSS" + customsort + "CSE";
     if (options.pagecount !== undefined) s += "PS" + options.pagecount + "PE";
@@ -339,22 +349,31 @@ function GetPaginationString(first = 10, cursor = 0, options = {}) {
 }
 
 //WEBSOCKET
-function StartWebsocket(register_info) {
-    let is_secure = window.location.protocol === 'https';
+function StartWebsocket(register_info, on_message = (event) => 'unused', on_terminated = (reason) => 'unused', on_system = (event) => 'unused') {
+    let is_secure = window.location.protocol === 'https:';
 
     const socket = new WebSocket((is_secure ? 'wss' : 'ws') + '://' + window.location.hostname + (window.location.port ? ":" + window.location.port : ""));
     
     socket.addEventListener('message', function (event) {
-        if (event.data.toString() === 'Error') {
-            console.error("Websocket error!");
-            return;
+        if (event.data.toString() === 'Error') return console.error("Websocket error!");
+        
+        let type = event.data.split(":")[0];
+
+        //System Messages
+        if (type === "register" || type === "ping" || type === "terminated") {
+            if (type === "register") socket.send("register:" + JSON.stringify(register_info));
+            if (type === "ping") socket.send("pong");
+            if (type === "terminated") {
+                let callback = on_terminated(event.data.split(":")[1]);
+                if (callback === 'unused') console.error("Websocket Terminated! Reason: " + event.data.split(":")[1]);
+                socket.close(1001, "terminated");
+            }
+
+            return on_system(event);
         }
 
-        let type = event.data.split(":")[0];
-        
-        if (type === "register") {
-            socket.send("register:" + JSON.stringify(register_info));
-        }
+        //Custom Messages
+        return on_message(event);
     });
 
     return socket;
@@ -403,6 +422,36 @@ function HTMLArray2RealArray(arr = []) {
 
     return output;
 }
+function FindHTMLParent(elt, parent_match = (parent) => true) {
+    while (parent_match(elt) === false && elt.tagName !== 'BODY') {
+        elt = elt.parentElement;
+    }
+
+    return elt.tagName !== 'BODY' ? elt : null;
+}
+function FindSubElementFromPath(parent, path = []) {
+    if (path.length === 0) return parent;
+
+    const type = path[0].charAt(0);
+    const check_class = (a) => a.classList.contains(path[0].substring(1));
+    const check_id = (a) => a.id === path[0].substring(1);
+    const check_tag = (a) => a.tagName === path[0].toUpperCase();
+    const check_dataset = (a) => a.dataset[path[0].substring(path[0].indexOf('-') + 1, path[0].indexOf('"') - 1)] === path[0].substring(path[0].indexOf('"') + 1, path[0].lastIndexOf('"'));
+
+    let checkChild = (a) => false;
+    if (path[0] instanceof Function) checkChild = path[0];
+    else if (type === '.') checkChild = check_class;
+    else if (type === '#') checkChild = check_id;
+    else if (path[0].startsWith('data-')) checkChild = check_dataset;
+    else checkChild = check_tag;
+
+    for (let child of parent.childNodes) {
+        if (!(child instanceof Element)) continue;
+        if (checkChild(child)) return FindSubElementFromPath(child, path.slice(1));
+    }
+
+    return null;
+}
 //GRID-STUFF
 function disableContent(callback, use_disabler_click = false) {
     if (document.getElementById('contentDISABLER')) return;
@@ -423,26 +472,6 @@ function enableContent() {
 }
 function CONTENT_DISABLE_REMOVE_BLUR() {
     enableContent();
-}
-function FindSubElementFromPath(parent, path = []) {
-    if (path.length === 0) return parent;
-
-    const type = path[0].charAt(0);
-    const check_class = (a) => a.classList.contains(path[0].substring(1));
-    const check_id = (a) => a.id === path[0].substring(1);
-    const check_tag = (a) => a.tagName === path[0];
-
-    let checkChild = (a) => false;
-    if (type === '.') checkChild = check_class;
-    else if (type === '#') checkChild = check_id;
-    else checkChild = check_tag;
-
-    for (let child of parent.childNodes) {
-        if (!(child instanceof Element)) continue;
-        if (checkChild(child)) return FindSubElementFromPath(child, path.slice(1));
-    }
-
-    return null;
 }
 
 //Data
@@ -493,8 +522,16 @@ function PrintArraySpaced(arr) {
     return s;
 }
 function replaceAll(string, search, replace) {
-    while (string.indexOf(search) >= 0) {
-        string = string.replace(search, replace);
+    let index = 0;
+    
+    while (string.indexOf(search, index) >= 0) {
+        index = string.indexOf(search, index);
+
+        let pre = string.substring(0, index);
+        let post = string.substring(search.length + index);
+        
+        string = pre + replace + post;
+        index += replace.length;
     }
 
     return string;
@@ -555,6 +592,15 @@ function cloneJSONArray(arr) {
     return new_arr;
 }
 
+function sortAlphabetical(a, b) {
+    for (let i = 0; i < a.length && i < b.length; i++) {
+        if (a.charCodeAt(i) < b.charCodeAt(i)) return -1;
+        if (a.charCodeAt(i) > b.charCodeAt(i)) return 1;
+    }
+
+    return a.length - b.length;
+}
+
 //CSS
 function isColor(strColor) {
     var s = new Option().style;
@@ -612,8 +658,32 @@ function GetCountdownTime(exp) {
     if (s < 10) s = '0' + s;
     return h + "H " + m + "M " + s + "S";
 }
+function GetLocalISODate(date = new Date(), skips = []) {
+    let html_date = '';
+
+    if(!skips.find(elt => elt === 'year')) html_date += date.getFullYear() + '-';
+    if (!skips.find(elt => elt === 'month')) html_date += (date.getMonth() < 9 ? '0' : '') + (date.getMonth()  + 1) + '-';
+    if (!skips.find(elt => elt === 'day')) html_date += (date.getDate() < 10 ? '0' : '') + date.getDate() + 'T';
+    if (!skips.find(elt => elt === 'hour')) html_date += (date.getHours() < 10 ? '0' : '') + date.getHours() + ':';
+    if (!skips.find(elt => elt === 'minute')) html_date += (date.getMinutes() < 10 ? '0' : '') + date.getMinutes() + ':';
+    if (!skips.find(elt => elt === 'second')) html_date += (date.getSeconds() < 10 ? '0' : '') + date.getSeconds() + ':';
+
+    return html_date.substring(0, html_date.length - 1);
+}
 
 //Math
 function Math_map(value, low1, high1, low2, high2) {
     return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
+}
+function GenerateRandomBytes(number = 10) {
+    let s = "";
+    for (let i = 0; i < number; i++) {
+
+        let type = Math.random() * 3;
+
+        if (type < 1) s += String.fromCharCode(Math.floor(Math.random() * 10) + 48);
+        else if (type < 2) s += String.fromCharCode(Math.floor(Math.random() * 26) + 65);
+        else if (type < 3) s += String.fromCharCode(Math.floor(Math.random() * 26) + 97);
+    }
+    return s;
 }

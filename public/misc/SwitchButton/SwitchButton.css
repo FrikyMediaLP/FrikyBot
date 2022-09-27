@@ -774,6 +774,7 @@ customtable {
 .MISC_FILE_LIBRARY {
     width: 100%;
     border: 1px solid gray;
+    overflow: hidden;
 }
     .MISC_FILE_LIBRARY > .HIDDEN_AUDIO_CLUB {
         display: none;
@@ -894,7 +895,13 @@ customtable {
         grid-row-gap: 5px;
         grid-column-gap: 10px;
         padding: 5px;
+        height: calc(100% - 40px);
+        overflow-y: scroll;
     }
+
+        .MISC_FILE_LIBRARY .FILE_LIST::-webkit-scrollbar {
+            width: 10px !important;
+        }
 
         .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT {
             width: 100%;
@@ -933,7 +940,7 @@ customtable {
                 max-width: 150px;
             }
 
-            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT.MP4 video {
+            .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT.MP4 video, .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT.WEBM video {
                 max-width: 150px;
                 position: absolute;
                 left: 50%;
@@ -980,6 +987,6 @@ customtable {
                 background-color: red;
             }
 
-                .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT img:nth-child(2):hover {
+                .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT img:last-child:hover {
                     background-color: green;
                 }

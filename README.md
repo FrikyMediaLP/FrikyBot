@@ -3,10 +3,14 @@ FrikyBot is the Twitch Chat Bot and WebInterface by FrikyMediaLP. This Bot will 
 
 The Scope has changed A LOT tho! For now, this Bot is (mostly) focused to be used by myself alone until most is done! But at some point a public Release to run on multiple custom servers by anyone is desired. This will take a while, but tipps and insight is ALWAYS welcome :) I´m still lerning much about all of this :D
 
-Note: This is a Hobby, nothing professionell or any good and thats great! So keep that in mind, when given critic about any "uncommon" workflows :D
+Note: This is a Hobby, nothing professionell or any good and thats great! So keep that in mind, when given criticism about any "uncommon" workflows :D
 
 ## Getting Started
-This Twitch Bot is powered by Node.js using the Express NPM Module to host a localhost Server and the tmi.js (will be replaced soon) NPM Module to Interface the Twitch Chat.
+This Twitch Bot is powered by Node.js using the Express NPM Module to host a localhost Server to Interface with the Bot.
+
+To install the bot, download this repository to your local machine or a cloud server. Open the commandline, navigate to the downloaded "server.js" file and run the command `"npm install"`. 
+
+This will install all necessary dependancies and setup the bot files.
 
 All dependancies are:
 * [express](https://www.npmjs.com/package/express) - hosting the Server
@@ -16,13 +20,11 @@ All dependancies are:
 * [jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken) - Login Token creation / verification
 * [jwks-rsa](https://www.npmjs.com/package/jwks-rsa) - JWT extern signature usage
 * [node-fetch](https://www.npmjs.com/package/node-fetch) - to use fetch() like in the Browser, this requieres v^2.6.5
-* [tmi.js](https://www.npmjs.com/package/tmi.js) - Twitch IRC Interface
-* [nedb](https://www.npmjs.com/package/nedb) - Database Manager (to be replaced with MongoDB "soon")
 * [colors](https://www.npmjs.com/package/colors) - coloring the Console Output
 
-After starting the bot(execute the server.js file) navigate to http://localhost:8080/login and use the token displayed in the Bot-Console to gain Admin privileges.
+To start the bot, run the `"npm start"` command and follow the commandline interface until the bot is ready. Then navigate to http://localhost:8080/login and use the displayed token in the commandline to gain Admin privileges.
 
-Then youre able to access the Web-Setup at http://localhost:8080/settings/setup and customize your bot the way you want.
+Then youre able to access the Web-Setup at http://localhost:8080/settings/setup and customize your bot the way you want. Extra Packages can be found here: [FrikyMediaLP Repositories](https://github.com/FrikyMediaLP?tab=repositories)
 
 Some features (like Twitch EventSubs) need an https / SSL secured domain. This can be done by deploying the bot to a custom domain or using proxys like ngrok.
 
@@ -30,7 +32,7 @@ Some features (like Twitch EventSubs) need an https / SSL secured domain. This c
 Modules are the base code interfacing with different Services and simplifying their usage.
 
 ### TwitchIRC
-This part handles all interactions with the Twitch Chat using [TMI (Twitch Messaging Interface)](https://github.com/tmijs) (soon replaced by a custom IRC Client). 
+This Module handles all interactions with the Twitch Chat and Emotes.
 
 ### TwitchAPI
 Interface with the Twitch API - This ONLY uses HELIX!!! So many things arent avaiable yet until Twitch themself are done.
@@ -46,19 +48,19 @@ These are some Packages currently available:
 ### Alerts
 An advanced Alerts-System with shareable Overlay settings, Alerts for Chat Events (e.g. HypeTrains, Predictions, ...) and a deep Alert-Trigger-System powered by custom Profiles which can be easily switched to.
 
-### Chat Moderation
+### Chat Moderation (WiP)
 Moderating is hard! Every chat has its own culture, its own memes and jokes - so a automated moderationt tool needs to be deeply tuneable. This is my shot at it - but as said, as chat culture changes so must the bot.
 
 ### CommandHandler
 Commands are probably THE most used Chatbot feature, period. Making it familiar but also improving it is the goal. With more controll over Userlevels and Command Variables this CommandHandler is probably the most powerfull and expandable using other Packages.
 
-### Docs
+### Docs (WiP)
 This Package is mainly hosted by the "official" FrikyBot providing Documentations and Guides when programming your own Packages and Modules. Or Troubleshooting stuff I messed up ;D
 
 ### NewsFeed
 Aswell as Docs this might only be hosted by the "official" Frikybot embedding News and Changelogs on Social Media and Bot-Instances.
 
-### Stats
+### Stats (WiP)
 Collecting Data from your Streams and visualizing them in a neat format. Not only cool to inspire competition for users to be at the top, but also to analyse your Stream Statistics.
 
 ### Planned Packages

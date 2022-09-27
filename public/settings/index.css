@@ -82,6 +82,9 @@
                 #DASHBOARD #Modules .Module .ctrl button {
                     width: calc(100% - 10px);
                     margin: 5px;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    white-space: nowrap;
                 }
 
             #DASHBOARD #Modules .Module.WIP a {
@@ -162,6 +165,9 @@
                     width: calc(100% - 10px);
                     margin: 5px;
                     max-height: 20px !important;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    white-space: nowrap;
                 }
 
 #DASHBOARD #Packages .Package[disabled] .ctrl button.RELOAD {

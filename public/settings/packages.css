@@ -130,17 +130,20 @@
             content: 'Enabled';
         }
 
-        .Package .Control button {
-            width: calc(100% - 10px);
-            margin: 0 5px;
-            padding: 5px;
-            background-color: #028deb;
-            color: white;
-            font-weight: bold;
-            border: none;
-            outline: none;
-            cursor: pointer;
-        }
+.Package .Control button {
+    width: calc(100% - 10px);
+    margin: 0 5px;
+    padding: 5px;
+    background-color: #028deb;
+    color: white;
+    font-weight: bold;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
 
             .Package .Control button:not([disabled]):hover {
                 filter: brightness(0.9);
@@ -186,6 +189,12 @@
             overflow-y: scroll;
         }
 
+            .Package .Misc .Desc .API_INFO {
+                color: gray;
+                font-size: 15px;
+                color: lightcoral;
+            }
+
         /* PACKAGE SETTINGS */
 
         .Package .Misc .Settings {
@@ -193,6 +202,7 @@
             display: grid;
             grid-template-columns: auto;
             grid-template-rows: auto;
+            position: relative;
         }
 
             .Package .Misc .Settings p {
@@ -242,9 +252,22 @@
             .Package .Misc .Settings .Setting {
                 margin-top: 2px;
                 display: none;
-                grid-template-columns: auto 0px;
+                grid-template-columns: auto auto;
                 grid-template-rows: auto;
             }
+
+                .Package .Misc .Settings .Setting > p > span:nth-child(2) {
+                    background-color: var(--frikybot-dark);
+                    color: white;
+                    border-radius: 50%;
+                    font-size: 10px;
+                    padding: 0 5px;
+                    height: 12px;
+                    display: inline-block;
+                    transform: translate(3px, -5px);
+                    user-select: none;
+                    cursor: help;
+                }
 
             .Package .Misc .Settings.show .Setting {
                 display: grid;
@@ -266,9 +289,14 @@
                     grid-template-columns: auto 52px;
                 }
 
-                .Package .Misc .Settings .Setting.SELECT {
-                    grid-template-columns: auto 200px;
-                }
+.Package .Misc .Settings .Setting.SELECT, .Package .Misc .Settings .Setting.ARRAY {
+    position: relative;
+}
+
+    .Package .Misc .Settings .Setting.SELECT .MISC_SELECT, .Package .Misc .Settings .Setting.ARRAY .MISC_SELECT {
+        position: absolute;
+        right: 0;
+    }
 
                 /* PACKAGE INTERCONNECT */
 

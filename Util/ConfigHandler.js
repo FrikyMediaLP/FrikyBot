@@ -23,7 +23,7 @@ const SettingTypes = [
                     return 'not in selection';
                 }
             },
-            { name: 'minlength', check: (x, optionSet) => x.length >= optionSet.minlength || 'too short' }
+            { name: 'minlength', check: (x, optionSet) =>x.length >= optionSet.minlength || 'too short' }
         ], default: ''
     }, {
         name: 'object', options: [
@@ -67,7 +67,8 @@ class ConfigHandler{
     constructor(logger, settings = {}) {
         this.Settings = {
             export_dir: '',
-            export_name: 'config'
+            export_name: 'config',
+            on_change: (newValue, oldValue) => 'unused'
         };
 
         //Copy Settings
@@ -154,6 +155,8 @@ class ConfigHandler{
     UpdateConfig(cfgJSON) {
         let errors = {};
 
+        let old_value = this.GetConfigJSON();
+
         for (let key in cfgJSON) {
             let foundCFG = this.Configs.find(elt => elt.name === key);
 
@@ -165,8 +168,11 @@ class ConfigHandler{
         }
 
         //Check for Errors
-        if (this.CheckErrors(errors)) this.Save();
-
+        if (this.CheckErrors(errors)) {
+            this.Save();
+            if (this.Settings.on_change) this.Settings.on_change(this.GetConfigJSON(), old_value);
+        }
+        
         return errors;
     }
 
@@ -232,6 +238,10 @@ class ConfigHandler{
             };
         }
     }
+    setOnChange(func = (newValue, oldValue) => 'unused') {
+        if (func instanceof Function) this.Settings.on_change = func;
+        return 'input not a function';
+    }
 }
 
 class Config {
@@ -244,7 +254,8 @@ class Config {
 
         this.Settings = {
             export_dir: null,
-            export_name: 'config'
+            export_name: 'config',
+            on_change: (name, newValue, oldValue) => 'unused'
         };
         
         //Copy Settings
@@ -329,32 +340,40 @@ class Config {
         if (test_result.length > 0) return test_result;
 
         //Update
+        let old_value = this.GetConfig();
         this.Config = cfg;
+        if (this.Settings.on_change) this.Settings.on_change('global', this.Config, old_value);
         if (autoSave) this.Save();
 
         return true;
     }
     UpdateSetting(stgName, updatedSetting, autoSave = true, skipOptions = false) {
-        //Find Template
-        let stgT = this.Template.find(elt => elt.name === stgName);
-        if (stgT) {
-            let result = this.checkType(stgT.type, updatedSetting, stgT, skipOptions);
-            if (result !== true) return '"' + stgT.name + '" ' + result;
-        }
-
         let copyCat = this.GetConfig();
         if (updatedSetting === undefined) delete copyCat[stgName];
-        else copyCat[stgName] = updatedSetting;
+        else {
+            //Find Template
+            let stgT = this.Template.find(elt => elt.name === stgName);
+            if (stgT) {
+                let result = this.checkType(stgT.type, updatedSetting, stgT, skipOptions);
+                if (result !== true) return '"' + stgT.name + '" ' + result;
+            }
+
+            copyCat[stgName] = updatedSetting;
+        }
 
         //Update
+        let old_value = this.GetConfig();
         this.Config = copyCat;
+        if (this.Settings.on_change) this.Settings.on_change(stgName, this.Config, old_value);
         if (autoSave) this.Save();
 
         return true;
     }
     
     ResetConfig(include_opt = false) {
+        let old_value = this.GetConfig();
         this.Config = this.CreateBlankConfig(include_opt);
+        if (this.Settings.on_change) this.Settings.on_change('global', this.Config, old_value);
     }
     FillConfig() {
         //Template
@@ -593,6 +612,10 @@ class Config {
     //Util
     GetName() {
         return this.name;
+    }
+    setOnChange(func = (name, newValue, oldValue) => 'unused') {
+        if (func instanceof Function) this.Settings.on_change = func;
+        return 'input not a function';
     }
 }
 

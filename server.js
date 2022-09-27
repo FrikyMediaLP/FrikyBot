@@ -1,5 +1,7 @@
 ﻿'use strict';
 
+const VERSION = '0.4.0.0';
+
 /*
  *  ----------------------------------------------------------
  *                      NPM MODULES
@@ -13,7 +15,7 @@ const express = require('express');
 
 console.log("\n");
 console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////");
-console.log("                                   FRIKYBOT - CHAT BOT - NODE JS SERVER");
+console.log("                                   FRIKYBOT - v" + VERSION + " - NODE JS SERVER");
 console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////");
 
 /*
@@ -79,6 +81,7 @@ SETUP()
         }
     })
     .catch(err => {
+        console.log(err);
         Logger.server.error(err.message);
         //console.log(err);
         console.log("Press any key to exit.");
@@ -138,8 +141,7 @@ async function SETUP() {
     ConfigHandler.AddConfig(new CONFIGHANDLER_MODULE.Config('FrikyBot', [{ name: 'logger', type: 'string' }, { name: 'constants', type: 'string' }], { preloaded: (errors['FrikyBot'] || [])[1] }));
 
     //Load Modules
-    for (let module in configs) {
-        if (module == '0') continue;
+    for (let module of CONSTANTS.MODULE_BOOT_ORDER) {
         loadModule(module, configs[module], ConfigHandler);
     }
 
@@ -241,6 +243,8 @@ async function INIT() {
         let obj = INSTALLED_MODULES[module].Object;
         let node_module = INSTALLED_MODULES[module].node_module;
 
+        if (!obj) continue;
+        
         try {
             if (module === 'WebApp') {
                 //Init
@@ -350,6 +354,7 @@ async function INIT_WEBAPP() {
         ModuleControlAPIRouter.get('/stop', API_MODULE_CONTROL_STOP);
         ModuleControlAPIRouter.get('/remove', API_MODULE_CONTROL_REMOVE);
         ModuleControlAPIRouter.post('/add', API_MODULE_CONTROL_ADD);
+        ModuleControlAPIRouter.put('/ables', API_MODULE_CONTROL_ABLES);
         WebAppInteractor.addAuthAPIRoute('/modules/control', { user_level: 'staff' }, ModuleControlAPIRouter);
         WebAppInteractor.addAuthAPIEndpoint('/modules/logs/:module', {}, 'GET', API_MODULE_LOGS);
         WebAppInteractor.addAuthAPIEndpoint('/modules/logs/:module/:log', {}, 'GET', API_MODULE_LOGS);
@@ -366,6 +371,7 @@ async function INIT_WEBAPP() {
         PackageControlAPIRouter.get('/reload', API_PACKAGE_CONTROL_RELOAD);
         PackageControlAPIRouter.get('/remove', API_PACKAGE_CONTROL_REMOVE);
         PackageControlAPIRouter.post('/add', API_PACKAGE_CONTROL_ADD);
+        PackageControlAPIRouter.put('/ables', API_PACKAGE_CONTROL_ABLES);
         WebAppInteractor.addAuthAPIRoute('/packages/control', { user_level: 'staff' }, PackageControlAPIRouter);
         
         //Bot API - Pages
@@ -407,11 +413,30 @@ async function INIT_WEBAPP() {
 
 //Modules
 function autodetectModules() {
+    let out = [];
+    let files = [];
+
     try {
-        return fs.readdirSync(path.resolve(CONSTANTS.FILESTRUCTURE.MODULES_INSTALL_ROOT)).map(x => x.split('.js')[0])
+        files = fs.readdirSync(path.resolve(CONSTANTS.FILESTRUCTURE.MODULES_INSTALL_ROOT)).map(x => x.split('.js')[0]);
     } catch (err) {
-        return [];
+
     }
+
+    for (let name of files) {
+        if (INSTALLED_MODULES[name] && INSTALLED_MODULES[name].node_module) {
+            out.push(INSTALLED_MODULES[name].node_module.DETAILS || { name });
+            continue;
+        }
+        
+        try {
+            let obj = require('./' + CONSTANTS.FILESTRUCTURE.MODULES_INSTALL_ROOT + name + '.js');
+            out.push(obj.DETAILS || { name });
+        } catch (err) {
+
+        }
+    }
+
+    return out;
 }
 function loadModule(module, preloaded_config, ConfigHandler) {
     try {
@@ -422,7 +447,11 @@ function loadModule(module, preloaded_config, ConfigHandler) {
 
         let obj = null;
 
-        if (module === 'TwitchAPI') obj = new INSTALLED_MODULES[module].node_module[module](preloaded_config, Logger, INSTALLED_MODULES['TwitchIRC'].Object);
+        if (module === 'TwitchIRC') obj = new INSTALLED_MODULES[module].node_module[module](preloaded_config, Logger, INSTALLED_MODULES['TwitchAPI'] ? INSTALLED_MODULES['TwitchAPI'].Object : null);
+        if (module === 'TwitchAPI') {
+            obj = new INSTALLED_MODULES[module].node_module[module](preloaded_config, Logger, INSTALLED_MODULES['TwitchIRC'].Object);
+            if (INSTALLED_MODULES['TwitchAPI'] && INSTALLED_MODULES['TwitchAPI'].Object) INSTALLED_MODULES['TwitchIRC'].Object.setTwitchAPI(INSTALLED_MODULES['TwitchAPI'].Object);
+        }
         else obj = new INSTALLED_MODULES[module].node_module[module](preloaded_config, Logger);
 
         INSTALLED_MODULES[module].Object = obj;
@@ -432,27 +461,48 @@ function loadModule(module, preloaded_config, ConfigHandler) {
         if (module === 'WebApp') {
             Logger.server.error("The FrikyBot REQUIERES the WebApp Module! Please check your install!");
             Logger.server.warn("Please check your install!");
-            return Promise.reject(err);
         }
+        console.log(err);
         Logger.setup.error(module + ' failed to load!');
     }
 }
 
 //Packages
 function autodetectPackages() {
+    let out = [];
+    let files = [];
+
     try {
-        return fs.readdirSync(path.resolve(CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT));
+        files = fs.readdirSync(path.resolve(CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT));
     } catch (err) {
-        return [];
+
     }
+
+    for (let name of files) {
+        if (INSTALLED_PACKAGES[name] && INSTALLED_PACKAGES[name].node_module) {
+            out.push(INSTALLED_PACKAGES[name].node_module.DETAILS || { name });
+            continue;
+        }
+
+        try {
+            let obj = require('./' + CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + name + '/' + name + '.js');
+            out.push(obj.DETAILS || { name });
+        } catch (err) {
+
+        }
+    }
+
+    return out;
 }
 function loadPackage(pack, preloaded_config) {
     try {
         INSTALLED_PACKAGES[pack] = {
             Object: null,
-            Class: require('./' + CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + pack + '/' + pack + '.js')[pack],
+            node_module: require('./' + CONSTANTS.FILESTRUCTURE.PACKAGES_INSTALL_ROOT + pack + '/' + pack + '.js'),
+            Class: null,
             Config: preloaded_config
         };
+        INSTALLED_PACKAGES[pack].Class = INSTALLED_PACKAGES[pack].node_module[pack];
     } catch (err) {
         Logger.server.error(pack + " -> " + err.message);
         Logger.server.warn(pack + " -> " + "Please check your install or contact the Devs!");
@@ -549,6 +599,16 @@ function GetPaginationString(first = 10, cursor = 0, options = {}) {
     if (options.pagecount !== undefined) s += "PS" + options.pagecount + "PE";
     return s;
 }
+function ExtractFromVersionString(string = '') {
+    let split = string.split('.');
+
+    return {
+        patch: parseInt(split.pop()),
+        minor: parseInt(split.pop()),
+        major: parseInt(split.pop()),
+        release: parseInt(split.pop())
+    };
+}
 
 /*
  *  ----------------------------------------------------------
@@ -562,10 +622,10 @@ async function SERVER_MAIN_ROUTER(req, res, next) {
         return res.redirect("/favicon.png");
     }
     
-    //TTV Login
+    //TTV Login - Update Bot User
     if (INSTALLED_MODULES['TwitchAPI'] && req.originalUrl.toLowerCase().startsWith("/settings/setup") && req.query['code']) {
         try {
-            await INSTALLED_MODULES['TwitchAPI'].Object.createUserAccessToken(req.query['code'], req.query['scopes']);
+            await INSTALLED_MODULES['TwitchAPI'].Object.createUserAccessToken(req.query['code'], req.query['scopes'], req.query['state']);
             return res.redirect("/Settings/setup");
         } catch (err) {
             Logger.TwitchAPI.error(err.message);
@@ -588,6 +648,7 @@ function API_Cookies(req, res, next) {
     LocalStorage.push({ name: 'ACCEPTED_COOKIES', by: 'Cookie Settings', set: 'When you allow a Cookie in the Cookie Settings', removed: 'When remove all Cookie Settings.', reason: 'Only allow the Cookies you want to use!', origin: 'frikybot' });
     LocalStorage.push({ name: 'darkmode', by: 'Any Page', set: 'When you change your Darkmode Preference', removed: 'When you decline Cookies.', reason: 'Remembering that Pages should be loaded in darkmode', origin: 'frikybot' });
     LocalStorage.push({ name: 'LOGGED_IN_USER', by: '(Twitch) Login', set: 'When you log in using Twitch or an Authorization Code', removed: 'When you log out / Your Access expires.', reason: 'Stay logged in on every Site.', origin: 'frikybot' });
+    LocalStorage.push({ name: 'LOGIN_NONCE', by: '(Twitch) Login', set: 'When you log in using Twitch or an Authorization Code', removed: 'Directly after Login', reason: 'Verifying that the Response you received originated from your browser.', origin: 'frikybot' });
     LocalStorage.push({ name: 'NEWSFEED_ALLOW_SCHEDULED', by: 'Homepage / News', set: 'When you toggle the NewsFeed to show/hide Scheduled News.', removed: 'When remove all Cookies.', reason: 'Dont Leak unpublished News.', origin: 'frikybot' });
 
     SessionStorage.push({ name: 'LOGIN_ORG_PAGE', by: 'Twitch Login', set: 'When sent over to Twitch.', reason: 'Be able to return to the Page you left off.', origin: 'frikybot' });
@@ -696,6 +757,48 @@ function API_MODULE_CONTROL_ADD(req, res, next) {
 
     //Restart when added
     shutdown(5);
+}
+
+async function API_MODULE_CONTROL_ABLES(req, res, next) {
+    const module_name = req.body['module_name'];
+    const controllable_name = req.body['controllable_name'];
+
+    if (!module_name) return res.status(400).json({ err: 'Bad Request. Module not found.' });
+    if (!INSTALLED_MODULES[module_name]) return res.status(400).json({ err: 'Bad Request. Module not installed.' });
+
+    let out = {
+        type: 'info',
+        message: ''
+    };
+
+    if (module_name === 'WebApp' && controllable_name === '_temp_clearErrorLog') {
+        Server_Status = {
+            status: "Operational",
+            errors: {
+                fatal: {
+
+                },
+                outage: {
+
+                }
+            }
+        };
+
+        out.message = 'cleared';
+        res.json(out);
+        return;
+    }
+
+    try {
+        let info = await INSTALLED_MODULES[module_name].Object.executeControllable(controllable_name, res.locals.user);
+        if (typeof info === 'string') out.message = info;
+        else out = info;
+    } catch (err) {
+        out.message = err.message;
+        out.type = 'error';
+    }
+
+    res.json(out);
 }
 
 async function API_MODULE_LOGS(req, res, next) {
@@ -903,7 +1006,6 @@ async function API_PACKAGE_CONTROL_ADD(req, res, next) {
 
         let pkg = INSTALLED_PACKAGES[package_name].Object;
         out.package = {
-            status: pkg ? 'ready' : 'not ready',
             details: pkg.getPackageDetails(),
             interconnects: pkg.GetPackageInterconnectRequests(),
             cfg: pkg.GetConfig(false).GetConfigREDACTED(),
@@ -915,6 +1017,30 @@ async function API_PACKAGE_CONTROL_ADD(req, res, next) {
 
     res.json(out);
     return Promise.resolve();
+}
+
+async function API_PACKAGE_CONTROL_ABLES(req, res, next) {
+    const package_name = req.body['package_name'];
+    const controllable_name = req.body['controllable_name'];
+
+    if (!package_name) return res.status(400).json({ err: 'Bad Request. Package not found.' });
+    if (!INSTALLED_PACKAGES[package_name]) return res.status(400).json({ err: 'Bad Request. Package not installed.' });
+
+    let out = {
+        type: 'info',
+        message: ''
+    };
+
+    try {
+        let info = await INSTALLED_PACKAGES[package_name].Object.executeControllable(controllable_name, res.locals.user);
+        if (typeof info === 'string') out.message = info;
+        else out = info;
+    } catch (err) {
+        out.message = err.message;
+        out.type = 'error';
+    }
+
+    res.json(out);
 }
 
 async function API_PACKAGE_LOGS(req, res, next) {
@@ -976,13 +1102,17 @@ async function PAGE_Navi(req, res, next) {
     //Check Userlevel and Push
     for (let element of ALL_ELEMENTS) {
         if (element.userlevel) {
-            if (CONSTANTS.UserLevel[element.userlevel] === undefined) continue;
+            let userlevel_value = null;
+            if (element.userlevel instanceof Function) userlevel_value = element.userlevel();
+            else userlevel_value = element.userlevel;
+            
+            if (CONSTANTS.UserLevel[userlevel_value] === undefined) continue;
 
-            if (CONSTANTS.UserLevel[maximum_userlevel] < CONSTANTS.UserLevel[element.userlevel]) {
+            if (CONSTANTS.UserLevel[maximum_userlevel] < CONSTANTS.UserLevel[userlevel_value]) {
                 //Check Userlevel
                 try {
-                    await INSTALLED_MODULES['WebApp'].Object.GetInteractor().AuthorizeUser(res.locals.user, { user_level: element.userlevel });
-                    maximum_userlevel = element.userlevel;
+                    await INSTALLED_MODULES['WebApp'].Object.GetInteractor().AuthorizeUser(res.locals.user, { user_level: userlevel_value });
+                    maximum_userlevel = userlevel_value;
                 } catch (err) {
                     continue;
                 }
@@ -1049,7 +1179,7 @@ async function PAGE_Navi(req, res, next) {
 function PAGE_LOGIN(req, res, next) {
     let auth = INSTALLED_MODULES['WebApp'].Object.Authenticator || {};
 
-    res.json({ authenticator: auth.GetName() || 'UNAVAILABLE' });
+    res.json({ authenticator: auth.GetName ? auth.GetName() : 'UNAVAILABLE' });
 }
 
 async function PAGE_Settings_Dashboard(req, res, next) {
@@ -1087,17 +1217,19 @@ async function PAGE_Settings_Setup(req, res, next) {
 
         ttv_irc['ready'] = TwitchIRC.isReady();
 
-        try {
-            let user = (await TwitchAPI.GetUsers({ login: TwitchIRC.Config.GetConfig()['login'] })).data[0];
+        if (TwitchIRC.Config.GetConfig()['login']) {
+            try {
+                let user = (await TwitchAPI.GetUsers({ login: TwitchIRC.Config.GetConfig()['login'] })).data[0];
 
-            ttv_irc['user'] = {
-                preferred_username: user.display_name,
-                sub: user.id,
-                description: user.description,
-                picture: user.profile_image_url
-            };
-        } catch {
+                ttv_irc['user'] = {
+                    preferred_username: user.display_name,
+                    sub: user.id,
+                    description: user.description,
+                    picture: user.profile_image_url
+                };
+            } catch {
 
+            }
         }
     }
 
@@ -1133,17 +1265,28 @@ async function PAGE_Settings_Setup(req, res, next) {
         ttv_api.eventsubs = TwitchAPI.GetEventSubSettings();
     }
 
+    //Package API Req
+    let packages = {};
+    for (let pgk in INSTALLED_PACKAGES) {
+        try {
+            packages[pgk] = INSTALLED_PACKAGES[pgk].Object.getPackageDetails();
+        } catch (err) {
+
+        }
+    }
+
     res.json({
         data: {
             cfg: ConfigHandler.GetConfigJSON(),
             tmpl: ConfigHandler.GetTemplates(),
             auths: INSTALLED_MODULES['WebApp'].Object.GetAuthenticatorDetails(),
-            ttv_api, ttv_irc
+            ttv_api, ttv_irc, packages
         }
     });
 }
 async function PAGE_Settings_Modules(req, res, next) {
     let data = {
+        server: VERSION,
         Modules: [],
         Unknown_Modules: [],
         auto_detected: autodetectModules()
@@ -1169,15 +1312,60 @@ async function PAGE_Settings_Modules(req, res, next) {
 }
 async function PAGE_Settings_Packages(req, res, next) {
     let data = {
+        server: VERSION,
+        modules: [],
         Packages: [],
-        auto_detected: autodetectPackages()
+        auto_detected: autodetectPackages(),
+        inactive_endpoints: [],
+        inactive_eventsubs: []
     };
 
+    //Check Module Versions
+    for (let modl in INSTALLED_MODULES) {
+        try {
+            if (INSTALLED_MODULES[modl].node_module) {
+                modules.push(INSTALLED_MODULES[modl].node_module.DETAILS);
+            }
+        } catch (err) {
+
+        }
+    }
+
+    //Find API / EventSubs
+    let TTVAPI = INSTALLED_MODULES['TwitchAPI'];
+    if (INSTALLED_MODULES['TwitchAPI'] && INSTALLED_MODULES['TwitchAPI'].node_module && INSTALLED_MODULES['TwitchAPI'].Object) {
+        //Inactive Stuff
+        let inactive_endpoints = [];
+        let inactive_eventsubs = [];
+        let scopes = TTVAPI.Object.GetScopes();
+
+        for (let name in TTVAPI.node_module.TTV_API_INFO || {}) {
+            if (!TTVAPI.node_module.TTV_API_INFO[name].req_scope) continue;
+            if (scopes.find(elt => elt === TTVAPI.node_module.TTV_API_INFO[name].req_scope)) continue;
+            inactive_endpoints.push(name);
+        }
+
+        for (let topic in TTVAPI.node_module.TTV_EVENTSUB_TOPICS || {}) {
+            if (!TTVAPI.node_module.TTV_EVENTSUB_TOPICS[topic].scope) continue;
+
+            let t_scopes = TTVAPI.node_module.TTV_EVENTSUB_TOPICS[topic].scope;
+            if (typeof t_scopes === 'string') t_scopes = [t_scopes];
+            
+            for (let scope of t_scopes) {
+                if (scopes.find(elt => elt === scope)) continue;
+                inactive_eventsubs.push(topic);
+            }
+        }
+
+        data.inactive_endpoints = inactive_endpoints;
+        data.inactive_eventsubs = inactive_eventsubs;
+    }
+
+    //Collect Package Data
     for (let pack in INSTALLED_PACKAGES) {
         try {
             let pkg = INSTALLED_PACKAGES[pack].Object;
             let pkg_data = {
-                status: pkg ? 'ready' : 'not ready', 
                 details: pkg.getPackageDetails(),
                 interconnects: pkg.GetPackageInterconnectRequests(),
                 cfg: pkg.GetConfig(false).GetConfigREDACTED(),
@@ -1348,7 +1536,7 @@ async function API_BotStatus(req, res, next) {
         //Twitch IRC
         if (TwitchIRC && TwitchIRC.isEnabled() && TwitchIRC.isReady()) {
             data.Channel = TwitchIRC.getChannel();
-            if (data.Channel && data.Channel.indexOf('#') >= 0) data.Channel = data.Channel.substring(1);
+            data.Username = TwitchIRC.getLoginName() || '';
         } else {
             Server_Status.errors.fatal.TwitchIRC = "Not available.";
         }
@@ -1373,10 +1561,10 @@ async function API_BotStatus(req, res, next) {
                 Server_Status.errors.outage.TwitchAPI = "No API Access";
             }
 
-            if (TwitchIRC) {
-                //Fetch Stream/User Info
+            //Fetch User Info
+            if (TwitchIRC && TwitchIRC.getLoginName()) {
                 try {
-                    let UserJson = await TwitchAPI.GetUsers({ login: TwitchIRC.getUsername() });
+                    let UserJson = await TwitchAPI.GetUsers({ login: TwitchIRC.getLoginName() });
 
                     if (UserJson && UserJson.data && UserJson.data[0]) {
                         data.Username = UserJson.data[0].display_name ? UserJson.data[0].display_name : UserJson.data[0].login;
@@ -1384,7 +1572,14 @@ async function API_BotStatus(req, res, next) {
                         data.Type = UserJson.data[0].type;
                         data.Image = UserJson.data[0].profile_image_url;
                     }
+                } catch (err) {
+                    Server_Status.errors.outage.TwitchAPI = "Access unavailabe.";
+                }
+            }
 
+            //Fetch Stream Info
+            if (TwitchIRC) {
+                try {
                     let StreamJson = await TwitchAPI.GetStreams({ user_login: data.Channel });
 
                     if (StreamJson && StreamJson.data) {
