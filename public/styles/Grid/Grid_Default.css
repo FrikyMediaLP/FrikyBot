@@ -40,6 +40,7 @@
         background-color: lightgray;
         cursor: pointer;
         outline: none;
+        border: none;
     }
 
         #grid #navi button:hover {

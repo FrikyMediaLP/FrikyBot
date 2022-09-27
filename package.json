@@ -1,6 +1,6 @@
 {
-  "name": "twitch-bot-new-api",
-  "version": "0.0.1",
+  "name": "frikybot",
+  "version": "0.4.0",
   "description": "TwitchFrikyBot",
   "main": "server.js",
   "author": {
@@ -13,9 +13,7 @@
     "express": "^4.17.3",
     "jsonwebtoken": "^8.5.1",
     "jwks-rsa": "^1.12.3",
-    "nedb": "^1.8.0",
     "node-fetch": "^2.6.7",
-    "tmi.js": "^1.8.5",
     "ws": "^8.5.0"
   }
 }

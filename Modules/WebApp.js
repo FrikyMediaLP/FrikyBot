@@ -2,7 +2,7 @@ const CONFIGHANDLER = require('./../Util/ConfigHandler.js');
 
 const fs = require('fs');
 const path = require('path');
-const Datastore = require('nedb');
+const FrikyDB = require('./../Util/FrikyDB.js');
 
 const express = require('express');
 const crypto = require('crypto');
@@ -18,7 +18,9 @@ const WS_REGISTER_TEMPLATE = "{origin}{topic}{misc}";
 const MODULE_DETAILS = {
     name: 'WebApp',
     description: 'Controlling Website access and Interfaces to Packages/Modules and APIs.',
-    picture: '/images/icons/wifi-solid.svg'
+    picture: '/images/icons/wifi-solid.svg',
+    version: '0.4.0.0',
+    server: '0.4.0.0'
 };
 
 class WebApp extends require('./../Util/ModuleBase.js') {
@@ -33,7 +35,8 @@ class WebApp extends require('./../Util/ModuleBase.js') {
             { name: 'enable_api', type: 'boolean', default: true },
             { name: 'Authenticator', type: 'config', requiered: true, group: 1 },
             { name: 'Log_Dir', type: 'string', default: 'Logs/' + MODULE_DETAILS.name + '/' },
-            { name: 'use_legacy_server', type: 'boolean', default: false }
+            { name: 'use_legacy_server', type: 'boolean', default: false },
+            { name: 'tcp_pinging_interval', type: 'number', default: 5 }
         ]);
         this.Config.options = {
             groups: [{ name: 'WebApp' }, { name: 'Authenticator' }]
@@ -43,17 +46,32 @@ class WebApp extends require('./../Util/ModuleBase.js') {
         
         //Express App
         this.app;
+        this.BODY_PARSER = {
+            verify: (req, res, buf) => {
+                req.rawBody = buf;
+            }
+        };
         this.Installed_Authenticators = [];
         this.Authenticator;
         if (WebAppInteractor) this.WebAppInteractor = WebAppInteractor;
 
         //TCP Server
         this.server;
+        this.TCP_WEBSOCKETS = [];
+        this.TCP_PINGING_INTERVAL = null;
 
         //logging
         this.AUTH_LOG;
         this.Settings_LOG;
-        
+
+        //Controllables
+        this.addControllables([
+            { name: 'restart', title: 'Restart WebServer', callback: async (user) => this.Controllable_Restart() },
+            { name: 'stop', title: 'Stop WebServer', callback: async (user) => this.Controllable_Stop() },
+            { name: 'ping', title: 'Force Ping', callback: async (user) => this.WS_ping() },
+            { name: '_temp_clearErrorLog', title: 'Clear Error Log', callback: () => 'cleared' }
+        ]);
+
         //Displayables
         this.addDisplayables([
             { name: 'API Status', value: () => this.Config.GetConfig()['enable_api'] !== false ? 'ONLINE' : 'OFFLINE' },
@@ -66,7 +84,8 @@ class WebApp extends require('./../Util/ModuleBase.js') {
             { name: 'Total API Route Calls', value: () => this.WebAppInteractor.STAT_API_CALLS },
             { name: 'API Route Calls per 10 Min', value: () => this.WebAppInteractor.STAT_API_CALLS_PER_10 },
             { name: 'Total Authentications', value: () => this.WebAppInteractor.STAT_API_CALLS },
-            { name: 'Authentications per 10 Min', value: () => this.WebAppInteractor.STAT_API_CALLS_PER_10 }
+            { name: 'Authentications per 10 Min', value: () => this.WebAppInteractor.STAT_API_CALLS_PER_10 },
+            { name: 'TCP Client', value: () => this.TCP_WEBSOCKETS.length }
         ]);
     }
 
@@ -75,12 +94,8 @@ class WebApp extends require('./../Util/ModuleBase.js') {
 
         //Express App Setup
         this.app = express();
-        this.app.use(bodyParser.json({
-            verify: (req, res, buf) => {
-                req.rawBody = buf;
-            },
-            limit: cfg['upload_limit'] || '3mb'
-        }));
+        this.BODY_PARSER.limit = cfg['upload_limit'] || '3mb';
+        this.app.use(bodyParser.json(this.BODY_PARSER));
 
         //WebSocketServer Stuff
         this.server;
@@ -90,8 +105,34 @@ class WebApp extends require('./../Util/ModuleBase.js') {
             this.server = HTTP.createServer(this.app);
             this.WSServer = new Websocket.Server({ server: this.server });
             this.WSServer.on('connection', (ws, request) => {
+                let client = { socket: ws, ping: 0, pong: 0, topic: null };
+                this.TCP_WEBSOCKETS.push(client);
+
+                let topic = null;
+
                 ws.send("register:" + WS_REGISTER_TEMPLATE);
-                ws.on('message', message => this.WebAppInteractor.SendTCPMessage(ws, message));
+                ws.on('message', message => {
+
+                    if (message.toString() === 'pong') {
+                        client.pong = Date.now();
+                        return;
+                    }
+
+                    let type = message.toString().split(":")[0];
+                    let data = message.toString().split(":").slice(1).join(":");
+
+                    if (type === 'register') {
+                        try {
+                            let json = JSON.parse(data);
+                            topic = json.topic;
+                            client.topic = topic;
+                        } catch (err) {
+
+                        }
+                    }
+
+                    this.WebAppInteractor.SendTCPMessage(topic, ws, message)
+                });
             });
 
             this.Logger.info("Using WebSocket Server.");
@@ -112,12 +153,12 @@ class WebApp extends require('./../Util/ModuleBase.js') {
         }
 
         //Init Logging Database
-        this.AUTH_LOG = new Datastore({ filename: path.resolve(cfg.Log_Dir + 'Auth_Log.db'), autoload: true });
-        this.Settings_LOG = new Datastore({ filename: path.resolve(cfg.Log_Dir + 'Settings_Logs.db'), autoload: true });
+        this.AUTH_LOG = new FrikyDB.Collection({ path: path.resolve(cfg.Log_Dir + 'Auth_Log.db') });
+        this.Settings_LOG = new FrikyDB.Collection({ path: path.resolve(cfg.Log_Dir + 'Settings_Logs.db') });
 
         this.addLog('Authentications', this.AUTH_LOG);
         this.addLog('Settings Changes', this.Settings_LOG);
-
+        
         //WebAppInteractor
         if (!this.WebAppInteractor) this.setupWAI();
 
@@ -191,7 +232,7 @@ class WebApp extends require('./../Util/ModuleBase.js') {
                     method: 'POST',
                     body: req.body,
                     time: Date.now()
-                });
+                }).catch(err => this.Logger.warn("Settings Logging: " + err.message));
             }
 
             res.sendStatus(200);
@@ -226,39 +267,37 @@ class WebApp extends require('./../Util/ModuleBase.js') {
                     method: 'POST',
                     body: req.body,
                     time: Date.now()
-                });
+                }).catch(err => this.Logger.warn("Settings Logging: " + err.message));
             }
             
             return Promise.resolve();
         });
-        this.WebAppInteractor.addAuthAPIEndpoint('/settings/webapp/upload_limit', { user_level: 'admin' }, 'POST', async (req, res) => {
-            try {
-                if (!req.body.upload_limit) {
-                    res.json({ err: 'Limit nof valid' });
-                    return Promise.resolve();
-                }
+        this.WebAppInteractor.addAuthAPIEndpoint('/settings/webapp/upload_limit', { user_level: 'admin' }, 'PUT', async (req, res) => {
 
-                let errors = this.Config.UpdateSetting('upload_limit', req.body.upload_limit);
-
-                if (errors !== true) {
-                    res.json({ err: 'Changing Limit: ' + errors[0] });
-                    return Promise.resolve();
-                }
-
-                res.json({ msg: '200', upload_limit: req.body.upload_limit });
-                await this.Restart();
-            } catch (err) {
-                res.json({ err: 'restart failed' });
+            if (!req.body.upload_limit) {
+                res.json({ err: 'Limit nof valid' });
+                return Promise.resolve();
             }
+            let errors = this.Config.UpdateSetting('upload_limit', req.body.upload_limit);
+
+            if (errors !== true) {
+                res.json({ err: 'Changing Limit: ' + errors[0] });
+                return Promise.resolve();
+            }
+
+            this.WebAppInteractor._upload_limit = req.body.upload_limit;
+            this.BODY_PARSER.limit = req.body.upload_limit;
+            this.Logger.warn("Updated Upload Limit to " + req.body.upload_limit.toUpperCase() + "! This requieres a manuell restart!!!");
+            res.json({ msg: '200', upload_limit: req.body.upload_limit });
             
             //Logging
             if (this.Settings_LOG) {
                 this.Settings_LOG.insert({
                     endpoint: '/api/settings/webapp/upload_limit',
-                    method: 'POST',
+                    method: 'PUT',
                     body: req.body,
                     time: Date.now()
-                });
+                }).catch(err => this.Logger.warn("Settings Logging: " + err.message));
             }
 
             return Promise.resolve();
@@ -280,7 +319,7 @@ class WebApp extends require('./../Util/ModuleBase.js') {
                     method: 'POST',
                     body: req.body,
                     time: Date.now()
-                });
+                }).catch(err => this.Logger.warn("Settings Logging: " + err.message));
             }
 
             return res.json({ code: 200, msg: 'Authenticator switched to' + this.Authenticator.GetName() });
@@ -295,49 +334,11 @@ class WebApp extends require('./../Util/ModuleBase.js') {
                     method: 'GET',
                     body: req.body,
                     time: Date.now()
-                });
+                }).catch(err => this.Logger.warn("Settings Logging: " + err.message));
             }
 
             if (errors !== true) return res.json({ err: 'API Enable Toggle failed.' });
             else return res.json({ new_displayables: this.GetDisplayables() });
-        });
-
-        //WebApp Control API
-        this.WebAppInteractor.addAuthAPIEndpoint('/webapp/control/stop', { user_level: 'admin' }, 'GET', async (req, res) => {
-            try {
-                res.sendStatus(200);
-                await this.StopServer();
-            } catch (err) {
-                return Promise.resolve();
-            }
-
-            //Logging
-            if (this.Settings_LOG) {
-                this.Settings_LOG.insert({
-                    endpoint: '/api/settings/webapp/stop',
-                    method: 'GET',
-                    body: req.body,
-                    time: Date.now()
-                });
-            }
-        });
-        this.WebAppInteractor.addAuthAPIEndpoint('/webapp/control/restart', { user_level: 'admin' }, 'GET', async (req, res) => {
-            try {
-                res.sendStatus(200);
-                await this.Restart();
-            } catch (err) {
-                return Promise.resolve();
-            }
-
-            //Logging
-            if (this.Settings_LOG) {
-                this.Settings_LOG.insert({
-                    endpoint: '/api/settings/webapp/restart',
-                    method: 'GET',
-                    body: req.body,
-                    time: Date.now()
-                });
-            }
         });
         
         //NO ENDPOINT FOUND
@@ -349,6 +350,7 @@ class WebApp extends require('./../Util/ModuleBase.js') {
         let cfg = this.Config.GetConfig();
         this.WebAppInteractor.SetHostname(cfg.Hostname);
         this.WebAppInteractor.SetPort(cfg.Port);
+        this.WebAppInteractor._upload_limit = cfg['upload_limit'];
     }
     async StartServer() {
         let cfg = this.Config.GetConfig();
@@ -359,6 +361,8 @@ class WebApp extends require('./../Util/ModuleBase.js') {
 
         return new Promise((resolve, reject) => {
             this.server.listen(cfg.Port, () => {
+                this.startTCPPinging();
+
                 let address = this.server.address();
                 this.Logger.info("FrikyBot Website online at " + (address.address === '::' ? 'localhost' : address.address) + ":" + address.port + " ...");
                 return resolve();
@@ -381,6 +385,7 @@ class WebApp extends require('./../Util/ModuleBase.js') {
         if (!this.server) return Promise.resolve();
 
         this.Logger.warn('Server shutting down...');
+        this.stopTCPPinging();
 
         return new Promise((resolve, reject) => {
             this.server.close(() => {
@@ -410,6 +415,21 @@ class WebApp extends require('./../Util/ModuleBase.js') {
         }
 
         return Promise.resolve();
+    }
+
+    startTCPPinging() {
+        let cfg = this.Config.GetConfig();
+
+        if (!this.TCP_PINGING_INTERVAL) {
+            this.TCP_PINGING_INTERVAL = setInterval(() => {
+                this.WS_ping();
+            }, cfg['tcp_pinging_interval'] * 60 * 1000);
+        }
+    }
+    stopTCPPinging() {
+        if (this.TCP_PINGING_INTERVAL) {
+            clearInterval(this.TCP_PINGING_INTERVAL);
+        }
     }
     
     addAuthenticator(authenticator) {
@@ -458,7 +478,54 @@ class WebApp extends require('./../Util/ModuleBase.js') {
 
         this.Logger.warn("No Authenticator in use!");
     }
-    
+
+    //Controllables
+    async Controllable_Restart() {
+        if (!this.isEnabled()) return Promise.reject(new Error('WebApp is disabled'));
+
+        try {
+            this.Restart();
+        } catch (err) {
+            this.Logger.error("Restarting Server failed: " + err.message);
+        }
+
+        return Promise.resolve("Restarting Server");
+    }
+    async Controllable_Stop() {
+        if (!this.isEnabled()) return Promise.reject(new Error('WebApp is disabled'));
+
+        try {
+            this.StopServer();
+        } catch (err) {
+            this.Logger.error("Stopping Server failed: " + err.message);
+        }
+
+        return Promise.resolve("Stopping Server");
+    }
+
+    //TCP
+    WS_ping() {
+        try {
+            let cfg = this.Config.GetConfig();
+
+            for (let i = 0; i < this.TCP_WEBSOCKETS.length; i++) {
+                let client = this.TCP_WEBSOCKETS[i];
+
+                if (client.ping > client.pong + cfg['tcp_pinging_interval'] * 1.5 * 60 * 1000) {
+                    client.socket.send("terminated:ping_timeout");
+                    this.WebAppInteractor.SendTCPMessage(client.topic, client.socket, "terminated:ping_timeout");
+                    client.socket.terminate();
+                    this.TCP_WEBSOCKETS.splice(i, 1);
+                }
+
+                client.ping = Date.now();
+                client.socket.send("ping");
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
     //Routing Structure
     API_ANALYSE(layer, type = "handle", iter = 100, allow_cleanup = false) {
         let obj = [];
@@ -779,6 +846,8 @@ class WebAppInteractor {
         this.API_ROUTER = API_ROUTER;
 
         this.Authenticator = Authenticator;
+        this.Hostname = null;
+        this.Port = null;
 
         this.Logger = Logger;
         this.Auth_Log = Auth_Log;
@@ -813,6 +882,8 @@ class WebAppInteractor {
         this.addMainRoute((req, res, next) => { this.STAT_MAIN_CALLS++; this.STAT_MAIN_CALLS_PER_10++; next(); });
         this.addFileRoute('/', (req, res, next) => { this.STAT_FILE_CALLS++; this.STAT_FILE_CALLS_PER_10++; next(); });
         this.addAPIRoute('/', (req, res, next) => { this.STAT_API_CALLS++; this.STAT_API_CALLS_PER_10++; next(); });
+
+        this._upload_limit = '3mb';
     }
 
     //Routes
@@ -900,7 +971,7 @@ class WebAppInteractor {
             next();
         } catch (err) {
             //Auth Failed / Unauthorized
-            res.status("401").send("Unauthorized");
+            res.status(401).send("Unauthorized");
         }
         
         return Promise.resolve();
@@ -938,7 +1009,7 @@ class WebAppInteractor {
                     status: 'success',
                     auth: this.Authenticator.GetName(),
                     time: Date.now()
-                });
+                }).catch(err => this.Logger.warn("Auth Logging: " + err.message));
             }
 
             return Promise.resolve(user);
@@ -955,7 +1026,7 @@ class WebAppInteractor {
                     reason: err.message,
                     auth: this.Authenticator.GetName(),
                     time: Date.now()
-                });
+                }).catch(err => this.Logger.warn("Auth Logging: " + err.message));
             }
 
             return Promise.reject(err);
@@ -968,14 +1039,16 @@ class WebAppInteractor {
         this.TCP_Login_callbacks.push({ topic, callback });
         return true;
     }
-    SendTCPMessage(ws, message) {
+    SendTCPMessage(topic, ws, message) {
         //Extract WS Data
         try {
             let type = message.toString().split(":")[0];
-            let data = JSON.parse(message.toString().split(":").slice(1).join(":"));
+            let data = message.toString().split(":").slice(1).join(":");
 
+            if (type !== 'ping' && type !== 'pong' && type !== 'terminated') data = JSON.parse(data);
+            
             //Send to Packages
-            for (let info of this.TCP_Login_callbacks) {
+            for (let info of this.TCP_Login_callbacks.filter(elt => elt.topic === topic)) {
                 try {
                     info.callback(ws, type, data);
                 } catch (err) {
@@ -983,6 +1056,7 @@ class WebAppInteractor {
                 }
             }
         } catch (err) {
+            console.log(err);
             ws.send("Error");
         }
     }
@@ -1003,6 +1077,9 @@ class WebAppInteractor {
     }
     GetHostnameAndPort() {
         return this.Hostname === 'localhost' ? (this.Hostname + ':' + this.Port) : this.Hostname;
+    }
+    GetUploadLimit() {
+        return this._upload_limit;
     }
 }
 
@@ -1111,7 +1188,7 @@ class Authenticator {
 
 /*
  *  ----------------------------------------------------------
- *            FrikyBot Authenticator Implementationv
+ *            FrikyBot Authenticator Implementation
  *  ----------------------------------------------------------
  */
 
@@ -1198,12 +1275,17 @@ class FrikyBot_Auth extends Authenticator {
     }
     async AuthorizeUser(user = {}, method = {}) {
         let cfg = this.Config.GetConfig();
-
+        
         //Check Method
         for (let meth in method) {
+            let target = method[meth];
+            if (method[meth] instanceof Function) {
+                target = method[meth](user, method);
+            }
+            
             try {
                 if (meth === 'user_level') {
-                    if (!this.CompareUserlevels(user.user_level, method[meth], method.user_level_cutoff === true)) {
+                    if (!this.CompareUserlevels(user.user_level || this.GetUserlevels()[0], target, method.user_level_cutoff === true)) {
                         return Promise.reject(new Error("Userlevel doesnt match"));
                     }
                 } else {
@@ -1288,6 +1370,7 @@ class FrikyBot_Auth extends Authenticator {
     }
 }
 
+module.exports.DETAILS = MODULE_DETAILS;
 module.exports.WebApp = WebApp;
 module.exports.WebAppInteractor = WebAppInteractor;
 module.exports.Authenticator = Authenticator;

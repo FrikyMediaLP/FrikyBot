@@ -1,17 +1,21 @@
 let DETECTED = [];
+let INACTIVE_ENDPOINTS = [];
+let INACTIVE_EVENTSUBS = [];
 
 async function Packages_init() {
 	//Data
 	try {
         let data = await FetchSettings();
+        INACTIVE_ENDPOINTS = data.inactive_endpoints || [];
+        INACTIVE_EVENTSUBS = data.inactive_eventsubs || [];
         
         for (let package of data.Packages) {
             createPackage(package);
         }
 
-        DETECTED = data.auto_detected.filter(elt => !data.Packages.find(elt2 => elt2.details.name === elt));
+        DETECTED = data.auto_detected.filter(elt => !data.Packages.find(elt2 => elt2.details.name === elt.name));
 
-        UI_init(DETECTED);
+        UI_init(DETECTED, data.modules, data.server);
 
         SWITCHBUTTON_AUTOFILL();
         MISC_SELECT_WidthCheck_All();
@@ -62,12 +66,50 @@ async function CONTROL_ACCESS(package_name, type, startparameters) {
 }
 
 //UI
-function UI_init(detected = []) {
-    detected = cloneJSONArray(detected);
-    detected.push('Custom');
-    detected.push('Select Package');
+function UI_init(detected = [], module_versions = [], server_version = '0.0.0.0') {
+    let infos = [];
+
+    for (let pack of detected) {
+        if (typeof pack === 'string') infos.push(pack);
+        else {
+            let details = '';
+
+            ////Server
+            //let result = CompareVersions(pack.server, server_version, true);
+            //if (details !== '' && (result.release > 0 || result.major > 0 || result.minor > 0)) {
+            //    details = '<span title="Server Version Outdated!" style="color: red;">' + pack.name + '</span>';
+            //}
+
+            ////Modules
+            //for (let mdl in pack.modules || []) {
+            //    if (details !== '') continue;
+
+            //    let mdl_version = module_versions.find(elt => elt.name.toLowerCase() === mdl.toLowerCase());
+            //    if (!mdl_version) {
+            //        details = '<span title="' + mdl + ' Module not found or outdated!" style="color: red;">' + pack.name + '</span>';
+            //        continue;
+            //    }
+
+            //    let result = CompareVersions(pack.modules[mdl], mdl_version.version, true);
+
+            //    if (result.release > 0 || result.major > 0 || result.minor > 0) {
+            //        details = '<span title="' + mdl_version.name + ' Version Outdated!" style="color: red;">' + pack.name + '</span>';
+            //    }
+            //}
+
+            //Package Interconnect TBD
+
+            //HTML
+            if (details === '') details = pack.name;
+            infos.push(details);
+        }
+    }
+
+    infos.push('Custom');
+    infos.push('Select Package');
+
     if (document.getElementById('UI_SELECT')) document.getElementById('UI_SELECT').remove();
-    document.getElementById('UI').innerHTML = MISC_SELECT_create(detected, detected.length-1, 'UI_SELECT', 'UI_selectChange()', '', '', true) + document.getElementById('UI').innerHTML;
+    document.getElementById('UI').innerHTML = MISC_SELECT_create(infos, infos.length-1, 'UI_SELECT', 'UI_selectChange()', '', '', true) + document.getElementById('UI').innerHTML;
     MISC_SELECT_WidthCheck(document.getElementById('UI_SELECT'));
 }
 function UI_selectChange() {
@@ -92,7 +134,7 @@ function createPackage(package) {
     if (!package) return;
 
     let is_enabled = package.details.enabled === true;
-    let s = '<div class="Package ' + (package.status === 'ready' ? (is_enabled ? 'ENABLED' : 'DISABLED') : 'NOTREADY') + '">';
+    let s = '<div class="Package ' + (is_enabled ? (package.details.ready === true ? 'ENABLED' : 'NOTREADY') : 'DISABLED') + '">';
 
     let img = '../images/icons/packages.svg';
 
@@ -121,7 +163,7 @@ function createPackageControl(package) {
 
     s += '<center class="Status"></center>';
     s += '<button class="ENABLE" onclick="CONTROL_ENABLE(\'' + package.details.name + '\', this)"></button>';
-    s += '<button ' + (package.status === 'ready' && is_enabled ? '' : 'disabled') + ' onclick="CONTROL_RELOAD(\'' + package.details.name + '\', this)">RELOAD</button>';
+    s += '<button ' + (package.details.ready === true && is_enabled ? '' : 'disabled') + ' onclick="CONTROL_RELOAD(\'' + package.details.name + '\', this)">RELOAD</button>';
     s += '<button class="REMOVE" onclick="CONTROL_REMOVE(\'' + package.details.name + '\', this)">REMOVE</button>';
 
     if (package.details.html) s += '<center><a href="../' + package.details.html + '">Visit HTML</a></center>';
@@ -133,7 +175,31 @@ function createPackageMisc(package) {
 
     let s = "";
 
-    s += '<div class="Desc">' + package.details.description + '</div>';
+    s += '<div class="Desc">';
+    s += '<p>' + package.details.description + '</p>';
+
+    let endpoints = [];
+    for (let req of ((package.details || {}).api_requierements || {}).endpoints || []) {
+        if (INACTIVE_ENDPOINTS.find(elt => elt === req)) endpoints.push(req);
+    }
+    if (endpoints.length > 0) s += '<p class="API_INFO">Currently Unavailable Twitch API Endpoints: ' + endpoints.join(', ') + '</p>';
+
+    let eventsubs = [];
+    for (let req of ((package.details || {}).api_requierements || {}).eventsubs || []) {
+        if (INACTIVE_EVENTSUBS.find(elt => elt === req)) eventsubs.push(req);
+    }
+
+    if (endpoints.length > 0 || eventsubs.length > 0) {
+        s += '<div class="API_INFO">';
+        s += '<p style="margin: 0;">Reduced Functionality due to missing ... </p>';
+        s += '<ul style="margin: 0;">';
+        if (endpoints.length > 0) s += '<li>TTV API Endpoints: ' + endpoints.join(', ') + '</li>';
+        if (eventsubs.length > 0) s += '<li>TTV API EventSubs: ' + eventsubs.join(', ') + '</li>';
+        s += '</ul>';
+        s += '</div>';
+    }
+
+    s += '</div>';
 
     s += '<div class="Settings" data-package="' + package.details.name + '">';
     s += '<p class="header">Settings';
@@ -149,23 +215,25 @@ function createPackageMisc(package) {
 
     s += '</div>';
 
-    s += '<div class="Interconnect" data-package="' + package.details.name + '">';
-    s += '<p class="header">Package Interconnect';
-    s += '<button class="show" onclick="showPIC(\'' + package.details.name + '\')">SHOW</button>';
-    s += '</p>';
-    
-    s += '<p>Requested: </p><ul>';
-    let pckicc = "";
-    for (let icc of package.interconnects || []) {
-        pckicc += '<li>' + icc.package + " -> " + icc.description + '</li>';
+    if (package.interconnects && package.interconnects.length > 0) {
+        s += '<div class="Interconnect" data-package="' + package.details.name + '">';
+        s += '<p class="header">Package Interconnect';
+        s += '<button class="show" onclick="showPIC(\'' + package.details.name + '\')">SHOW</button>';
+        s += '</p>';
+
+        s += '<p>Requested: </p><ul>';
+        let pckicc = "";
+        for (let icc of package.interconnects || []) {
+            pckicc += '<li>' + icc.package + " -> " + icc.description + '</li>';
+        }
+        if (pckicc === "") s += '<li>NONE</li>';
+        else s += pckicc;
+
+        s += '</ul>';
+
+        s += '</div>';
     }
-    if (pckicc === "") s += '<li>NONE</li>';
-    else s += pckicc;
-
-    s += '</ul>';
-
-    s += '</div>';
-
+    
     return s;
 }
 
@@ -189,7 +257,11 @@ function createSettingNUMBER(name, id, value, options = {}, packageName) {
     let s = '';
 
     s += '<div class="Setting NUMBER" data-package="' + packageName + '">';
-    s += '<p>' + name + '</p><input type="number" class="SETTING_PACKAGE_' + packageName + '" oninput="changeSettings(\'' + packageName + '\')" data-name="' + name + '"';
+    s += '<p>';
+    s += '<span>' + (options.title || name) + '</span>';
+    if (options.description) s += '<span title="' + options.description + '">i</span>';
+    s += '</p>';
+    s += '<input type="number" class="SETTING_PACKAGE_' + packageName + '" oninput="changeSettings(\'' + packageName + '\')" data-name="' + name + '"';
 
     //id
     if (id) s += ' id="' + id + '"';
@@ -211,7 +283,12 @@ function createSettingINPUT(name, id, value, options = {}, packageName) {
     let s = '';
 
     s += '<div class="Setting INPUT" data-package="' + packageName + '">';
-    s += '<p>' + name + '</p><input class="SETTING_PACKAGE_' + packageName + '" oninput="changeSettings(\'' + packageName + '\')" data-name="' + name + '"';
+    s += '<p>';
+    s += '<span>' + (options.title || name) + '</span>';
+    if (options.description) s += '<span title="' + options.description + '">i</span>';
+    s += '</p>';
+
+    s += '<input class="SETTING_PACKAGE_' + packageName + '" oninput="changeSettings(\'' + packageName + '\')" data-name="' + name + '"';
 
     //id
     if (id) s += ' id="' + id + '"';
@@ -230,7 +307,11 @@ function createSettingSWITCH(name, id, value, options = {}, packageName) {
     let s = '';
 
     s += '<div class="Setting SWITCH">';
-    s += '<p>' + name + '</p>' + SWITCHBUTTON_CREATE(value, options.disabled, "changeSettings('" + packageName + "')", id, 'class="SETTING_PACKAGE_' + packageName + '" data-name="' + name + '"');
+    s += '<p>';
+    s += '<span>' + (options.title || name) + '</span>';
+    if (options.description) s += '<span title="' + options.description + '">i</span>';
+    s += '</p>';
+    s += SWITCHBUTTON_CREATE(value, options.disabled, "changeSettings('" + packageName + "')", id, 'class="SETTING_PACKAGE_' + packageName + '" data-name="' + name + '"');
     s += '</div>';
 
     return s;
@@ -240,10 +321,14 @@ function createSettingARRAY(name, id, value, options = {}, packageName) {
 
     value = value || options['default'] || [];
     if (options['title']) value.unshift(options['title']);
-    if (value.length === '0') value.push('NONE');
+    if (value[0] === options['title']) value.push('NONE');
     
     s += '<div class="Setting ARRAY">';
-    s += '<p>' + name + '</p>' + MISC_SELECT_create(value, 0, id, "changeSettings('" + packageName + "')", null, null, true);
+    s += '<p>';
+    s += '<span>' + (options.title || name) + '</span>';
+    if (options.description) s += '<span title="' + options.description + '">i</span>';
+    s += '</p>';
+    s += MISC_SELECT_create(value, 0, id, "changeSettings('" + packageName + "')", null, null, true);
     s += '</div>';
 
     return s;
@@ -253,7 +338,10 @@ function createSettingSELECT(name, id, value, options = {}, packageName) {
     let s = '';
 
     s += '<div class="Setting SELECT">';
-    s += '<p>' + name + '</p>';
+    s += '<p>';
+    s += '<span>' + (options.title || name) + '</span>';
+    if (options.description) s += '<span title="' + options.description + '">i</span>';
+    s += '</p>';
 
     let idx = 0;
     if (!options.selection) options.selection = [];
@@ -263,8 +351,7 @@ function createSettingSELECT(name, id, value, options = {}, packageName) {
             return true;
         }
     });
-    console.log(idx);
-    s += MISC_SELECT_create(options.selection, idx, null, "changeSettings('" + packageName + "')", "SETTING_PACKAGE_' + packageName + '", 'data-name="' + name + '"');
+    s += MISC_SELECT_create(options.selection, idx, null, "changeSettings('" + packageName + "')", 'SETTING_PACKAGE_' + packageName, 'data-name="' + name + '"');
     s += '</div>';
 
     return s;
@@ -279,7 +366,9 @@ function changeSettings(name) {
 function saveSettings(name) {
     let cfg = {};
     for (let settingElts of document.getElementsByClassName('SETTING_PACKAGE_' + name)) {
-        cfg[settingElts.dataset.name] = settingElts.value;
+        if (settingElts.type === 'number') cfg[settingElts.dataset.name] = parseInt(settingElts.value);
+        else if (settingElts.classList.contains('MISC_SELECT')) cfg[settingElts.dataset.name] = MISC_SELECT_GetValue(settingElts);
+        else cfg[settingElts.dataset.name] = settingElts.value;
     }
     
     let opt = getAuthHeader();
@@ -312,6 +401,7 @@ function showSettings(name) {
         elt.childNodes[0].childNodes[1].innerHTML = elt.classList.contains('show') ? 'HIDE' : 'SHOW';
     }
 
+    MISC_SELECT_WidthCheck_All();
     setInputWidth(name);
 }
 function showPIC(name) {
@@ -322,16 +412,10 @@ function showPIC(name) {
     }
 }
 
-function setInputWidth(name) {
+function setInputWidth() {
     for (let settingElts of document.getElementsByClassName('Setting')) {
-        if (!settingElts.classList.contains('INPUT') && !settingElts.classList.contains('NUMBER')) continue;
-        if (name && settingElts.dataset.package !== name) continue;
-        if (settingElts.style.gridTemplateColumns !== "") continue;
-
-        let rel = settingElts.childNodes[1].clientWidth - settingElts.childNodes[1].scrollWidth;
-        if (rel > 0) continue;
-        
-        settingElts.style.gridTemplateColumns = 'auto minmax(50px, ' + (-1 * rel + 20) + 'px)';
+        settingElts.style.gridTemplateColumns = 'auto 0';
+        settingElts.style.gridTemplateColumns = 'auto minmax(50px, ' + settingElts.childNodes[1].scrollWidth + 'px)';
     }
 }
 

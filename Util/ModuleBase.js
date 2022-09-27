@@ -39,6 +39,7 @@ class ModuleBase {
 
         //Infos
         this.DISPLAYABELS = [];
+        this.CONTROLLABLES = [];
         this.LOGS = [];
     }
 
@@ -57,6 +58,7 @@ class ModuleBase {
             name: this.GetName(),
             description: this.GetDescription(),
             picture: this.Module_Details.picture,
+            controllables: this.GetControllables(),
             displayables: this.GetDisplayables(),
             enabled: this.isEnabled(),
             ready: this.isReady()
@@ -129,6 +131,44 @@ class ModuleBase {
         return out;
     }
 
+    addControllable(name, title, callback = (user) => 'unused') {
+        if (this.CONTROLLABLES.find(elt => elt.name === name)) return 'already exists';
+        this.CONTROLLABLES.push({ name, title, callback });
+        return true;
+    }
+    addControllables(constrollables = []) {
+        let ress = {};
+
+        for (let controll of constrollables) {
+            let res = this.addControllable(controll.name, controll.title, controll.callback);
+            if (res !== true) return res[controll.name] = res;
+        }
+
+        return Object.getOwnPropertyNames(ress).length === 0 ? ress : true;
+    }
+    removeControllable(name) {
+        let i = -1;
+        this.CONTROLLABLES.find((elt, idx) => {
+            if (elt.name === name) {
+                i = idx;
+                return true;
+            }
+            return false;
+        });
+
+        if (i < 0) return 'not found';
+        this.CONTROLLABLES.splice(i, 1);
+        return true;
+    }
+    async executeControllable(name, user) {
+        let contr = this.CONTROLLABLES.find(elt => elt.name === name);
+        if (!contr) return Promise.reject(new Error('not found'));
+        return contr.callback(user);
+    }
+    GetControllables() {
+        return this.CONTROLLABLES;
+    }
+
     addLog(name, database, query) {
         this.LOGS.push({ name, database, query });
     }
@@ -151,7 +191,7 @@ class ModuleBase {
         let out = {};
         for (let log of this.LOGS) {
             try {
-                out[log.name] = await this.AccessNeDB(log.database, log.query || {}, pagination);
+                out[log.name] = await this.AccessFrikyDB(log.database, log.query || {}, pagination);
             } catch (err) {
 
             }
@@ -163,7 +203,7 @@ class ModuleBase {
         if (!log) return Promise.reject(new Error('Log not found.'));
         
         if (!pagination) pagination = this.GetPaginationString(10, 0, { timesorted: true });
-        return this.AccessNeDB(log.database, log.query || {}, pagination);
+        return this.AccessFrikyDB(log.database, log.query || {}, pagination);
     }
     
     //Logger Interface
@@ -234,6 +274,50 @@ class ModuleBase {
             });
         });
     }
+    async AccessFrikyDB(collection, query = {}, pagination) {
+        if (!collection) return Promise.resolve([]);
+        if (pagination instanceof Object) pagination = this.GetPaginationString(pagination.first, pagination.cursor, pagination);
+
+        let collection_slice = [];
+
+        try {
+            collection_slice = await collection.find(query);
+        } catch (err) {
+            return Promise.reject(err);
+        }
+
+        if (pagination) {
+            let pages = this.GetPaginationValues(pagination);
+            let first = 10;
+            let cursor = 0;
+            let opts = {};
+
+            if (pages) {
+                first = pages[0] || 10;
+                cursor = pages[1] || 0;
+                opts = pages[2] || {};
+            }
+
+            if (first > 0) opts.pagecount = Math.ceil(collection_slice.length / first);
+
+            if (opts.timesorted) collection_slice = collection_slice.sort((a, b) => {
+                if (a.time) return (-1) * (a.time - b.time);
+                else if (a.iat) return (-1) * (a.iat - b.iat);
+                else return 0;
+            });
+
+            if (opts.customsort) collection_slice = collection_slice.sort((a, b) => {
+                return (-1) * (a[opts.customsort] - b[opts.customsort]);
+            });
+
+            return Promise.resolve({
+                data: collection_slice.slice(first * cursor, first * (cursor + 1)),
+                pagination: this.GetPaginationString(first, cursor + 1, opts)
+            });
+        } else {
+            return Promise.resolve(collection_slice);
+        }
+    }
     GetPaginationValues(pagination = "") {
         if (!pagination) return null;
         let out = [10, 0, {}];
@@ -256,11 +340,35 @@ class ModuleBase {
         return out;
     }
     GetPaginationString(first = 10, cursor = 0, options = {}) {
-        let s = "A" + first + "B" + Math.min(cursor, (options.pagecount  || (cursor + 1)) - 1) + "C";
+        let s = "A" + first + "B" + Math.max(0, Math.min(cursor, (options.pagecount === undefined ? (cursor + 1) : options.pagecount) - 1)) + "C";
         if (options.timesorted) s += "T";
         if (options.customsort) s += "CSS" + customsort + "CSE";
         if (options.pagecount !== undefined) s += "PS" + options.pagecount + "PE";
         return s;
+    }
+    cloneJSON(json) {
+        let new_json = {};
+
+        for (let key in json) {
+            if (json[key] instanceof Array) new_json[key] = this.cloneJSONArray(json[key]);
+            else if (json[key] instanceof Function) new_json[key] = json[key];
+            else if (json[key] instanceof Object) new_json[key] = this.cloneJSON(json[key]);
+            else new_json[key] = json[key];
+        }
+
+        return new_json;
+    }
+    cloneJSONArray(arr) {
+        let new_arr = [];
+
+        for (let elt of arr) {
+            if (elt instanceof Array) new_arr.push(this.cloneJSONArray(elt));
+            else if (elt instanceof Function) new_arr.push(elt);
+            else if (elt instanceof Object) new_arr.push(this.cloneJSON(elt));
+            else new_arr.push(elt);
+        }
+
+        return new_arr;
     }
 }
 

@@ -11,7 +11,7 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 const jwksClient = require('jwks-rsa');
 
-const Datastore = require('nedb');
+const FrikyDB = require('./../Util/FrikyDB.js');
 
 const TTV_JWK_URL = "https://id.twitch.tv/oauth2/keys";
 const TTV_API_ROOT = "https://api.twitch.tv/helix";
@@ -93,7 +93,7 @@ const TTV_API_INFO = {
         req_scope: 'channel:manage:redemptions',
         resource: 'Channel Points'
     },
-    "Delete Custom Rewards": {
+    "Delete Custom Reward": {
         token_type: 'User',
         method: 'DELETE',
         url: '/channel_points/custom_rewards',
@@ -101,14 +101,14 @@ const TTV_API_INFO = {
         returns_raw: true,
         resource: 'Channel Points'
     },
-    "Update Custom Rewards": {
+    "Update Custom Reward": {
         token_type: 'User',
         method: 'PATCH',
         url: '/channel_points/custom_rewards',
         req_scope: 'channel:manage:redemptions',
         resource: 'Channel Points'
     },
-    "Get Custom Rewards": {
+    "Get Custom Reward": {
         token_type: 'User',
         method: 'GET',
         url: '/channel_points/custom_rewards',
@@ -128,6 +128,14 @@ const TTV_API_INFO = {
         url: '/channel_points/custom_rewards/redemptions',
         req_scope: 'channel:manage:redemptions',
         resource: 'Channel Points'
+    },
+    //Charity
+    "Get Charity Campaign": {
+        token_type: 'User',
+        method: 'GET',
+        url: '/charity/campaigns',
+        req_scope: 'channel:read:charity',
+        resource: 'Charity'
     },
     //Chat
     "Get Channel Emotes": {
@@ -173,11 +181,32 @@ const TTV_API_INFO = {
         opt_scope: 'moderator:read:chat_settings',
         resource: 'Chat'
     },
-    "Get Global Chat Badges": {
+    "Update Chat Settings": {
         token_type: 'User',
         method: 'PATCH',
         url: '/chat/settings',
         req_scope: 'moderator:manage:chat_settings',
+        resource: 'Chat'
+    },
+    "Send Chat Announcement": {
+        token_type: 'User',
+        method: 'POST',
+        url: '/chat/announcements',
+        req_scope: 'moderator:manage:announcements',
+        resource: 'Chat'
+    },
+    "Get User Chat Color": {
+        token_type: 'Any',
+        method: 'POST',
+        url: '/chat/color',
+        req_scope: null,
+        resource: 'Chat'
+    },
+    "Update User Chat Color": {
+        token_type: 'User',
+        method: 'PUT',
+        url: '/chat/color',
+        req_scope: 'user:manage:chat_color',
         resource: 'Chat'
     },
     //Clips
@@ -383,6 +412,7 @@ const TTV_API_INFO = {
     "Get AutoMod Settings": {
         token_type: 'User',
         method: 'GET',
+        rate_limited: true,
         url: '/moderation/automod/settings',
         req_scope: 'moderator:read:automod_settings',
         resource: 'Moderation'
@@ -443,6 +473,13 @@ const TTV_API_INFO = {
         req_scope: 'moderator:manage:blocked_terms',
         resource: 'Moderation'
     },
+    "Delete Chat Messages": {
+        token_type: 'User',
+        method: 'DELETE',
+        url: '/moderation/chat',
+        req_scope: 'moderator:manage:chat_messages',
+        resource: 'Moderation'
+    },
     "Get Moderators": {
         token_type: 'User',
         method: 'GET',
@@ -450,11 +487,39 @@ const TTV_API_INFO = {
         req_scope: 'moderation:read',
         resource: 'Moderation'
     },
-    "Get Moderators Events": {
+    "Add Channel Moderator": {
+        token_type: 'User',
+        method: 'POST',
+        url: '/moderation/moderators',
+        req_scope: 'channel:manage:moderators',
+        resource: 'Moderation'
+    },
+    "Remove Channel Moderator": {
+        token_type: 'User',
+        method: 'DELETE',
+        url: '/moderation/moderators',
+        req_scope: 'channel:manage:moderators',
+        resource: 'Moderation'
+    },
+    "Get VIPs": {
         token_type: 'User',
         method: 'GET',
-        url: '/moderation/moderators/events',
-        req_scope: 'moderation:read',
+        url: '/channels/vips',
+        req_scope: 'channel:read:vips',
+        resource: 'Moderation'
+    },
+    "Add Channel VIP": {
+        token_type: 'User',
+        method: 'POST',
+        url: '/moderation/vips',
+        req_scope: 'channel:manage:vips',
+        resource: 'Moderation'
+    },
+    "Remove Channel VIP": {
+        token_type: 'User',
+        method: 'DELETE',
+        url: '/channels/vips',
+        req_scope: 'channel:manage:vips',
         resource: 'Moderation'
     },
     //Polls
@@ -500,6 +565,21 @@ const TTV_API_INFO = {
         url: '/predictions',
         req_scope: 'channel:manage:predictions',
         resource: 'Predictions'
+    },
+    //Raid
+    "Start a Raid": {
+        token_type: 'User',
+        method: 'POST',
+        url: '/raids',
+        req_scope: 'channel:manage:raids',
+        resource: 'Raids'
+    },
+    "Cancel a Raid": {
+        token_type: 'User',
+        method: 'DELETE',
+        url: '/raids',
+        req_scope: 'channel:manage:raids',
+        resource: 'Raids'
     },
     //Schedule
     "Get Channel Stream Schedule": {
@@ -758,12 +838,13 @@ const TTV_API_INFO = {
         resource: 'Videos'
     },
     //Webhooks
-    "Get Webhook Subscriptions": {
-        token_type: 'App',
-        method: 'GET',
-        url: '/webhooks/subscriptions',
-        req_scope: null,
-        resource: 'Webhooks'
+    "Send Whisper": {
+        token_type: 'User',
+        method: 'POST',
+        url: '/whispers',
+        req_scope: 'user:manage:whispers',
+        rate_limited: true,
+        resource: 'Whispers'
     }
 };
 const TTV_EVENTSUB_TOPICS = {
@@ -1065,7 +1146,9 @@ const UNNOFF_TTV_API_INFO = {
 const MODULE_DETAILS = {
     name: 'TwitchAPI',
     description: 'Interface to the Twitch API to change Settings and Fetch Data.',
-    picture: '/images/icons/twitch_colored.png'
+    picture: '/images/icons/twitch_colored.png',
+    version: '0.4.0.0',
+    server: '0.4.0.0'
 };
 
 class TwitchAPI extends require('./../Util/ModuleBase.js') {
@@ -1091,7 +1174,10 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             { name: 'log_api_calls', type: 'boolean', default: true },
             { name: 'disabled_eventsub_topics', type: 'array', selection: Object.getOwnPropertyNames(TTV_EVENTSUB_TOPICS), allow_empty: true, default: ['drop.entitlement.grant', 'extension.bits_transaction.create', 'user.authorization.grant', 'user.authorization.revoke', 'user.update'] },
             { name: 'EventSub_Secret', type: 'string', private: true, requiered: true, default_func: () => this.regenerateEventSubSecret(false) },
-            { name: 'EventSub_max_Timeout', type: 'number', default: 12, min: 1 }
+            { name: 'EventSub_max_Timeout', type: 'number', default: 12, min: 1 },
+            { name: 'multi_hostname_mode', type: 'boolean', default: true },
+            { name: 'eventsubs_update_interval', type: 'number', default: 24 },
+            { name: 'api_caching_range', type: 'number', default: 1 }
         ]);
         this.Config.options = {
             groups: [{ name: 'Your Application' }, { name: 'User Login' }, { name: 'Authenticatior' }, { name: 'Twitch Api Settings' }, { name: 'EventSub Topics' }]
@@ -1114,14 +1200,22 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         this.RateLimits = null;
         this.AppAccessToken = null;
         this.UserAccessToken = null;
+
         this.EventSubs = [];
         this.EventSubs_Duplicates = [];
         this.EventSubs_Extern_Callback = [];
+        this.EventSubs_Interval = null;
+
+        this.API_CACHE = [];
+        this.BOT_USER_NONCE = null;
+        this.Validate_Token_Interval = null;
 
         //Logging
         this.API_LOG;
+        this.TOKEN_LOG;
+        this.EVENTSUB_LOG;
         this.Settings_LOG;
-
+        
         //STATS
         this.STAT_API_CALLS = 0;
         this.STAT_API_CALLS_PER_10 = 0;
@@ -1129,7 +1223,13 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         this.STAT_MINUTE_TIMER = setInterval(() => {
             this.STAT_API_CALLS_PER_10 = 0;
         }, 600000);
-        
+
+        //Controllables
+        this.addControllables([
+            { name: 'check_tokens', title: 'Check Tokens', callback: async (user) => this.Controllable_CheckTokens() },
+            { name: 'check_eventsubs', title: 'Check EventSubs', callback: async (user) => this.Controllable_CheckEventSubs() }
+        ]);
+
         //Displayables
         this.addDisplayables([
             { name: 'API Access', value: () => this.UserAccessToken ? 'FULL' : this.AppAccessToken ? 'LIMITED' : 'NONE' },
@@ -1178,10 +1278,10 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         this.CreateTTVApiFunctions();
 
         //Init Logging Database
-        this.API_LOG = new Datastore({ filename: path.resolve(cfg.Log_Dir + 'API_Logs.db'), autoload: true });
-        this.TOKEN_LOG = new Datastore({ filename: path.resolve(cfg.Log_Dir + 'Token_Logs.db'), autoload: true });
-        this.EVENTSUB_LOG = new Datastore({ filename: path.resolve(cfg.Log_Dir + 'EventSub_Logs.db'), autoload: true });
-        this.Settings_LOG = new Datastore({ filename: path.resolve(cfg.Log_Dir + 'Settings_Logs.db'), autoload: true });
+        this.API_LOG = new FrikyDB.Collection({ path: path.resolve(cfg.Log_Dir + 'API_Logs.db') });
+        this.TOKEN_LOG = new FrikyDB.Collection({ path: path.resolve(cfg.Log_Dir + 'Token_Logs.db') });
+        this.EVENTSUB_LOG = new FrikyDB.Collection({ path: path.resolve(cfg.Log_Dir + 'EventSub_Logs.db') });
+        this.Settings_LOG = new FrikyDB.Collection({ path: path.resolve(cfg.Log_Dir + 'Settings_Logs.db') });
 
         this.addLog('Twitch API Calls', this.API_LOG);
         this.addLog('Token Updates', this.TOKEN_LOG);
@@ -1209,12 +1309,16 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         }
 
         //EventSubs
+        this.Logger.warn("Checking EventSubs...");
         try {
             await this.updateEventSubs();
+            this.Logger.info("EventSubs active!".green);
         } catch (err) {
             if (err.message === 'not deployed') this.Logger.warn("Server currently not set to be deployed. Change WebApp Hostname when its actually deployed!");
             else this.Logger.warn("EventSub Error: " + err.message);
         }
+
+        this.startEventSubInterval();
 
         return Promise.resolve();
     }
@@ -1308,7 +1412,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                         method: 'PATCH',
                         body: req.body,
                         time: Date.now()
-                    });
+                    }).catch(err => this.Logger.warn("Settings Logging: " + err.message));
                 }
 
                 return res.json({ data });
@@ -1357,7 +1461,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                         method: 'DELETE',
                         query: req.query,
                         time: Date.now()
-                    });
+                    }).catch(err => this.Logger.warn("Settings Logging: " + err.message));
                 }
 
                 return res.json({ data: data });
@@ -1426,7 +1530,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                     method: 'POST',
                     body: req.body,
                     time: Date.now()
-                });
+                }).catch(err => this.Logger.warn("Settings Logging: " + err.message));
             }
 
             return res.json({
@@ -1505,7 +1609,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                     params: req.params,
                     query: req.query,
                     time: Date.now()
-                });
+                }).catch(err => this.Logger.warn("Settings Logging: " + err.message));
             }
 
             //Update Config
@@ -1591,7 +1695,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                     method: 'PUT',
                     body: req.body,
                     time: Date.now()
-                });
+                }).catch(err => this.Logger.warn("Settings Logging: " + err.message));
             }
 
             //Change Setting
@@ -1628,7 +1732,6 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             //Send Data
             res.json({ data: channels });
         });
-
         //EventSub
         WebInter.addAuthAPIEndpoint('/TwitchAPI/EventSub', { user_level: 'admin' }, 'GET', async (req, res) => {
             if (!this.isEnabled()) return response.status(503).json({ err: 'Twitch API is disabled' });
@@ -1640,7 +1743,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                 if(topic === 'all') {
                     await this.updateEventSubs();
                 } else {
-                    await this.updateEventSub(topic);
+                    return response.sendStatus(408);
                 }
 
                 res.json({ data: this.EventSubs });
@@ -1663,6 +1766,49 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                 return this.AccessTwitchNewAPI(api_endpoint, querry_params, body, raw || TTV_API_INFO[api_endpoint].returns_raw, extern_jwt);
             };
         }
+    }
+
+    async Controllable_CheckEventSubs() {
+        if (!this.isEnabled()) return Promise.reject(new Error('Twitch API is disabled'));
+        return this.updateEventSubs();
+    }
+    async Controllable_CheckTokens() {
+        if (!this.isEnabled()) return Promise.reject(new Error('Twitch API is disabled'));
+
+        let data = {};
+
+        for (let type of ['app', 'user']) {
+            let tkn_data = {
+                state: 'unavailable',
+                data: null
+            };
+
+            if (type === 'app') {
+                try {
+                    await this.updateAppAccessToken();
+                    tkn_data.data = this.getAppTokenStatus();
+                    if (this.AppAccessToken) tkn_data.state = 'available';
+                } catch (err) {
+
+                }
+            }
+            else if (type === 'user') {
+                try {
+                    await this.updateUserAccessToken();
+                    tkn_data.data = await this.getUserTokenStatus();
+                    if (this.UserAccessToken) tkn_data.state = 'available';
+                } catch (err) {
+
+                }
+            }
+            else {
+                return res.json({ err: 'invalid Type ' + type });
+            }
+
+            data[type] = tkn_data;
+        }
+
+        return Promise.resolve('App Access: ' + data.app.state + ' User Access: ' + data.user.state);
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -1706,7 +1852,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         //Current is still valid?
         if (this.AppAccessToken && this.AppAccessToken.access_token) {
             try {
-                await this.CheckAccessToken(this.AppAccessToken.access_token)
+                await this.ValidateToken(this.AppAccessToken.access_token)
                 return Promise.resolve(this.AppAccessToken);
             } catch (err) {
                 this.AppAccessToken = null;
@@ -1720,7 +1866,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         for (let token of oldTokens) {
             //Is still valid?
             try {
-                await this.CheckAccessToken(token.access_token);
+                await this.ValidateToken(token.access_token);
                 this.AppAccessToken = token;
                 return Promise.resolve(token);
             } catch (err1) {
@@ -1744,7 +1890,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                                 method: 'revoke',
                                 token: token.access_token,
                                 time: Date.now()
-                            });
+                            }).catch(err => this.Logger.warn("Token Logging: " + err.message));
                         }
                     }
 
@@ -1770,7 +1916,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                     method: 'request',
                     token: newToken.access_token,
                     time: Date.now()
-                });
+                }).catch(err => this.Logger.warn("Token Logging: " + err.message));
             }
 
             //SAVE NEW
@@ -1806,12 +1952,12 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
     }
 
     // USER ACCESS
-    generateUserAccessLinkCode(scopes = [], claims = [], hostname, port) {
+    generateUserAccessLinkCode(scopes = [], claims = [], host, nonce) {
         let cfg = this.Config.GetConfig();
 
         let query = "https://id.twitch.tv/oauth2/authorize";
         query += "?client_id=" + cfg.ClientID;
-        query += "&redirect_uri=http" + (hostname === 'localhost' ? '' : 's') + "://" + hostname + (hostname === 'localhost' ? port : '') + "/twitch-redirect";
+        query += "&redirect_uri=http" + (host.startsWith('localhost') ? '' : 's') + "://" + host + "/twitch-redirect";
         query += "&response_type=code";
         query += "&scope=";
 
@@ -1829,16 +1975,18 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             query += "&claims=" + JSON.stringify({ id_token: obj });
         }
 
+        if (nonce) query += "&nonce=" + nonce;
+        if (nonce) query += "&state=" + nonce;
         query += "&force_verify=true"
 
         return query;
     }
-    generateUserAccessLinkToken(scopes = [], claims = [], hostname, port) {
+    generateUserAccessLinkImplicit(scopes = [], claims = [], host, nonce) {
         let cfg = this.Config.GetConfig();
 
         let query = "https://id.twitch.tv/oauth2/authorize"
         query += "?client_id=" + cfg.ClientID;
-        query += "&redirect_uri=http" + (hostname === 'localhost' ? '' : 's') + "://" + hostname + (hostname === 'localhost' ? port : '') + "/twitch-redirect";
+        query += "&redirect_uri=http" + (host.startsWith('localhost')  ? '' : 's') + "://" + host + "/twitch-redirect";
         query += "&response_type=" + (scopes.length > 0 ? 'token+' : '') + "id_token";
         query += "&scope=openid";
         
@@ -1849,9 +1997,11 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             for (let claim of claims) {
                 obj[claim] = null;
             }
-            query += "&claims=" + JSON.stringify({ id_token: obj });
+            query += "&claims=" + JSON.stringify({ id_token: obj, userinfo: obj });
         }
 
+        if (nonce) query += "&nonce=" + nonce;
+        if (nonce) query += "&state=" + nonce;
         query += "&force_verify=true";
 
         return query;
@@ -1866,7 +2016,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         URL += "&client_secret=" + cfg.Secret;
         URL += "&code=" + code;
         URL += "&grant_type=authorization_code";
-        URL += "&redirect_uri=http://localhost:" + port + "/Twitch-redirect";
+        URL += "&redirect_uri=http://localhost:" + port + "/twitch-redirect";
 
         let options = {
             method: "POST",
@@ -1891,15 +2041,20 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                 .catch(err => reject(err));
         });
     }
-    async createUserAccessToken(code, scopes) {
+    async createUserAccessToken(code, scopes, state) {
+        if (!this.BOT_USER_NONCE || this.BOT_USER_NONCE !== state) {
+            this.BOT_USER_NONCE = null;
+            return Promise.reject(new Error('State Mismatch!'));
+        }
+
         return new Promise(async (resolve, reject) => {
             try {
                 //GET NEW
                 let newToken = await this.getUserAccessToken(code);
 
                 if (!newToken || !newToken.access_token || !newToken.id_token) {
-                    reject(new Error("Token was not created properly!"));
-                    return;
+                    this.BOT_USER_NONCE = null;
+                    return reject(new Error("Token was not created properly!"));
                 }
 
                 //Check JWT
@@ -1908,7 +2063,13 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                     idUser = await this.VerifyTTVJWT(newToken.id_token);
                 } catch (err) {
                     //JWT Validation failed
-                    return Promise.reject(err);
+                    this.BOT_USER_NONCE = null;
+                    return reject(err);
+                }
+
+                if (this.BOT_USER_NONCE !== idUser.nonce) {
+                    this.BOT_USER_NONCE = null;
+                    return reject(new Error('State Mismatch!'));
                 }
 
                 //Logs
@@ -1920,7 +2081,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                         scope: newToken.scope,
                         token: newToken.access_token,
                         time: Date.now()
-                    });
+                    }).catch(err => this.Logger.warn("Token Logging: " + err.message));
                 }
 
                 //SAVE NEW
@@ -1941,7 +2102,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                             method: 'remove',
                             token: this.UserAccessToken.access_token,
                             time: Date.now()
-                        });
+                        }).catch(err => this.Logger.warn("Token Logging: " + err.message));
                     }
 
                     this.Logger.warn("Deleting Old User Access Token!");
@@ -1952,6 +2113,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                     }
                 }
 
+                this.BOT_USER_NONCE = null;
                 this.UserAccessToken = newToken;
                 resolve(newToken);
             } catch (err) {
@@ -1965,7 +2127,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         //Current is still valid?
         if (this.UserAccessToken && this.UserAccessToken.access_token) {
             try {
-                await this.CheckAccessToken(this.UserAccessToken.access_token)
+                await this.ValidateToken(this.UserAccessToken.access_token)
                 return Promise.resolve(this.UserAccessToken);
             } catch (err) {
                 this.UserAccessToken = null;
@@ -1979,7 +2141,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         for (let token of oldTokens) {
             //Is still valid?
             try {
-                await this.CheckAccessToken(token.access_token);
+                await this.ValidateToken(token.access_token);
                 this.UserAccessToken = token;
                 return Promise.resolve(token);
             } catch (err) {
@@ -1996,7 +2158,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                                 method: 'remove',
                                 token: token.access_token,
                                 time: Date.now()
-                            });
+                            }).catch(err => this.Logger.warn("Token Logging: " + err.message));
                         }
 
                         this.Logger.error("Refresh Error: " + resp.message);
@@ -2014,7 +2176,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                             token: resp.access_token,
                             prev_token: token.access_token,
                             time: Date.now()
-                        });
+                        }).catch(err => this.Logger.warn("Token Logging: " + err.message));
                     }
 
                     //set new Token
@@ -2101,29 +2263,6 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             return json;
         });
     }
-    async CheckAccessToken(token) {
-        let cfg = this.Config.GetConfig();
-
-        //No Scopes/No Params -> using Stream Endpoint
-        try {
-            let resp = await this.request("https://api.twitch.tv/helix/streams?first=1", {
-                headers: {
-                    'Client-ID': cfg.ClientID,
-                    'Authorization': "Bearer " + token
-                }
-            }, json => {
-                return json;
-                });
-            
-            if (resp && resp.data) {
-                return Promise.resolve(true);
-            } else {
-                return Promise.reject(new Error("No Data Fetched -> Token may be invalid!"));
-            }
-        } catch (err) {
-            return Promise.reject(err);
-        }
-    }
     async VerifyTTVJWT(token) {
         return new Promise((resolve, reject) => {
             let client = jwksClient({ jwksUri: TTV_JWK_URL });
@@ -2139,7 +2278,16 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             });
         });
     }
-    
+    async ValidateToken(token) {
+        let cfg = this.Config.GetConfig();
+
+       return this.request("https://id.twitch.tv/oauth2/validate", { headers: { 'Authorization': "Bearer " + token } }, json => json)
+           .then(json => {
+               if (json.status === 401 || json.message !== undefined || json.client_id !== cfg['ClientID']) return Promise.reject(new Error('invalid access token'));
+               return Promise.resolve(json);
+           });
+    }
+
     setExtraTokenDetails(token) {
         //Add created_at
         let date = new Date();
@@ -2241,7 +2389,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
 
         //Check Token
         try {
-            await this.CheckAccessToken(this.AppAccessToken.access_token);
+            await this.ValidateToken(this.AppAccessToken.access_token);
 
             return Promise.resolve({
                 iat: Math.floor(new Date(this.AppAccessToken.created_at).getTime() / 1000),
@@ -2249,6 +2397,41 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             });
         } catch (err) {
             return Promise.resolve({});
+        }
+    }
+
+    startValidateInterval() {
+        if (!this.Validate_Token_Interval) {
+            this.Validate_Token_Interval = setInterval(async () => {
+                this.Logger.warn("Checking Access Tokens...");
+                try {
+                    await this.updateAppAccessToken();
+                    this.Logger.info("App Access Token found!".green);
+                } catch (err) {
+
+                }
+
+                try {
+                    await this.updateUserAccessToken();
+                    this.Logger.info("User Access Token found!".green);
+                } catch (err) {
+                    this.Logger.warn("User Access Token not found! Only Basic API access available!");
+                }
+                
+                this.Logger.warn("Checking EventSubs...");
+                try {
+                    await this.updateEventSubs();
+                    this.Logger.info("EventSubs active!".green);
+                } catch (err) {
+                    if (err.message !== 'not deployed') this.Logger.warn("EventSub Error: " + err.message);
+                }
+            }, 60 * 60 * 1000);
+        }
+    }
+    stopValidateInterval() {
+        if (!this.Validate_Token_Interval) {
+            clearInterval(this.Validate_Token_Interval);
+            this.Validate_Token_Interval = null;
         }
     }
 
@@ -2281,10 +2464,14 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             return "?" + querry.substring(1);
         }
     }
-    async AccessTwitchNewAPI(endpoint_name, querry_params, body, RETURN_RAW = false, extern_jwt, RETRYS = 3) {
+    async AccessTwitchNewAPI(endpoint_name, querry_params = {}, body, RETURN_RAW = false, extern_jwt, RETRYS = 3) {
         let cfg = this.Config.GetConfig();
         if (!this.isEnabled() || !this.isReady()) return Promise.reject(new Error('TwitchAPI is disabled.'));
         if (cfg['disabled_api_endpoints'].find(elt => elt === endpoint_name)) return Promise.reject(new Error('Endpoint is disabled.'));
+        
+        //Chached?
+        let chached = this.API_CACHE.find(elt => elt.endpoint === endpoint_name && elt.querry_params === querry_params && elt.body === body && Date.now() - elt.time <= 1000 * 60 * cfg['api_caching_range']);
+        if (chached) return Promise.resolve(chached.result);
 
         const ENDPOINT = TTV_API_INFO[endpoint_name];
         //Endpoint not found
@@ -2320,11 +2507,11 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
 
         if (this.API_LOG && cfg['log_api_calls']) {
             this.API_LOG.insert({
-                endpoint: endpoint_name,
-                token: TOKEN_TYPE,
-                querry_params: querry_params,
-                time: Date.now()
-            });
+                    endpoint: endpoint_name,
+                    token: TOKEN_TYPE,
+                    querry_params: querry_params,
+                    time: Date.now()
+                }).catch(err => this.Logger.warn("API Logging: " + err.message));
         }
         
         //Start Fetch
@@ -2375,6 +2562,24 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                 }
 
                 if (data.error) return Promise.reject(new Error(data.status + ": " + data.error + " - " + data.message));
+
+                //Cache
+                let cache_idx = -1;
+                this.API_CACHE.find((elt, index) => {
+                    if (elt.endpoint === endpoint_name && elt.querry_params === querry_params && elt.body === body) {
+                        chache_idx = index;
+                        return true;
+                    }
+                    return false;
+                });
+                if (cache_idx >= 0) this.API_CACHE.splice(cache_idx, 1);
+                this.API_CACHE.push({
+                    endpoint: endpoint_name,
+                    querry_params,
+                    body,
+                    time: Date.now()
+                });
+
                 return Promise.resolve(data);
             })
             .catch(err => Promise.reject(err));
@@ -2407,104 +2612,57 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         this.Logger.info("Requesting EventSub " + type + " " + JSON.stringify(condition));
         return this.CreateEventSubSubscription_RAW({}, body);
     }
-    async updateEventSub(topic) {
-        //Topic Info exists?
-        if (!TTV_EVENTSUB_TOPICS[topic]) return Promise.reject(new Error('EventSub Topic not supported!'));
-        
-        //Requiered Scope is available?
-        if (TTV_EVENTSUB_TOPICS[topic].scope) {
-            let found = false;
-            let current_scopes = this.GetScopes();
-            let eventsub_scopes = TTV_EVENTSUB_TOPICS[topic].scope;
-            if (!(eventsub_scopes instanceof Array)) eventsub_scopes = [eventsub_scopes];
-
-            for (let scope of eventsub_scopes) {
-                if (!current_scopes.find(elt => elt === scope)) found = true;
-            }
-
-            if (!found) return Promise.reject(new Error("Missing Scope."));
-        }
-
+    async updateEventSubs() {
         let cfg = this.Config.GetConfig();
-        let cur_hostname = this.WebAppInteractor.GetHostname();
 
-        //Get WebHook Status
-        let webhook_status = [];
+        //Multi Hostname Mode
+        if (cfg['multi_hostname_mode'] === false) return this.overwriteEventSubs();
+
+        let updated_eventsubs = [];
+
+        //Get EventSub Status
+        let eventsubs = [];
         try {
-            webhook_status = (await this.GetEventSubSubscriptions({ status: 'enabled' })).data;
+            eventsubs = (await this.GetEventSubSubscriptions({ status: 'enabled' })).data;
         } catch (err) {
             return Promise.reject(err);
         }
-        
-        let webhook = webhook_status.find(elt => elt.type === topic);
 
-        if (webhook) {
-            let old_host = webhook.transport.callback.substring(8, webhook.transport.callback.indexOf('/api/TwitchAPI/'));
-            if (cfg['disabled_eventsub_topics'].find(elt => elt === topic) || old_host !== cur_hostname) {
-                //Disabled -> remove and revoke
-                let idx = -1;
-                this.EventSubs.find((elt, index) => {
-                    if (elt.type === topic) {
-                        idx = index;
-                        return true;
-                    }
-                    return false;
-                });
-                if (idx >= 0) this.EventSubs.splice(idx, 1);
+        let current_hostname = this.WebAppInteractor.GetHostname();
 
-                //Delete - Hostname invalid
-                try {
-                    await this.DeleteEventSubSubscription({ id: webhook.id });
-                } catch (err) {
-                    this.Logger.warn("EventSub " + webhook.type + " couldnt be removed! Error: " + err.message);
-                }
-
-                if (old_host === cur_hostname) return Promise.resolve();
-            } else {
-                //WebHook still valid
-                return Promise.resolve(webhook);
-            }
-        }
-
-        if (cur_hostname === 'localhost') return Promise.reject(new Error('not deployed'));
-
-        //Create New - this just returns the status of your request, this does not indicate that the EventSub was created successfully!
-        await this.CreateEventSubSubscription(topic).catch(err => err);
-        return this.awaitWebHookSetup(topic);
-    }
-    async updateEventSubs(ignore_deploy = false) {
-        let cfg = this.Config.GetConfig();
-        let cur_hostname = this.WebAppInteractor.GetHostname();
-        let new_webhooks = [];
-        
-        //Skip when not deployed
-        if (!ignore_deploy) {
-            if (cur_hostname === 'localhost') return Promise.reject(new Error('not deployed'));
-            try {
-                await this.request('http://' + cur_hostname + "/api/identify");
-            } catch (err) {
-                return Promise.reject(new Error('not deployed'));
-            }
-        }
-
-        //Get WebHook Status
-        let webhook_status = [];
-        try {
-            webhook_status = (await this.GetEventSubSubscriptions({ status: 'enabled' })).data;
-        } catch (err) {
-            return Promise.reject(err);
+        //Collect
+        let hostnames = [current_hostname];
+        for (let eventsub of eventsubs) {
+            let callback = eventsub.transport.callback;
+            let hostname = callback.substring(8, callback.indexOf('/', 8) > 0 ? callback.indexOf('/', 8) : callback.length);
+            if (!hostnames.find(elt => elt === hostname)) hostnames.push(hostname);
         }
 
         let current_scopes = this.GetScopes();
         
-        //Check current
-        //Get EventSubs from Twitch - check Hostname - remove from this.WebHooks - Delete when invalid or disabled
-        for (let webhook of webhook_status) {
+        //Check Deployment
+        let revoke_hostnames = [];
+        for (let hostname of hostnames) {
+            try {
+                await this.request('https://' + hostname + "/api/identify");
+            } catch (err) {
+                revoke_hostnames.push(hostname);
+            }
+        }
+
+        //Check - Scopes + Enabled + Condition
+        let revoke_eventsubs = [];
+        for (let eventsub of eventsubs) {
+            let callback = eventsub.transport.callback;
+            let hostname = callback.substring(8, callback.indexOf('/', 8) > 0 ? callback.indexOf('/', 8) : callback.length);
+            if (revoke_hostnames.find(elt => elt === hostname)) continue;
+            if (hostname !== current_hostname) continue;
+
             let found = false;
-            
+
             //Requiered Scope is available?
-            if (TTV_EVENTSUB_TOPICS[webhook.type].scope) {
-                let eventsub_scopes = TTV_EVENTSUB_TOPICS[webhook.type].scope;
+            if (TTV_EVENTSUB_TOPICS[eventsub.type].scope) {
+                let eventsub_scopes = TTV_EVENTSUB_TOPICS[eventsub.type].scope;
                 if (!(eventsub_scopes instanceof Array)) eventsub_scopes = [eventsub_scopes];
 
                 for (let scope of eventsub_scopes) {
@@ -2517,42 +2675,49 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                 found = true;
             }
 
-            let old_host = webhook.transport.callback.substring(8, webhook.transport.callback.indexOf('/api/TwitchAPI/'));
-            let disabled = cfg['disabled_eventsub_topics'].find(elt => elt === webhook.type);
+            //Disabled?
+            found &= cfg['disabled_eventsub_topics'].find(elt => elt === eventsub.type) === undefined;
+
+            //Condition?
+            try {
+                let condition = await this.getEventSubTopiCondition(eventsub.type);
+                found &= condition === eventsub.condition;
+            } catch (err) {
+
+            }
+
+            //Mismatch in Settings -> Revoke
+            if (found === false) revoke_eventsubs.push(eventsub);
+        }
+
+        //Revoke
+        for (let eventsub of eventsubs) {
+            let callback = eventsub.transport.callback;
+            let hostname = callback.substring(8, callback.indexOf('/', 8) > 0 ? callback.indexOf('/', 8) : callback.length);
             
-            //Disabled or invalid
-            if (!found || cfg['disabled_eventsub_topics'].find(elt => elt === webhook.type) || old_host != cur_hostname) {
-                let idx = -1;
-                this.EventSubs.find((elt, index) => {
-                    if (elt.type === webhook.type) {
-                        idx = index;
-                        return true;
-                    }
-                    return false;
-                });
-                if (idx >= 0) this.EventSubs.splice(idx, 1);
+            let hostname_check = revoke_hostnames.find(elt => elt === hostname);
+            let eventsub_check = revoke_eventsubs.find(elt => elt === eventsub);
 
-                let reason = 'unknown';
-                if (!found) reason = 'no scope';
-                if (disabled) reason = 'disabled';
-                if (old_host != cur_hostname) reason = 'new hostname';
+            if (!hostname_check && !eventsub_check) {
+                if (hostname == current_hostname) updated_eventsubs.push(eventsub);
+                continue;
+            }
 
-                //Delete
-                try {
-                    this.Logger.warn("Removing EventSub: " + webhook.type + ' -> Reason: ' + reason);
-                    await this.DeleteEventSubSubscription({ id: webhook.id });
-                } catch (err) {
-                    this.Logger.warn("EventSub " + webhook.type + " couldnt be removed! Error: " + err.message);
-                }
-            } else {
-                new_webhooks.push(webhook);
+            if (hostname === current_hostname) continue;
+
+            try {
+                this.Logger.warn("Removing EventSub: " + eventsub.type + ' -> Reason: ' + (hostname ? 'Hostname unavailable' : 'EventSub settings changed' ));
+                await this.DeleteEventSubSubscription({ id: eventsub.id });
+            } catch (err) {
+                this.Logger.warn("EventSub " + eventsub.type + " couldnt be removed! Error: " + err.message);
             }
         }
-        
-        this.EventSubs = new_webhooks;
-        
-        //Create missing
-        //list of TTV_EVENTSUB_TOPICS without the this.WebHooks Elements
+
+        this.EventSubs = updated_eventsubs;
+
+        if (revoke_hostnames.find(elt => elt === current_hostname)) return Promise.reject(new Error('not deployed'));
+
+        //Request
         for (let topic in TTV_EVENTSUB_TOPICS) {
             if (this.EventSubs.find(elt => elt.type === topic)) continue;
             if (cfg['disabled_eventsub_topics'].find(elt => elt === topic)) continue;
@@ -2569,7 +2734,139 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                         break;
                     }
                 }
-                
+
+                if (!found) continue;
+            }
+
+            //Request EventSub
+            try {
+                await this.CreateEventSubSubscription(topic);
+                await this.awaitWebHookSetup(topic);
+            } catch (err) {
+                return Promise.reject(err);
+            }
+        }
+
+        return Promise.resolve(this.EventSubs);
+    }
+    async overwriteEventSubs() {
+        let cfg = this.Config.GetConfig();
+        let updated_eventsubs = [];
+
+        //Get EventSub Status
+        let eventsubs = [];
+        try {
+            eventsubs = (await this.GetEventSubSubscriptions({ status: 'enabled' })).data;
+        } catch (err) {
+            return Promise.reject(err);
+        }
+
+        let current_hostname = this.WebAppInteractor.GetHostname();
+
+        //Collect
+        let hostnames = [current_hostname];
+        for (let eventsub of eventsubs) {
+            let callback = eventsub.transport.callback;
+            let hostname = callback.substring(8, callback.indexOf('/', 8) > 0 ? callback.indexOf('/', 8) : callback.length);
+            if (!hostnames.find(elt => elt === hostname)) hostnames.push(hostname);
+        }
+
+        let current_scopes = this.GetScopes();
+
+        //Check Deployment
+        let revoke_hostnames = [];
+        for (let hostname of hostnames) {
+            try {
+                await this.request('https://' + hostname + "/api/identify");
+                if(hostname !== current_hostname) revoke_hostnames.push(hostname);
+            } catch (err) {
+                revoke_hostnames.push(hostname);
+            }
+        }
+
+        //Check - Scopes + Enabled + Condition
+        let revoke_eventsubs = [];
+        for (let eventsub of eventsubs) {
+            let callback = eventsub.transport.callback;
+            let hostname = callback.substring(8, callback.indexOf('/', 8) > 0 ? callback.indexOf('/', 8) : callback.length);
+            if (revoke_hostnames.find(elt => elt === hostname)) continue;
+            if (hostname !== current_hostname) continue;
+
+            let found = false;
+
+            //Requiered Scope is available?
+            if (TTV_EVENTSUB_TOPICS[eventsub.type].scope) {
+                let eventsub_scopes = TTV_EVENTSUB_TOPICS[eventsub.type].scope;
+                if (!(eventsub_scopes instanceof Array)) eventsub_scopes = [eventsub_scopes];
+
+                for (let scope of eventsub_scopes) {
+                    if (current_scopes.find(elt => elt === scope)) {
+                        found = true;
+                        break;
+                    }
+                }
+            } else {
+                found = true;
+            }
+
+            //Disabled?
+            found &= cfg['disabled_eventsub_topics'].find(elt => elt === webhook.type) === undefined;
+
+            //Condition?
+            try {
+                let condition = await this.getEventSubTopiCondition(eventsub.type);
+                found &= condition === eventsub.condition;
+            } catch (err) {
+
+            }
+
+            //Mismatch in Settings -> Revoke
+            if (found === false) revoke_eventsubs.push(eventsub);
+        }
+
+        //Revoke
+        for (let eventsub of eventsubs) {
+            let callback = eventsub.transport.callback;
+            let hostname = callback.substring(8, callback.indexOf('/', 8) > 0 ? callback.indexOf('/', 8) : callback.length);
+
+            let hostname_check = revoke_hostnames.find(elt => elt === hostname);
+            let eventsub_check = revoke_eventsubs.find(elt => elt === eventsub);
+
+            if (!hostname_check && !eventsub_check) {
+                if (hostname == current_hostname) updated_eventsubs.push(eventsub);
+                continue;
+            }
+
+            try {
+                this.Logger.warn("Removing EventSub: " + eventsub.type + ' -> Reason: ' + (hostname ? 'Hostname unavailable' : 'EventSub settings changed'));
+                await this.DeleteEventSubSubscription({ id: eventsub.id });
+            } catch (err) {
+                this.Logger.warn("EventSub " + eventsub.type + " couldnt be removed! Error: " + err.message);
+            }
+        }
+
+        this.EventSubs = updated_eventsubs;
+
+        if (revoke_hostnames.find(elt => elt === current_hostname)) return Promise.reject(new Error('not deployed'));
+
+        //Request
+        for (let topic in TTV_EVENTSUB_TOPICS) {
+            if (this.EventSubs.find(elt => elt.type === topic)) continue;
+            if (cfg['disabled_eventsub_topics'].find(elt => elt === topic)) continue;
+
+            //Requiered Scope is available?
+            if (TTV_EVENTSUB_TOPICS[topic].scope) {
+                let found = false;
+                let eventsub_scopes = TTV_EVENTSUB_TOPICS[topic].scope;
+                if (!(eventsub_scopes instanceof Array)) eventsub_scopes = [eventsub_scopes];
+
+                for (let scope of eventsub_scopes) {
+                    if (current_scopes.find(elt => elt === scope)) {
+                        found = true;
+                        break;
+                    }
+                }
+
                 if (!found) continue;
             }
 
@@ -2604,7 +2901,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         if ('sha256=' + signature !== req.headers['twitch-eventsub-message-signature']) {
             stats.status = "signature-missmatch";
             //Logs
-            if (this.EVENTSUB_LOG) this.EVENTSUB_LOG.insert(stats);
+            if (this.EVENTSUB_LOG) this.EVENTSUB_LOG.insert(stats).catch(err => this.Logger.warn("EventSub Logging: " + err.message));
             return res.sendStatus(403);
         }
 
@@ -2612,7 +2909,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         if (this.EventSubs_Duplicates.find(elt => elt === req.headers['twitch-eventsub-message-id'])) {
             stats.status = "duplicate";
             //Logs
-            if (this.EVENTSUB_LOG) this.EVENTSUB_LOG.insert(stats);
+            if (this.EVENTSUB_LOG) this.EVENTSUB_LOG.insert(stats).catch(err => this.Logger.warn("EventSub Logging: " + err.message));
             return res.sendStatus(200);
         }
 
@@ -2665,7 +2962,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         }
         
         //Logs
-        if (this.EVENTSUB_LOG) this.EVENTSUB_LOG.insert(stats);
+        if (this.EVENTSUB_LOG) this.EVENTSUB_LOG.insert(stats).catch(err => this.Logger.warn("EventSub Logging: " + err.message));
         return Promise.resolve();
     }
 
@@ -2676,7 +2973,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         for (let condition of TTV_EVENTSUB_TOPICS[topic].conditions || []) {
             if (condition === 'broadcaster_user_id' || condition === 'from_broadcaster_user_id') {
                 try {
-                    let user = (await this.GetUsers({ login: this.TwitchIRC.getChannel().substring(1) })).data[0];
+                    let user = (await this.GetUsers({ login: this.TwitchIRC.getChannel() })).data[0];
                     conditions[condition] = user.id;
                 } catch (err) {
                     console.log(err);
@@ -2716,6 +3013,26 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         });
     }
 
+    startEventSubInterval() {
+        if (this.EventSubs_Interval) clearInterval(this.EventSubs_Interval);
+
+        let cfg = this.GetConfig();
+
+        this.EventSubs_Interval = setInterval(() => {
+            this.updateEventSubs().catch(err => {
+                if (err.message === 'not deployed') {
+                    clearInterval(this.EventSubs_Interval);
+                    this.Logger.warn("Server no longer deployed. Stopping Interval!");
+                } else {
+                    this.Logger.warn("EventSub Error: " + err.message);
+                }
+            });
+        }, cfg['eventsubs_update_interval'] * 1000 * 60 * 60);
+    }
+    stopEventSubInterval() {
+        if (this.EventSubs_Interval) clearInterval(this.EventSubs_Interval);
+    }
+
     //////////////////////////////////////////////////////////////////////
     //                  TWITCH API - NON HELIX
     //////////////////////////////////////////////////////////////////////
@@ -2735,14 +3052,14 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                 token: 'NONE',
                 querry_params: { channel_name },
                 time: Date.now()
-            });
+            }).catch(err => this.Logger.warn("API Logging: " + err.message));;
         }
 
         return new Promise(async (resolve, reject) => {
             let output = null;
             try {
                 await this.request("http://tmi.twitch.tv/group/user/" + channel_name + "/chatters", {}, json => {
-                    output = json.badge_sets;
+                    output = json;
                 });
                 resolve(output);
             } catch (err) {
@@ -2795,25 +3112,31 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
 
         return out;
     }
-    GetEventSubSettings() {
-        let out = {};
+    GetMissingEndpoints() {
+        let arr = [];
         
-        for (let topic in TTV_EVENTSUB_TOPICS) {
-            out[topic] = {
-                name: TTV_EVENTSUB_TOPICS[topic].name,
-                enabled: true,
-                scope: TTV_EVENTSUB_TOPICS[topic].scope,
-                version: TTV_EVENTSUB_TOPICS[topic].version,
-                resource: TTV_EVENTSUB_TOPICS[topic].resource || 'Unknown'
-            };
+        //get current scope access
+        let scopes = this.GetScopes();
+
+        //go through all offical and unoffical
+        let endpoints = this.GetEndpointSettings();
+        for (let cat in endpoints) {
+            for (let name in endpoints[cat]) {
+                //enabled?
+                if (endpoints[cat][name].enabled === true) continue;
+                //token?
+                if (endpoints[cat][name].token_type === 'Unknown') continue;
+                if ((endpoints[cat][name].token_type === 'User' || endpoints[cat][name].token_type === 'Any') && this.UserAccessToken) continue;
+                if ((endpoints[cat][name].token_type === 'App' || endpoints[cat][name].token_type === 'Any') && this.AppAccessToken) continue;
+                //scope?
+                if (endpoints[cat][name].req_scope === 'Unknown' || scopes.find(elt => elt === endpoints[cat][name].req_scope) !== undefined) continue;
+                //doesnt meet req
+                arr.push(name);
+            }
         }
 
-        //Disabled?
-        for (let topic of this.Config.GetConfig()['disabled_eventsub_topics']) {
-            if (out[topic]) out[topic].enabled = false;
-        }
-
-        return out;
+        //return array
+        return arr;
     }
 
     AddEventSubCallback(topic, source = "UNKNOWN", func) {
@@ -2838,7 +3161,27 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
     GetEventSubCallbacks(source = "UNKNOWN") {
         return this.EventSubs_Extern_Callback.filter(elt => elt.source === source);
     }
-    
+
+    GetEventSubSettings() {
+        let out = {};
+
+        for (let topic in TTV_EVENTSUB_TOPICS) {
+            out[topic] = {
+                name: TTV_EVENTSUB_TOPICS[topic].name,
+                enabled: true,
+                scope: TTV_EVENTSUB_TOPICS[topic].scope,
+                version: TTV_EVENTSUB_TOPICS[topic].version,
+                resource: TTV_EVENTSUB_TOPICS[topic].resource || 'Unknown'
+            };
+        }
+
+        //Disabled?
+        for (let topic of this.Config.GetConfig()['disabled_eventsub_topics']) {
+            if (out[topic]) out[topic].enabled = false;
+        }
+
+        return out;
+    }
     GetActiveEventSubs() {
         return this.EventSubs;
     }
@@ -2863,6 +3206,8 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
     }
 }
 
+let OIDC_USERINFO_CACHE = {};
+
 class Authenticator extends WEBAPP.Authenticator {
     constructor(logger, parentConfigObj, TwitchAPI) {
         super("TTV Auth.", logger, parentConfigObj.GetConfig()['Authenticator']);
@@ -2872,7 +3217,8 @@ class Authenticator extends WEBAPP.Authenticator {
             { name: 'show_auth_message', type: 'boolean', default: false },
             { name: 'UserDB_File', type: 'string', default: CONSTANTS.FILESTRUCTURE.DATA_STORAGE_ROOT + "Auth/User" },
             { name: 'Userlevels', type: 'array', typeArray: 'string', default: ['viewer', 'subscriber', 'moderator', 'staff', 'admin'] },
-            { name: 'Claims', type: 'array', default: ['picture', 'preferred_username'] }
+            { name: 'Claims', type: 'array', default: ['picture', 'preferred_username'] },
+            { name: 'userinfo_cache', type: 'number', default: 120 }
         ]);
 
         parentConfigObj.AddChildConfig(this.Config);
@@ -2900,7 +3246,11 @@ class Authenticator extends WEBAPP.Authenticator {
 
     //API
     async Init(webInt) {
-        this.UserDatabase = new Datastore({ filename: path.resolve(this.Config.GetConfig()['UserDB_File'] + ".db"), autoload: true });
+        let cfg = this.Config.GetConfig();
+        if (!fs.existsSync(path.resolve(cfg['UserDB_File'].substring(0, cfg['UserDB_File'].lastIndexOf('/'))))) {
+            fs.mkdirSync(path.resolve(cfg['UserDB_File'].substring(0, cfg['UserDB_File'].lastIndexOf('/'))));
+        }
+        this.UserDatabase = new FrikyDB.Collection({ path: path.resolve(cfg['UserDB_File'] + ".db") });
 
         //Check Admin is set
         try {
@@ -3055,14 +3405,18 @@ class Authenticator extends WEBAPP.Authenticator {
         webInt.addAuthAPIRoute('/settings/TwitchAPI/ttvauth', { user_level: 'staff' }, router);
 
         //Login using Twitch
-        webInt.addAuthAPIEndpoint('/TwitchAPI/login', { user_level: 'staff' }, 'POST', async (req, res) => {
+        webInt.addAPIEndpoint('/TwitchAPI/login', 'POST', async (req, res) => {
             if (!this.isEnabled()) return res.json({ err: 'TTV Auth. is disabled.' });
             if (!this.TwitchAPI) return res.json({ err: 'Twitch API is not available.' });
             if (!this.TwitchAPI.isEnabled()) return res.json({ err: 'Twitch API is disabled.' });
             
             //Check JWT
             try {
-                let user = await this.TwitchAPI.VerifyTTVJWT(req.body['id_token']);
+                let user = null;
+                
+                if (req.body['oauth_token']) user = await this.TwitchAPI.OIDCUserInfoEndpoint(req.body['oauth_token']);
+                else if (req.body['id_token']) user = await this.TwitchAPI.VerifyTTVJWT(req.body['id_token']);
+                
                 return res.json({ user });
             } catch (err) {
                 //JWT Validation failed
@@ -3076,9 +3430,9 @@ class Authenticator extends WEBAPP.Authenticator {
             if (!this.TwitchAPI.isEnabled()) return res.json({ err: 'Twitch API is disabled.' });
             
             let cfg = this.Config.GetConfig();
-
+            
             return res.json({
-                data: this.TwitchAPI.generateUserAccessLinkToken(req.body.scopes, req.body.claims || cfg['Claims'], webInt.GetHostname(), webInt.GetPort())
+                data: this.TwitchAPI.generateUserAccessLinkImplicit(req.body.scopes, req.body.claims || cfg['Claims'], req.headers.host, req['body'].nonce)
             });
         });
         webInt.addAuthAPIEndpoint('/TwitchAPI/login/bot', { user_level: 'admin' }, 'POST', (req, res) => {
@@ -3089,8 +3443,10 @@ class Authenticator extends WEBAPP.Authenticator {
             let claims = req.body['claims'] || this.TwitchAPI.getClaims();
             let scopes = req.body['scopes'] || this.TwitchAPI.GetScopes();
 
+            this.TwitchAPI.BOT_USER_NONCE = crypto.randomBytes(32).toString('hex');
+
             res.send({
-                data: this.TwitchAPI.generateUserAccessLinkCode(scopes, claims, webInt.GetHostname(), webInt.GetPort())
+                data: this.TwitchAPI.generateUserAccessLinkCode(scopes, claims, req.headers.host, this.TwitchAPI.BOT_USER_NONCE)
             });
         });
     }
@@ -3121,7 +3477,16 @@ class Authenticator extends WEBAPP.Authenticator {
         //Check JWT
         try {
             if (token_type === 'OAuth') {
-                user = await this.TwitchAPI.OIDCUserInfoEndpoint(token);
+                if (OIDC_USERINFO_CACHE[token]) {
+                    user = OIDC_USERINFO_CACHE[token];
+                } else {
+                    let cfg = this.Config.GetConfig();
+                    user = await this.TwitchAPI.OIDCUserInfoEndpoint(token);
+
+                    setTimeout(() => {
+                        delete OIDC_USERINFO_CACHE[token];
+                    }, 1000 * (cfg['userinfo_cache'] || 12));
+                }
             } else {
                 user = await this.TwitchAPI.VerifyTTVJWT(token);
             }
@@ -3147,11 +3512,16 @@ class Authenticator extends WEBAPP.Authenticator {
 
         //Check Method
         for (let meth in method) {
+            let target = method[meth];
+            if (method[meth] instanceof Function) {
+                target = method[meth](user, method);
+            }
+
             try {
                 if (meth === 'user_id') {
-                    await this.Auth_UserID(user.sub, method[meth]);
+                    await this.Auth_UserID(user.sub, target);
                 } else if (meth === 'user_level') {
-                    await this.Auth_UserLevel(user.user_level, method[meth], method.user_level_cutoff === true);
+                    await this.Auth_UserLevel(user.user_level, target, method.user_level_cutoff === true);
                 } else {
                     return Promise.reject(new Error('Unknown Authorization Method!'));
                 }
@@ -3212,25 +3582,24 @@ class Authenticator extends WEBAPP.Authenticator {
         }
         
         //Access Database
-        return new Promise((resolve, reject) => {
-            this.UserDatabase.find(query, (err, docs) => {
-                if (err || !docs) return reject(new Error("User Database Error."));
+        try {
+            let docs = await this.UserDatabase.find(query);
+            let users = [];
 
-                let users = [];
+            for (let doc of docs) {
+                users.push({
+                    user_id: doc.user_id,
+                    user_name: doc.user_name,
+                    user_level: doc.user_level,
+                    added_by: doc.added_by,
+                    added_at: doc.added_at
+                });
+            }
 
-                for (let doc of docs) {
-                    users.push({
-                        user_id: doc.user_id,
-                        user_name: doc.user_name,
-                        user_level: doc.user_level,
-                        added_by: doc.added_by,
-                        added_at: doc.added_at
-                    });
-                }
-
-                return resolve(users);
-            });
-        });
+            return Promise.resolve(users);
+        } catch (err) {
+            return Promise.reject(err);
+        }
     }
     async addUser(user_id, user_name, user_level, added_by_id = "UNKNOWN_ID", added_by = "UNKNOWN") {
         if (!this.UserDatabase) return Promise.reject(new Error('User Database not available.'));
@@ -3263,24 +3632,14 @@ class Authenticator extends WEBAPP.Authenticator {
         if (!added_by) added_by = "UNKNOWN";
         
         //Add User to Database
-        return new Promise((resolve, reject) => {
-            this.UserDatabase.insert({ user_id: user_id, user_name: user_name, user_level: user_level, added_by: added_by, added_by_id: added_by_id, added_at: Math.floor(Date.now() / 1000) }, (err, newDocs) => {
-                if (err) return reject(new Error("User Database Error"));
-                if (newDocs == 0) return reject(new Error("User couldnt be inserted"));
-
-                this.Logger.warn('Added ' + user_id + '(' + user_name + ') User Authorization as ' + user_level + ' by ' + added_by_id + '(' + added_by + ')');
-                if (user_level === 'admin') this.HAS_ADMIN_USER = true;
-
-                return resolve({
-                    added_at: newDocs.added_at,
-                    added_by: newDocs.added_by,
-                    added_by_id: newDocs.added_by_id,
-                    user_id: newDocs.user_id,
-                    user_level: newDocs.user_level,
-                    user_name: newDocs.user_name
-                });
-            });
-        });
+        try {
+            let user = { user_id: user_id, user_name: user_name, user_level: user_level, added_by: added_by, added_by_id: added_by_id, added_at: Math.floor(Date.now() / 1000) };
+            
+            await this.UserDatabase.insert(user);
+            return Promise.resolve(user);
+        } catch (err) {
+            return Promise.reject(err);
+        }
     }
     async removeUser(user_id, removed_by_id, removed_by) {
         if (!this.UserDatabase) return Promise.reject(new Error('User Database not available.'));
@@ -3288,17 +3647,16 @@ class Authenticator extends WEBAPP.Authenticator {
         if (!user_id) return Promise.reject(new Error("User Info not found"));
 
         //Add User to Database
-        return new Promise((resolve, reject) => {
-            this.UserDatabase.remove({ user_id: user_id + "" }, (err, numRemoved) => {
-                if (err) return reject(new Error("User Database Error"));
-                if (numRemoved == 0) return reject(new Error("User couldnt be removed"));
+        try {
+            await this.UserDatabase.remove({ user_id: user_id + "" });
 
-                this.Logger.warn('Removed ' + user_id + ' User Authorization by ' + removed_by_id + '(' + removed_by + ')');
-                this.UpdateAdminCheck();
+            this.Logger.warn('Removed ' + user_id + ' User Authorization by ' + removed_by_id + '(' + removed_by + ')');
+            this.UpdateAdminCheck();
 
-                return resolve(numRemoved > 0);
-            });
-        });
+            return Promise.resolve(true);
+        } catch (err) {
+            return Promise.reject(err);
+        }
     }
     async updateUser(user_id, user_name, user_level, changed_by_id, changed_by) {
         if (!this.UserDatabase) return Promise.reject(new Error('User Database not available.'));
@@ -3325,16 +3683,14 @@ class Authenticator extends WEBAPP.Authenticator {
         if (!user_id || !user_name || !user_level) return Promise.reject(new Error("User Info not found"));
 
         //Update User to Database
-        return new Promise((resolve, reject) => {
-            this.UserDatabase.update({ user_id: user_id + "" }, { user_id, user_name, user_level, added_by: changed_by, added_by_id: changed_by_id, added_at: Math.floor(Date.now() / 1000) }, (err, numReplaced) => {
-                if (err) return reject(new Error("User Database Error"));
-                if (numReplaced == 0) return reject(new Error("User couldnt be updated"));
+        try {
+            let user = { user_id, user_name, user_level, added_by: changed_by, added_by_id: changed_by_id, added_at: Math.floor(Date.now() / 1000) };
 
-                this.Logger.warn('Updated ' + user_id + '(' + user_name + ') User Authorization to ' + user_level + ' by ' + changed_by_id + '(' + changed_by + ')');
-
-                return resolve(numReplaced > 0);
-            });
-        });
+            await this.UserDatabase.update({ user_id: user_id + "" }, user);
+            return Promise.resolve(true);
+        } catch (err) {
+            return Promise.reject(err);
+        }
     }
     
     //UTIL
@@ -3371,7 +3727,7 @@ class Authenticator extends WEBAPP.Authenticator {
         
         return true;
     }
-    
+
     async UpdateAdminCheck() {
         return this.GetUsers({ user_level: 'admin' })
             .then(users => { if (users.length > 0) this.HAS_ADMIN_USER = true; });
@@ -3403,6 +3759,7 @@ class Authenticator extends WEBAPP.Authenticator {
     }
 }
 
+module.exports.DETAILS = MODULE_DETAILS;
 module.exports.TwitchAPI = TwitchAPI;
 module.exports.Authenticator = Authenticator;
 module.exports.TTV_API_INFO = TTV_API_INFO;

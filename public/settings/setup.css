@@ -147,8 +147,8 @@
         height: 500px;
     }
 
-        #WIZARD #WIZ_CONTENT ::-webkit-scrollbar {
-            width: 15px;
+        #WIZARD #WIZ_CONTENT *::-webkit-scrollbar {
+            width: 5px;
         }
 
 
@@ -261,19 +261,18 @@ body.darkmode#WIZARD #WIZ_CONTENT h3 {
 
             #WIZARD #WIZ_CONTENT .Con_Cat_Description > div {
                 height: calc(100% - 10px);
-                width: calc(100% - 15px);
                 padding: 5px;
-                margin-left: 5px;
                 overflow-y: scroll;
                 overflow-x: hidden;
             }
 
                 #WIZARD #WIZ_CONTENT .Con_Cat_Description > div:first-child {
-                    border-right: 1px solid lightgray;
+
                 }
 
                 #WIZARD #WIZ_CONTENT .Con_Cat_Description > div:last-child {
-                    padding: 5px 20px 5px 0px;
+                    border-left: 1px solid lightgray;
+                    padding: 5px 20px 5px 10px;
                 }
 
         #WIZARD #WIZ_CONTENT .ARRAY_SELECTION {
@@ -627,7 +626,7 @@ body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > span, body.darkmode #TWITCHAPI_USERL
         margin-bottom: 5px !important;
     }
 
-    #TWITCHAPI_API_ENABLES > .ENDPOINT_CAT, #TWITCHAPI_API_ENABLES_UNOFF > .ENDPOINT_CAT {
+    #TWITCHAPI_API_ENABLES > .ENDPOINT_CAT, #TWITCHAPI_API_ENABLES_UNOFF > .ENDPOINT_CAT  {
         display: grid;
         grid-template-columns: auto 52px;
         grid-row-gap: 2px;
@@ -637,19 +636,28 @@ body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > span, body.darkmode #TWITCHAPI_USERL
         color: orange;
     }
 
-    #TWITCHAPI_API_ENABLES > .ENDPOINT_CAT {
+    #TWITCHAPI_API_ENABLES > .ENDPOINT_CAT > div, #TWITCHAPI_API_ENABLES_UNOFF > .ENDPOINT_CAT > div {
         display: grid;
-        grid-template-columns: auto 52px;
-        grid-row-gap: 2px;
+        grid-template-rows: auto auto;
     }
 
-        #TWITCHAPI_API_ENABLES > .ENDPOINT_CAT > span > span {
-            margin-left: 5px;
+        #TWITCHAPI_API_ENABLES > .ENDPOINT_CAT > div > span:nth-child(2), #TWITCHAPI_API_ENABLES_UNOFF > .ENDPOINT_CAT > div > span:nth-child(2) {
+            transform: translate(0, -5px);
+            height: 10px;
         }
 
-#TWITCHAPI_API_LEGEND {
-    margin-top: 20px;
-}
+    #TWITCHAPI_API_ENABLES > .ENDPOINT_CAT span > span, #TWITCHAPI_API_ENABLES_UNOFF > .ENDPOINT_CAT span > span {
+        margin-left: 5px;
+    }
+
+    #TWITCHAPI_API_ENABLES > .ENDPOINT_CAT .ENDPOINT_CAT_USES, #TWITCHAPI_API_ENABLES_UNOFF > .ENDPOINT_CAT .ENDPOINT_CAT_USES {
+        font-size: 12px;
+        color: gray;
+    }
+
+    #TWITCHAPI_API_LEGEND {
+        margin-top: 20px;
+    }
 
     #TWITCHAPI_API_LEGEND p {
         position: relative;
@@ -691,8 +699,23 @@ body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > span, body.darkmode #TWITCHAPI_USERL
         grid-row-gap: 2px;
     }
 
-        #TWITCHAPI_EVENTSUB_ENABLES > .EVENTSUB_CAT > span > span {
-            margin-left: 5px;
+        #TWITCHAPI_EVENTSUB_ENABLES > .EVENTSUB_CAT > div {
+            display: grid;
+            grid-template-rows: auto auto;
+        }
+
+    #TWITCHAPI_EVENTSUB_ENABLES > .EVENTSUB_CAT > div > span:nth-child(2) {
+        transform: translate(0, -5px);
+        height: 10px;
+    }
+
+    #TWITCHAPI_EVENTSUB_ENABLES > .EVENTSUB_CAT span > span {
+        margin-left: 5px;
+    }
+
+        #TWITCHAPI_EVENTSUB_ENABLES > .EVENTSUB_CAT .EVENTSUB_CAT_USES {
+            font-size: 12px;
+            color: gray;
         }
 
 #TWITCHAPI_EVENTSUB_LEGEND {

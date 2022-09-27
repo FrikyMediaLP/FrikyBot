@@ -1,5 +1,5 @@
 let colors = require('colors');
-const Datastore = require('nedb');
+const FrikyDB = require('./FrikyDB.js');
 const path = require('path');
 const fs = require('fs');
 
@@ -43,9 +43,9 @@ class Logger {
 
         this.CURRENT_RAW_FILE = this.GetTodaysRAWPath();
 
-        if (this.Settings.enableFileOutput == true) {
+        if (this.Settings.enableFileOutput == true && fs.existsSync(path.resolve(this.Settings.FileStructure.ROOT))) {
             try {
-                this.LogDataBase = new Datastore({ filename: path.resolve(this.CURRENT_RAW_FILE), autoload: true });
+                this.LogDataBase = new FrikyDB.Collection({ path: path.resolve(this.CURRENT_RAW_FILE) });
             } catch (err) {
                 this.warn(err.message);
             }
@@ -349,7 +349,7 @@ class Logger {
         try {
             if (this.GetTodaysRAWPath(time) !== this.CURRENT_RAW_FILE) {
                 this.CURRENT_RAW_FILE = this.GetTodaysRAWPath(time);
-                this.LogDataBase = new Datastore({ filename: path.resolve(this.CURRENT_RAW_FILE), autoload: true });
+                this.LogDataBase = new FrikyDB.Collection({ path: path.resolve(this.CURRENT_RAW_FILE) });
             }
         } catch (err) {
             return;
@@ -360,7 +360,7 @@ class Logger {
             source: source,
             type: type,
             message: message
-        });
+        }).catch(err => this.Logger.warn("Connection Logging: " + err.message));
     }
 
     ResetLatest() {
@@ -385,54 +385,55 @@ class Logger {
             log = this.LogDataBase;
         } else {
             let raw_path_comb = this.Settings.FileStructure.ROOT + this.Settings.FileStructure.RAW + log_name + ".db";
-            log = new Datastore({ filename: path.resolve(raw_path_comb), autoload: true });
+            log = new FrikyDB.Collection({ path: path.resolve(raw_path_comb) });
         }
 
-        return this.AccessNeDB(log, query, pagination);
+        return this.AccessFrikyDB(log, query, pagination);
     }
 
-    async AccessNeDB(datastore, query = {}, pagination) {
-        if (!datastore) return Promise.resolve([]);
+    async AccessFrikyDB(collection, query = {}, pagination) {
+        if (!collection) return Promise.resolve([]);
+        if (pagination instanceof Object) pagination = this.GetPaginationString(pagination.first, pagination.cursor, pagination);
 
-        return new Promise((resolve, reject) => {
-            datastore.find(query, (err, docs) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    if (pagination) {
-                        let pages = this.GetPaginationValues(pagination);
-                        let first = 10;
-                        let cursor = 0;
-                        let opts = {};
+        let collection_slice = [];
 
-                        if (pages) {
-                            first = pages[0] || 10;
-                            cursor = pages[1] || 0;
-                            opts = pages[2] || {};
-                        }
+        try {
+            collection_slice = await collection.find(query);
+        } catch (err) {
+            return Promise.reject(err);
+        }
 
-                        if (first > 0) opts.pagecount = Math.ceil(docs.length / first);
+        if (pagination) {
+            let pages = this.GetPaginationValues(pagination);
+            let first = 10;
+            let cursor = 0;
+            let opts = {};
 
-                        if (opts.timesorted) docs.sort((a, b) => {
-                            if (a.time) return (-1) * (a.time - b.time);
-                            else if (a.iat) return (-1) * (a.iat - b.iat);
-                            else return 0;
-                        });
+            if (pages) {
+                first = pages[0] || 10;
+                cursor = pages[1] || 0;
+                opts = pages[2] || {};
+            }
 
-                        if (opts.customsort) docs.sort((a, b) => {
-                            return (-1) * (a[opts.customsort] - b[opts.customsort]);
-                        });
+            if (first > 0) opts.pagecount = Math.ceil(collection_slice.length / first);
 
-                        resolve({
-                            data: docs.slice(first * cursor, first * (cursor + 1)),
-                            pagination: this.GetPaginationString(first, Math.min(first * (cursor + 1), opts.pagecount), opts)
-                        });
-                    } else {
-                        resolve(docs);
-                    }
-                }
+            if (opts.timesorted) collection_slice = collection_slice.sort((a, b) => {
+                if (a.time) return (-1) * (a.time - b.time);
+                else if (a.iat) return (-1) * (a.iat - b.iat);
+                else return 0;
             });
-        });
+
+            if (opts.customsort) collection_slice = collection_slice.sort((a, b) => {
+                return (-1) * (a[opts.customsort] - b[opts.customsort]);
+            });
+
+            return Promise.resolve({
+                data: collection_slice.slice(first * cursor, first * (cursor + 1)),
+                pagination: this.GetPaginationString(first, cursor + 1, opts)
+            });
+        } else {
+            return Promise.resolve(collection_slice);
+        }
     }
     GetPaginationValues(pagination = "") {
         if (!pagination) return null;

@@ -1,9 +1,3 @@
-const CONTROLABLES_INDEX = {
-    'WebApp': CONTROLS_WEBAPP,
-    'TwitchIRC': CONTROLS_TWITCHIRC,
-    'TwitchAPI': CONTROLS_TWITCHAPI
-};
-
 async function Modules_init() {
 	//Data
 	try {
@@ -17,7 +11,7 @@ async function Modules_init() {
             createUnknownModule(module);
         }
 
-        UI_init(data.auto_detected.filter(elt => !data.Modules.find(elt2 => elt2.name === elt)));
+        UI_init(data.auto_detected.filter(elt => !data.Modules.find(elt2 => elt2.name === elt.name)));
     } catch (err) {
         console.log(err);
         OUTPUT_showError(err.message);
@@ -73,9 +67,11 @@ async function CONTROL_ACCESS(module_name, type, is_unknown) {
 
 //UI
 function UI_init(detected = []) {
-    detected.push('Custom');
-    detected.push('Select Module');
-    document.getElementById('UI').innerHTML = MISC_SELECT_create(detected, detected.length - 1, 'UI_SELECT', 'UI_selectChange()', '', '', true) + document.getElementById('UI').innerHTML;
+    let names = [];
+    for (let mdl of detected) names.push(mdl.name);
+    names.push('Custom');
+    names.push('Select Module');
+    document.getElementById('UI').innerHTML = MISC_SELECT_create(names, names.length - 1, 'UI_SELECT', 'UI_selectChange()', '', '', true) + document.getElementById('UI').innerHTML;
     MISC_SELECT_WidthCheck(document.getElementById('UI_SELECT'));
 }
 function UI_selectChange() {
@@ -178,11 +174,16 @@ function createButtons(module) {
     s += '<p class="header">Controls</p>';
 
     s += '<div class="ButtonWrapper">';
-    
-    let bttns = (CONTROLABLES_INDEX[module.name] || (() => ''))(module);
-    if (!bttns) bttns = '<p>None</p>';
-    s += bttns;
 
+    let btns = "";
+
+    for (let controllable of module.controllables || []) {
+        btns += '<button title="' + (controllable.title || controllable.name) + '" onclick="CONTROLS_CONTROLLABLE(' + "'" + module.name + "', '" + controllable.name + "'" + ')">' + controllable.title || controllable.name + '</button>';
+    }
+
+    if (btns === "") s += '<p>none</p>';
+    else s += btns;
+    
     s += '</div>';
 
     s += '</div>';
@@ -283,6 +284,22 @@ function CONTROL_ADD() {
             document.getElementById('UI').classList.remove('DISABLED');
         });
 }
+function CONTROLS_CONTROLLABLE(module_name, controllable_name) {
+    let opts = getAuthHeader();
+    opts['method'] = 'PUT';
+    opts['headers']['Content-Type'] = 'application/json';
+    opts['body'] = JSON.stringify({ module_name, controllable_name });
+
+    fetch('/api/modules/control/ables', opts)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            console.log(json);
+        })
+        .catch(err => {
+            console.log(err);
+            OUTPUT_showError(err.message);
+        });
+}
 
 //Unknown Modules
 function createUnknownModule(name) {
@@ -298,141 +315,4 @@ function createUnknownModule(name) {
 function removeUnknown(e, name) {
     if (e.target.tagName !== 'IMG') return;
     CONTROL_REMOVE(name, true);
-}
-
-//Custom Controls
-//WEBAPP
-function CONTROLS_WEBAPP(module) {
-    let s = '';
-
-    s += '<button onclick="CONTROLS_WEBAPP_STOP()">STOP</button>';
-    s += '<button onclick="CONTROLS_WEBAPP_RESTART()">RESTART</button>';
-
-    return s;
-}
-function CONTROLS_WEBAPP_STOP() {
-    fetch("/api/webapp/control/stop", getAuthHeader())
-        .then(STANDARD_FETCH_RESPONSE_CHECKER)
-        .then(json => {
-            OUTPUT_showInfo('Web Server stopped!');
-        })
-        .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err.message);
-        });
-}
-function CONTROLS_WEBAPP_RESTART() {
-    fetch("/api/webapp/control/restart", getAuthHeader())
-        .then(STANDARD_FETCH_RESPONSE_CHECKER)
-        .then(json => {
-            OUTPUT_showInfo('Web Server restarting ... please wait!');
-        })
-        .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err.message);
-        });
-}
-
-//TTV IRC
-function CONTROLS_TWITCHIRC(module) {
-    let s = '';
-
-    s += '<button onclick="CONTROLS_IRC_RECONNECT()">FORCE RECONNECT</button>';
-    s += '<button onclick="CONTROLS_IRC_DISCONNECT()">DISCONNECT</button>';
-    s += '<button onclick="CONTROLS_IRC_TEST()">SEND TEST MESSAGE</button>';
-
-    return s;
-}
-function CONTROLS_IRC_RECONNECT() {
-    document.getElementById('content').classList.add('HALT');
-
-    fetch("/api/twitchirc/connect", getAuthHeader())
-        .then(STANDARD_FETCH_RESPONSE_CHECKER)
-        .then(json => {
-            OUTPUT_showInfo('Reconnecting...');
-            document.getElementById('content').classList.remove('HALT');
-        })
-        .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err.message);
-            document.getElementById('content').classList.remove('HALT');
-        });
-}
-function CONTROLS_IRC_DISCONNECT() {
-    document.getElementById('content').classList.add('HALT');
-
-    fetch("/api/twitchirc/disconnect", getAuthHeader())
-        .then(STANDARD_FETCH_RESPONSE_CHECKER)
-        .then(json => {
-            OUTPUT_showInfo('Disconnecting...');
-            document.getElementById('content').classList.remove('HALT');
-        })
-        .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err.message);
-            document.getElementById('content').classList.remove('HALT');
-        });
-}
-function CONTROLS_IRC_TEST() {
-    document.getElementById('content').classList.add('HALT');
-
-    fetch("/api/twitchirc/test", getAuthHeader())
-        .then(STANDARD_FETCH_RESPONSE_CHECKER)
-        .then(json => {
-            OUTPUT_showInfo('Test Message sent!');
-            document.getElementById('content').classList.remove('HALT');
-        })
-        .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err.message);
-            document.getElementById('content').classList.remove('HALT');
-        });
-}
-
-//TTV API
-function CONTROLS_TWITCHAPI(module) {
-    let s = '';
-
-    s += '<button onclick="CONTROLS_API_TOKENS()">CHECK TOKENS</button>';
-    s += '<button onclick="CONTROLS_API_EVENTSUB()">UPDATE EVENTSUBS</button>';
-    
-    return s;
-}
-function CONTROLS_API_TOKENS() {
-    let opt = getAuthHeader();
-
-    opt['method'] = 'PATCH';
-    opt['headers']['Content-Type'] = 'application/json';
-    opt['body'] = JSON.stringify({ type: ['app', 'user'] });
-
-    document.getElementById('content').classList.add('HALT');
-
-    fetch("/api/twitchapi/token", opt)
-        .then(STANDARD_FETCH_RESPONSE_CHECKER)
-        .then(json => {
-            OUTPUT_showInfo('Tokens Checked! App Access: ' + json.data['app'].state + '! App Access: ' + json.data['user'].state + '!');
-            document.getElementById('content').classList.remove('HALT');
-        })
-        .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err.message);
-            document.getElementById('content').classList.remove('HALT');
-        });
-}
-function CONTROLS_API_EVENTSUB(topic = 'all') {
-    let opt = getAuthHeader();
-
-    opt['method'] = 'GET';
-    opt['headers']['Content-Type'] = 'application/json';
-
-    fetch("/api/twitchapi/EventSub?topic=" + topic, opt)
-        .then(STANDARD_FETCH_RESPONSE_CHECKER)
-        .then(json => {
-            OUTPUT_showInfo(json.data.length + ' EventSubs updated!');
-        })
-        .catch(err => {
-            if (err.message === 'not deployed') err = new Error('WebServer not deployed to Domain or using Proxy! Eventsubs are unavailable!');
-            console.log(err);
-            OUTPUT_showError(err.message);
-        });
 }

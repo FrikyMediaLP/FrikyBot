@@ -13,6 +13,7 @@ async function Logs_init() {
 	//Data
 	try {
         let data = await FetchSettings();
+        console.log(data);
         
         document.getElementById('LOGS').innerHTML += '<center>MODULES</center>';
         for (let modl of data.Modules) createChapter(modl);

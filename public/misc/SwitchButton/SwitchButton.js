@@ -549,7 +549,7 @@ async function MISC_USERCONFIRM_ANSWER(elt) {
         };
 
 
-        int = setInterval(check, 500);
+        int = setInterval(check, 100);
     });
 }
 
@@ -568,7 +568,7 @@ function MISC_createTable(array = [], options = {}) {
     do {
         options.identifier = Math.floor(Math.random() * 6546544168);
     } while (MISC_TABLE_OPTIONS_REGISTER[options.identifier] !== undefined);
-
+    
     MISC_TABLE_OPTIONS_REGISTER[options.identifier] = cloneJSON(options);
 
     //Wrapper
@@ -613,7 +613,7 @@ function MISC_createTable_update(elt, array = [], options = {}) {
     if (ui && options.pagination) ui.innerHTML = MISC_createTableInterface(array, options);
     return true;
 }
-function MISC_Interface_UpdatePage(elt, pagination = "") {
+function MISC_Interface_UpdatePage(elt, pagination = "", reset = false) {
     //find parent
     while (elt.tagName !== 'CUSTOMTABLE' && elt.tagName !== 'BODY') {
         elt = elt.parentElement;
@@ -628,6 +628,8 @@ function MISC_Interface_UpdatePage(elt, pagination = "") {
     fetch(options.api_root + '?pagination=' + pagination, getAuthHeader())
         .then(STANDARD_FETCH_RESPONSE_CHECKER)
         .then(json => {
+            if (reset) delete options.prev_pagination;
+            else options.prev_pagination = pagination;
             options.pagination = json.pagination;
 
             //replace Table Content & Update UI
@@ -765,14 +767,47 @@ function MISC_createTableInterface(array = [], options = {}) {
     //RIGHT
     s += '<tableinterfaceright>';
 
-    let empty = pages[2].pagecount === undefined ? false : pages[2].pagecount === 0;
+    let pagecount = pages[2].pagecount === undefined ? Infinity : pages[2].pagecount;
+    let empty = pagecount === 0;
     
-    s += '<button onclick="' + "MISC_Interface_first(this, '" + options.pagination + "');" + '" ' + (pages[1] === 1 ? 'disabled' : '') + '>first</button>';
-    s += '<button onclick="' + "MISC_Interface_prev(this, '" + options.pagination + "');" + '" ' + (pages[1] === 1 ? 'disabled' : '') + '>prev</button>';
-    s += '<input value="' + (empty ? 0 : pages[1]) + '" step="1" min="' + (empty ? 1 : 0) + '" ' + (pages[2].pagecount !== undefined ? 'max="' + pages[2].pagecount + '"' : '') + ' onchange="MISC_Interface_input(this, ' + options.pagination + ');"/>';
-    s += '<span>/' + pages[2].pagecount + '</span>';
-    s += '<button onclick="' + "MISC_Interface_next(this, '" + options.pagination + "');" + '" ' + (pages[1] === pages[2].pagecount ? 'disabled' : '') + '>next</button>';
-    s += '<button onclick="' + "MISC_Interface_last(this, '" + options.pagination + "');" + '" ' + (pages[1] === pages[2].pagecount ? 'disabled' : '') + '>last</button>';
+    if (options.prev_pagination === undefined) {
+        //True Next - first load
+        s += '<button onclick="' + "MISC_Interface_first(this, '" + options.pagination + "');" + '" ' + (pages[1] === 0 || pages[1] === 1 ? 'disabled' : '') + '>first</button>';
+        s += '<button onclick="' + "MISC_Interface_prev(this, '" + options.pagination + "');" + '" ' + (pages[1] === 0  || pages[1] === 1 ? 'disabled' : '') + '>prev</button>';
+        s += '<input type="number" value="' + (pages[1] !== 0 ? pages[1] : (empty ? 0 : pages[1] + 1)) + '" step="1" min="' + (empty ? 0 : 1) + '" max="' + pagecount + '" onchange="MISC_Interface_input(this, ' + "'" + options.pagination + "'" + ');"/>';
+        s += '<span>/ ' + pages[2].pagecount + '</span>';
+        s += '<button onclick="' + "MISC_Interface_next(this, '" + options.pagination + "');" + '" ' + (pages[1] === 0 && pagecount <= 1 ? 'disabled' : '') + '>next</button>';
+        s += '<button onclick="' + "MISC_Interface_last(this, '" + options.pagination + "');" + '" ' + (pages[1] === 0 && pagecount <= 1 ? 'disabled' : '') + '>last</button>';
+    } else {
+        let prev_pages = GetPaginationValues(options.prev_pagination);
+        
+        //Same Per Page
+        if (prev_pages[1] < pages[1]) {
+            //True Next - pressed last / prev / decrement
+            s += '<button onclick="' + "MISC_Interface_first(this, '" + options.pagination + "');" + '" ' + (pages[1] === 1 ? 'disabled' : '') + '>first</button>';
+            s += '<button onclick="' + "MISC_Interface_prev(this, '" + options.pagination + "');" + '" ' + (pages[1] === 1 ? 'disabled' : '') + '>prev</button>';
+            s += '<input type="number" value="' + pages[1] + '" step="1" min="1" max="' + pagecount + '" onchange="MISC_Interface_input(this, ' + "'" + options.pagination + "'" + ');"/>';
+            s += '<span>/ ' + pages[2].pagecount + '</span>';
+            s += '<button onclick="' + "MISC_Interface_next(this, '" + options.pagination + "');" + '">next</button>';
+            s += '<button onclick="' + "MISC_Interface_last(this, '" + options.pagination + "');" + '">last</button>';
+        } else if (options.prev_pagination === options.pagination) {
+            //Same Again = END
+            s += '<button onclick="' + "MISC_Interface_first(this, '" + options.pagination + "');" + '" ' + (pages[1] === 0 ? 'disabled' : '') + '>first</button>';
+            s += '<button onclick="' + "MISC_Interface_prev(this, '" + options.pagination + "');" + '" ' + (pages[1] === 0 ? 'disabled' : '') + '>prev</button>';
+            s += '<input type="number" value="' + pagecount + '" step="1" min="' + (empty ? 0 : 1) + '" max="' + pagecount + '" onchange="MISC_Interface_input(this, ' + "'" + options.pagination + "'" + ');"/>';
+            s += '<span>/ ' + pages[2].pagecount + '</span>';
+            s += '<button onclick="' + "MISC_Interface_next(this, '" + options.pagination + "');" + '" disabled>next</button>';
+            s += '<button onclick="' + "MISC_Interface_last(this, '" + options.pagination + "');" + '" disabled>last</button>';
+        } else {
+            //pressed next / last / increment
+            s += '<button onclick="' + "MISC_Interface_first(this, '" + options.pagination + "');" + '">first</button>';
+            s += '<button onclick="' + "MISC_Interface_prev(this, '" + options.pagination + "');" + '">prev</button>';
+            s += '<input type="number" value="' + pagecount + '" step="1" min="1" max="' + pagecount + '" onchange="MISC_Interface_input(this, ' + "'" + options.pagination + "'" + ');"/>';
+            s += '<span>/ ' + pages[2].pagecount + '</span>';
+            s += '<button onclick="' + "MISC_Interface_next(this, '" + options.pagination + "');" + '">next</button>';
+            s += '<button onclick="' + "MISC_Interface_last(this, '" + options.pagination + "');" + '">last</button>';
+        }
+    }
 
     s += '</tableinterfaceright>';
     
@@ -867,12 +902,9 @@ function MISC_Interface_last(elt, next_pagination) {
 function MISC_Interface_input(elt, next_pagination) {
     //pagination string to numbers
     let pages = GetPaginationValues(next_pagination);
-
-    //page to input (fit to range)
-    pages[1] = Math.min(0, Math.max(elt.value, pages[2].pagecount || pages[1]));
-
+    
     //Update
-    MISC_Interface_UpdatePage(elt, GetPaginationString(pages[0], pages[1], pages[2]));
+    MISC_Interface_UpdatePage(elt, GetPaginationString(pages[0], Math.max(0, parseInt(elt.value - 1)), pages[2]));
 }
 function MISC_Interface_perChange(elt, next_pagination) {
     //pagination string to numbers
@@ -884,7 +916,7 @@ function MISC_Interface_perChange(elt, next_pagination) {
     pages[1] = 0;
 
     //Update
-    MISC_Interface_UpdatePage(elt, GetPaginationString(pages[0], pages[1], pages[2]));
+    MISC_Interface_UpdatePage(elt, GetPaginationString(pages[0], pages[1], pages[2]), true);
 }
 
 /* 
@@ -937,14 +969,18 @@ async function MISC_createTimer(seconds, parent) {
  *             FILE LIBRARY
  * -------------------------------------
  */
-const SUPPORTED_IMG_FILES = ['png', 'jpg', 'jpeg', 'gif', 'mp4'];
-const SUPPORTED_VIDEO_FILES = ['mp4'];
+const SUPPORTED_IMG_FILES = ['png', 'jpg', 'jpeg', 'gif', 'mp4', 'webm'];
+const SUPPORTED_VIDEO_FILES = ['mp4', 'webm'];
 const SUPPORTED_SOUND_FILES = ['ogg', 'mp3', 'wav'];
 const SUPPORTED_FILES = SUPPORTED_IMG_FILES.concat(SUPPORTED_SOUND_FILES);
 
-function MISC_createFileLibrary(files, file_dir = "/images/", title = "", types = 'all', selected, custom_class = "", custom_attribute = "", api_url = "", onchange = "") {
-    let s = '<div class="MISC_FILE_LIBRARY ' + (custom_class != undefined ? custom_class : '') + '" ' + (custom_attribute != undefined ? custom_attribute : '') + ' >';
+function MISC_createFileLibrary(files, file_dir = "/images/", title = "", types = 'all', selected, custom_class = "", custom_attribute = "", api_url = "", onchange = "", upload_limit = 2) {
+    let accepted_files_ext = [];
+    if (types === 'all' || types === 'images') accepted_files_ext = accepted_files_ext.concat(SUPPORTED_IMG_FILES).concat(SUPPORTED_VIDEO_FILES);
+    if (types === 'all' || types === 'sounds') accepted_files_ext = accepted_files_ext.concat(SUPPORTED_SOUND_FILES);
 
+    let s = '<div class="MISC_FILE_LIBRARY ' + (custom_class != undefined ? custom_class : '') + '" ' + (custom_attribute != undefined ? custom_attribute : '') + ' >';
+    
     //HEADER
     s += '<div class="MISC_FILE_LIB_HEADER">';
 
@@ -952,16 +988,16 @@ function MISC_createFileLibrary(files, file_dir = "/images/", title = "", types 
     s += '<div class="FILE_LIB_HEADER_TITLE">' + title + '</div>';
 
     //REFRESH
-    if (api_url) s += '<img src="/images/icons/refresh.svg" onclick="MISC_FileLibrary_Refresh(this, ' + "'" + api_url + "'" + ', ' + "'" + types + "'" + ', ' + "'" + selected + "'" + ')"/>';
+    if (api_url) s += '<img src="/images/icons/refresh.svg" onclick="MISC_FileLibrary_Refresh(this, ' + "'" + api_url + "', '" + types + "', '" + selected + "', '" + file_dir + "', '" + onchange + "'" + ')"/>';
 
     //UPLOAD
     if (api_url) {
         s += '<div class="FILE_LIB_HEADER_UPLOAD">';
         s += '<button onclick="this.parentElement.classList.toggle(' + "'expanded'" + ')">UPLOAD FILE</button>';
-        s += '<input type="file" id="input" onchange="MISC_FileLibrary_UploadPreview(this)" />';
+        s += '<input type="file" id="input" onchange="MISC_FileLibrary_UploadPreview(this, ' + upload_limit + ')" accept=".' + accepted_files_ext.join(',.') + '" />';
 
         //IMG
-        s += '<img src="/images/icons/plus.png" draggable="false" onclick="MISC_FileLibrary_addFile(this)"/>';
+        s += '<img src="/images/icons/plus.png" draggable="false" onclick="MISC_FileLibrary_addFile(this)" />';
 
         //Video
         s += '<video muted onmouseenter="this.play();" onmouseleave="this.pause(); this.currentTime = 0;" loop onclick="MISC_FileLibrary_addFile(this)"></video>';
@@ -973,7 +1009,7 @@ function MISC_createFileLibrary(files, file_dir = "/images/", title = "", types 
         s += '<span></span>';
 
         //UPLOAD
-        s += '<button disabled onclick="MISC_FileLibrary_Upload(this, ' + "'" + api_url + "'" + ', ' + onchange + ')">UPLOAD</button>';
+        s += '<button disabled onclick="MISC_FileLibrary_Upload(this, ' + "'" + file_dir + "'" + ', ' + "'" + api_url + "'" + ', ' + "'" + onchange + "'" + ')">UPLOAD</button>';
 
         s += '</div>';
     }
@@ -1008,17 +1044,17 @@ function MISC_FileLibrary_addImageElement(file_name, file_dir, selected = false,
     
     s += '<div';
     s += ' class="IMAGE_ELT ' + extension.toUpperCase() + '" ';
-    s += ' onclick="MISC_FileLibrary_selectFile(this); ' + (onchange != undefined ? onchange + "('" + file_name + "');" : '') + '"';
+    s += ' onclick="MISC_FileLibrary_selectFile(this); ' + (onchange != undefined ? onchange + "('" + file_name + "', this);" : '') + '"';
     s += ' data-file="' + file_name + '" ' + (selected ? 'selected' : '');
     if (selected) s += ' selected ';
-    if (extension === 'mp4') s += ' onmouseenter="this.childNodes[1].play();" ';
-    if (extension === 'mp4') s += ' onmouseleave="this.childNodes[1].pause(); this.childNodes[1].currentTime = 0;" ';
+    if (SUPPORTED_VIDEO_FILES.find(elt => elt === extension)) s += ' onmouseenter="this.childNodes[1].play();" ';
+    if (SUPPORTED_VIDEO_FILES.find(elt => elt === extension)) s += ' onmouseleave="this.childNodes[1].pause(); this.childNodes[1].currentTime = 0;" ';
     s += ' >';
 
     s += '<span title="' + file_name + '">' + file_name + '</span>';
-    if (extension === 'mp4') {
+    if (SUPPORTED_VIDEO_FILES.find(elt => elt === extension)) {
         s += '<video muted loop>';
-        s += '<source src="' + file_dir + file_name + '" type="video/mp4">';
+        if (api_url) s += '<source src="' + file_dir + file_name + '" type="video/' + extension + '">';
         s += '<img src="/images/icons/mp4.png" />';
         s += '</video>';
     }
@@ -1036,12 +1072,12 @@ function MISC_FileLibrary_addSoundElement(file_name, file_dir, selected = false,
     let s = '';
 
     let extension = file_name.split('.').pop().toLowerCase();
-    s += '<div class="IMAGE_ELT BIGGER ' + extension + '"  onclick="MISC_FileLibrary_selectFile(this); ' + (onchange != undefined ? onchange + "('" + file_name + "');" : '') + '" data-file="' + file_name + '" ' + (selected ? 'selected' : '') + '>';
+    s += '<div class="IMAGE_ELT BIGGER ' + extension + '"  onclick="MISC_FileLibrary_selectFile(this); ' + (onchange != undefined ? onchange + "('" + file_name + "', this);" : '') + '" data-file="' + file_name + '" ' + (selected ? 'selected' : '') + '>';
     s += '<span title="' + file_name + '">' + file_name + '</span>';
     s += '<img src="/images/icons/' + extension + '.png" />';
 
     s += '<div class="HOVER_ELT">';
-    s += '<img src="/images/icons/trash-alt-solid.svg" onclick="MISC_FileLibrary_deleteFile(event, this, ' + "'" + file_name + "'" + ', ' + "'" + api_url + "'" + ')"/>';
+    if(api_url) s += '<img src="/images/icons/trash-alt-solid.svg" onclick="MISC_FileLibrary_deleteFile(event, this, ' + "'" + file_name + "'" + ', ' + "'" + api_url + "'" + ')"/>';
     s += '<img src="/images/icons/play-solid.svg" onclick="MISC_FileLibrary_playSound(this, event, ' + "'" + file_dir + file_name + "'" + ')"/>';
     s += '</div>';
     s += '</div>';
@@ -1059,7 +1095,7 @@ function MISC_FileLibrary_addMissingElement(file_name, selected = false) {
     return s;
 }
 
-function MISC_FileLibrary_Refresh(elt, url, types = 'all', selected) {
+function MISC_FileLibrary_Refresh(elt, url, types = 'all', selected, file_dir, onchange) {
     let LIST = elt;
 
     while (LIST.tagName !== 'body' && !LIST.classList.contains('MISC_FILE_LIBRARY')) {
@@ -1080,8 +1116,8 @@ function MISC_FileLibrary_Refresh(elt, url, types = 'all', selected) {
             for (let file of json.files) {
                 let extension = file.split('.').pop().toLowerCase();
                 
-                if ((types === 'all' || types === 'images') && SUPPORTED_IMG_FILES.find(elt => elt === extension)) s += MISC_FileLibrary_addImageElement(file, file === selected, url);
-                else if ((types === 'all' || types === 'sounds') && SUPPORTED_SOUND_FILES.find(elt => elt === extension)) s += MISC_FileLibrary_addSoundElement(file, file === selected, url);
+                if ((types === 'all' || types === 'images') && SUPPORTED_IMG_FILES.find(elt => elt === extension)) s += MISC_FileLibrary_addImageElement(file, file_dir, file === selected, url, onchange);
+                else if ((types === 'all' || types === 'sounds') && SUPPORTED_SOUND_FILES.find(elt => elt === extension)) s += MISC_FileLibrary_addSoundElement(file, file_dir, file === selected, url, onchange);
             }
             LIST.innerHTML = s;
         })
@@ -1099,7 +1135,7 @@ function MISC_FileLibrary_addFile(elt) {
 
     input.click();
 }
-function MISC_FileLibrary_UploadPreview(elt) {
+function MISC_FileLibrary_UploadPreview(elt, upload_limit = 2) {
     let IMG_PREVIEW = null;
     let VIDEO_PREVIEW = null;
     let SOUND_PREVIEW = null;
@@ -1112,7 +1148,7 @@ function MISC_FileLibrary_UploadPreview(elt) {
     for (let child of elt.parentElement.childNodes) if (child.tagName === 'BUTTON' && child.innerHTML === 'UPLOAD') UPLOAD = child;
 
     let FILE = elt.files[0];
-
+    
     const reader = new FileReader();
     reader.onload = (img) => {
         IMG_PREVIEW.src = "";
@@ -1138,14 +1174,14 @@ function MISC_FileLibrary_UploadPreview(elt) {
         //    IMG_PREVIEW.style.borderColor = 'red';
         //    return;
         //}
-
+        
         //CHECK SIZE
-        if (FILE.size > Math.pow(1024, 2) * 2) {
+        if (FILE.size > Math.pow(1024, 2) * upload_limit) {
             SIZE.classList.add('big');
         } else {
             SIZE.classList.remove('big');
-            UPLOAD.removeAttribute('disabled');
         }
+        UPLOAD.removeAttribute('disabled');
         
         if (type === 'image') IMG_PREVIEW.src = img.target.result;
         else if (type === 'audio') {
@@ -1159,11 +1195,11 @@ function MISC_FileLibrary_UploadPreview(elt) {
             return;
         }
 
-        SIZE.innerHTML = byteToString(FILE.size) + " / 2MB";
+        SIZE.innerHTML = byteToString(FILE.size) + " / " + upload_limit + "MB";
     };
     reader.readAsDataURL(FILE);
 }
-function MISC_FileLibrary_Upload(elt, url, onchange) {
+function MISC_FileLibrary_Upload(elt, dir = '', url, onchange) {
     let IMG_PREVIEW = null;
     let VIDEO_PREVIEW = null;
     let SOUND_PREVIEW = null;
@@ -1195,7 +1231,7 @@ function MISC_FileLibrary_Upload(elt, url, onchange) {
     } else if (file_info.type.startsWith('image')) {
         file_data = IMG_PREVIEW.src;
     }
-    
+
     elt.setAttribute('disabled', 'true');
     
     let opt = getAuthHeader();
@@ -1210,8 +1246,8 @@ function MISC_FileLibrary_Upload(elt, url, onchange) {
             elt.removeAttribute('disabled');
 
             let extension = INPUT.files[0].name.split('.').pop().toLowerCase();
-            if (SUPPORTED_IMG_FILES.find(elt => elt === extension)) LIST.innerHTML += MISC_FileLibrary_addImageElement(INPUT.files[0].name, false, url, onchange);
-            else if (SUPPORTED_SOUND_FILES.find(elt => elt === extension)) LIST.innerHTML += MISC_FileLibrary_addSoundElement(INPUT.files[0].name, false, url, onchange);
+            if (SUPPORTED_IMG_FILES.find(elt => elt === extension)) LIST.innerHTML += MISC_FileLibrary_addImageElement(INPUT.files[0].name, dir, false, url, onchange);
+            else if (SUPPORTED_SOUND_FILES.find(elt => elt === extension)) LIST.innerHTML += MISC_FileLibrary_addSoundElement(INPUT.files[0].name, dir, false, url, onchange);
 
             //Collapse Dropdown
             elt.parentElement.classList.remove('expanded');

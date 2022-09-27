@@ -1,16 +1,10 @@
 const CORE_MODULES = ['WebApp', 'TwitchIRC', 'TwitchAPI'];
 const WIP_MODULES = [];
 
-const CONTROLABLES_INDEX = {
-    'WebApp': CONTROLS_WEBAPP,
-    'TwitchIRC': CONTROLS_TWITCHIRC,
-    'TwitchAPI': CONTROLS_TWITCHAPI
-};
-
 async function Control_init() {
 	//Data
 	try {
-		let data = await FetchSettings();
+        let data = await FetchSettings();
 
         for (let module of data.Modules) createModule(module);
         for (let module of CORE_MODULES.filter(elt => data.Modules.find(elt2 => elt === elt2.name) === undefined)) createModule({ name: module, installed: false });
@@ -49,7 +43,11 @@ function createModule(module) {
     s += '<div class="ctrl">';
 
     if (module.installed === false) s += '<a href="settings/setup" style="margin-left: 35px;">install</a>';
-    else if (CONTROLABLES_INDEX[module.name]) s += CONTROLABLES_INDEX[module.name](module);
+    else {
+        for (let controllable of module.controllables || []) {
+            s += '<button title="' + (controllable.title || controllable.name) + '" onclick="CONTROLS_CONTROLLABLE(true, ' + "'" + module.name + "', '" + controllable.name + "'" + ')">' + controllable.title || controllable.name + '</button>';
+        }
+    }
 
     s += '</div>';
 
@@ -90,122 +88,22 @@ function updateModule(module) {
     if (module.ready === false) elt.setAttribute('notready', "");
 
 }
+function CONTROLS_CONTROLLABLE(module = true, type_name, controllable_name) {
+    let opts = getAuthHeader();
+    opts['method'] = 'PUT';
+    opts['headers']['Content-Type'] = 'application/json';
 
-//Custom Controls
-//WEBAPP
-function CONTROLS_WEBAPP(module) {
-    let s = '';
+    let body = { controllable_name };
 
-    s += '<button onclick="CONTROLS_WEBAPP_STOP()">STOP</button>';
-    s += '<button onclick="CONTROLS_WEBAPP_RESTART()">RESTART</button>';
+    if (module) body.module_name = type_name;
+    else body.package_name = type_name;
 
-    return s;
-}
-function CONTROLS_WEBAPP_STOP() {
-    fetch("/api/webapp/control/stop", getAuthHeader())
+    opts['body'] = JSON.stringify(body);
+
+    fetch('/api/' + (module ? 'modules' : 'packages') + '/control/ables', opts)
         .then(STANDARD_FETCH_RESPONSE_CHECKER)
         .then(json => {
-            OUTPUT_showInfo('Web Server stopped!');
-        })
-        .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err.message);
-        });
-}
-function CONTROLS_WEBAPP_RESTART() {
-    fetch("/api/webapp/control/restart", getAuthHeader())
-        .then(STANDARD_FETCH_RESPONSE_CHECKER)
-        .then(json => {
-            OUTPUT_showInfo('Web Server restarting ... please wait!');
-        })
-        .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err.message);
-        });
-}
-
-//TTV IRC
-function CONTROLS_TWITCHIRC(module) {
-    let s = '';
-
-    s += '<button onclick="CONTROLS_IRC_RECONNECT()"' + (module.ready && module.enabled ? '' : 'disabled') + '>FORCE RECONNECT</button>';
-    s += '<button onclick="CONTROLS_IRC_DISCONNECT()"' + (module.ready && module.enabled ? '' : 'disabled') + '>DISCONNECT</button>';
-    s += '<button onclick="CONTROLS_IRC_TEST()"' + (module.ready && module.enabled ? '' : 'disabled') + '>SEND TEST MESSAGE</button>';
-
-    return s;
-}
-function CONTROLS_IRC_RECONNECT() {
-    OUTPUT_showInfo('Reconnecting...');
-    fetch("/api/twitchirc/connect", getAuthHeader())
-        .then(STANDARD_FETCH_RESPONSE_CHECKER)
-        .then(json => {
-            OUTPUT_showInfo('Reconnected!');
-        })
-        .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err.message);
-        });
-}
-function CONTROLS_IRC_DISCONNECT() {
-    OUTPUT_showInfo('Disconnecting...');
-    fetch("/api/twitchirc/disconnect", getAuthHeader())
-        .then(STANDARD_FETCH_RESPONSE_CHECKER)
-        .then(json => {
-            OUTPUT_showInfo('Disconnected!');
-        })
-        .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err.message);
-        });
-}
-function CONTROLS_IRC_TEST() {
-    fetch("/api/twitchirc/test", getAuthHeader())
-        .then(STANDARD_FETCH_RESPONSE_CHECKER)
-        .then(json => {
-            OUTPUT_showInfo('Test Message sent!');
-        })
-        .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err.message);
-        });
-}
-
-//TTV API
-function CONTROLS_TWITCHAPI(module) {
-    let s = '';
-
-    s += '<button onclick="CONTROLS_API_TOKENS()" ' + (module.ready && module.enabled ? '' : 'disabled') + '>CHECK TOKENS</button>';
-    s += '<button onclick="CONTROLS_API_EVENTSUB()" ' + (module.ready && module.enabled ? '' : 'disabled') + '>UPDATE EVENTSUBS</button>';
-
-    return s;
-}
-function CONTROLS_API_TOKENS() {
-    let opt = getAuthHeader();
-
-    opt['method'] = 'PATCH';
-    opt['headers']['Content-Type'] = 'application/json';
-    opt['body'] = JSON.stringify({ type: ['app', 'user'] });
-
-    fetch("/api/twitchapi/token", opt)
-        .then(STANDARD_FETCH_RESPONSE_CHECKER)
-        .then(json => {
-            OUTPUT_showInfo('Tokens Checked! App Access: ' + json.data['app'].state + '! App Access: ' + json.data['user'].state + '!');
-        })
-        .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err.message);
-        });
-}
-function CONTROLS_API_EVENTSUB(topic = 'all') {
-    let opt = getAuthHeader();
-
-    opt['method'] = 'GET';
-    opt['headers']['Content-Type'] = 'application/json';
-
-    fetch("/api/twitchapi/EventSub?topic=" + topic, opt)
-        .then(STANDARD_FETCH_RESPONSE_CHECKER)
-        .then(json => {
-            OUTPUT_showInfo(json.data.length + ' EventSubs updated!');
+            console.log(json);
         })
         .catch(err => {
             console.log(err);
@@ -224,6 +122,11 @@ function createPackage(package) {
     s += '<div class="ctrl">';
     s += '<button onclick="CONTROL_ENABLE(\'' + package.name + '\', this);">' + (package.enabled ? 'STOP' : 'START') + '</button>';
     s += '<button class="RELOAD" onclick="CONTROL_RELOAD(\'' + package.name + '\', this);">RELOAD</button>';
+    
+    for (let controllable of package.controllables || []) {
+        s += '<button title="' + (controllable.title || controllable.name) + '" onclick="CONTROLS_CONTROLLABLE(false, ' + "'" + package.name + "', '" + controllable.name + "'" + ')">' + controllable.title || controllable.name + '</button>';
+    }
+
     s += '</div>';
     
     s += '<div class="misc">';
@@ -234,6 +137,7 @@ function createPackage(package) {
         let stat = package.displayables[i];
         s += '<span>' + stat.name + ':</span><span style="text-align: right;">' + ColorValue(stat.value, stat.name) + '</span>';
     }
+
 
     s += '</div>';
 

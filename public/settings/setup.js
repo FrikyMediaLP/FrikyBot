@@ -24,8 +24,18 @@
         "enabled": true,
         "state": true
     },
+    "channel:read:charity": {
+        "desc": "Read charity campaign details and user donations on your channel.",
+        "enabled": true,
+        "state": false
+    },
     "channel:manage:extension": {
         "desc": "Manage a channel’s Extension configuration, including activating Extensions.",
+        "enabled": true,
+        "state": false
+    },
+    "channel:manage:moderators": {
+        "desc": "Add or remove the moderator role from users in your channel.",
         "enabled": true,
         "state": false
     },
@@ -94,6 +104,16 @@
         "enabled": true,
         "state": true
     },
+    "channel:read:vips": {
+        "desc": "Read the list of VIPs in your channel.",
+        "enabled": true,
+        "state": false
+    },
+    "channel:manage:vips": {
+        "desc": "Add or remove the VIP role from users in your channel.",
+        "enabled": true,
+        "state": false
+    },
     "clips:edit": {
         "desc": "Manage Clips for a channel.",
         "enabled": true,
@@ -104,10 +124,15 @@
         "enabled": true,
         "state": true
     },
-    "moderator:manage:banned_users": {
-        "desc": "Ban and unban users.",
+    "moderation:read": {
+        "desc": "View a channel’s moderation data including Moderators, Bans, Timeouts, and Automod settings.",
         "enabled": true,
         "state": true
+    },
+    "moderator:manage:announcements": {
+        "desc": "Send announcements in channels where you have the moderator role.",
+        "enabled": true,
+        "state": false
     },
     "moderator:read:blocked_terms": {
         "desc": "View a broadcaster’s list of blocked terms.",
@@ -118,6 +143,11 @@
         "desc": "Manage a broadcaster’s list of blocked terms.",
         "enabled": true,
         "state": true
+    },
+    "moderator:manage:chat_messages": {
+        "desc": "Delete chat messages in channels where you have the moderator role",
+        "enabled": true,
+        "state": false
     },
     "moderator:manage:automod": {
         "desc": "Manage messages held for review by AutoMod in channels where you are a moderator.",
@@ -164,6 +194,11 @@
         "enabled": true,
         "state": true
     },
+    "user:manage:chat_color": {
+        "desc": "Update the color used for the user’s name in chat.",
+        "enabled": true,
+        "state": false
+    },
     "user:read:email": {
         "desc": "Read an authorized user’s email address.",
         "enabled": true,
@@ -176,6 +211,11 @@
     },
     "user:read:subscriptions": {
         "desc": "View if an authorized user is subscribed to specific channels.",
+        "enabled": true,
+        "state": true
+    },
+    "user:manage:whispers": {
+        "desc": "Read whispers that you send and receive, and send whispers on your behalf.",
         "enabled": true,
         "state": true
     }
@@ -241,6 +281,8 @@ let TTV_API_AUTH_USERS = [];
 let TTV_API_AUTH_USERLEVELS = [];
 let TTV_API_ACTIVE_SCOPES = [];
 
+let PACKAGE_DETAILS = {};
+
 window.onhashchange = WIZARD_go2Hash;
 
 //Setup General
@@ -262,11 +304,12 @@ async function Setup_init() {
     //Data
     try {
         let data = await FetchSettings();
-        console.log(data);
         
         //Create
         WIZARD_create(data.tmpl, data.cfg, data.auths);
         CUR_CONFIG = data.cfg;
+
+        PACKAGE_DETAILS = data.packages;
 
         if (data.ttv_irc) TwitchIRC_USER_SET_INFO(data.ttv_irc.user);
         if (data.ttv_api) {
@@ -500,14 +543,12 @@ function WIZARD_go2Hash() {
     WIZARD_show(parseInt(hMdl) || 0, parseInt(hGrp) || 0);
 }
 
-function WIZARD_onRestart() {
-    let moduleName = WIZARD_NAV_DATA[WIZARD_CURSOR[0]].name;
-
-    if (moduleName === 'WebApp' && WIZARD_CURSOR[1] === 1) {
+function WIZARD_onRestart(elt) {
+    if (elt.dataset.name === 'port') {
         let opt = getAuthHeader();
         opt.method = 'POST';
         opt.headers['Content-Type'] = 'application/json';
-        opt.body = JSON.stringify({ port: CUR_CONFIG.WebApp.Port });
+        opt.body = JSON.stringify({ port: elt.dataset.value });
 
         fetch('/api/settings/webapp/port', opt)
             .then(STANDARD_FETCH_RESPONSE_CHECKER)
@@ -595,12 +636,16 @@ async function CONTENT_OnLoad() {
 //WebApp
 function port_change(value) {
     if (value == CUR_CONFIG.WebApp.Port) {
+        delete document.getElementById('WIZ_UI_RESTART').dataset.name;
+        delete document.getElementById('WIZ_UI_RESTART').dataset.value;
         document.getElementById('WIZ_UI_RESTART').setAttribute('hidden', '');
         document.getElementById('WIZ_UI_NEXT').removeAttribute('hidden');
         document.getElementById('SETTING_WebApp_Port_Hint').setAttribute('hidden', '');
         return;
     }
 
+    document.getElementById('WIZ_UI_RESTART').dataset.name = 'port';
+    document.getElementById('WIZ_UI_RESTART').dataset.value = value;
     document.getElementById('SETTING_WebApp_Port_Hint').removeAttribute('hidden');
     document.getElementById('WIZ_UI_NEXT').setAttribute('hidden', '');
     document.getElementById('WIZ_UI_RESTART').removeAttribute('hidden');
@@ -636,15 +681,37 @@ function hostname_save() {
 }
 function upload_limit_change(value) {
     if (value == CUR_CONFIG.WebApp.upload_limit) {
+        document.getElementById('WebApp_UploadLimit_Save').disabled = false;
         document.getElementById('WIZ_UI_RESTART').setAttribute('hidden', '');
         document.getElementById('WIZ_UI_NEXT').removeAttribute('hidden');
         document.getElementById('SETTING_WebApp_upload_limit_Hint').setAttribute('hidden', '');
         return;
     }
 
+    document.getElementById('WebApp_UploadLimit_Save').disabled = false;
     document.getElementById('SETTING_WebApp_upload_limit_Hint').removeAttribute('hidden');
     document.getElementById('WIZ_UI_NEXT').setAttribute('hidden', '');
     document.getElementById('WIZ_UI_RESTART').removeAttribute('hidden');
+}
+function upload_limit_save() {
+    let opt = getAuthHeader();
+    opt.method = 'PUT';
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify({ upload_limit: document.getElementById('SETTING_WebApp_upload_limit').value  });
+
+    fetch('/api/settings/webapp/upload_limit', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            if (json.msg === '200') {
+                //Output 
+                let outS = 'Server Upload Limit updated to ' + json.upload_limit;
+                outS += '</br>Go <a href="http://localhost:' + json.port + '/settings/setup#_m=0&_g=1">here</a> after a manuell restart to resume Setup at this Step!';
+                OUTPUT_showInfo(outS);
+            } else OUTPUT_showError('500 - Internal Error.');
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+        });
 }
 
 async function FrikyBot_Auth_switch(elt) {
@@ -1441,9 +1508,31 @@ function TwitchAPI_API_createCategorie(cat, unoff = false) {
     s += '<div class="ENDPOINT_CAT">';
 
     for (let api of cat.endpoints) {
+        let api_name_trimmed = api.name.split(' ').join('');
+
         let missing = !TwitchAPI_hasScope(api.req_scope);
         let beta = TwitchAPI_isBetaScope(api.req_scope);
-        s += '<span>' + api.name + '<span title="Requieres ' + (missing ? 'missing ' : '') + 'Scopes: ' + (api.req_scope instanceof Array ? api.req_scope.join(' or ') : api.req_scope) + ' " class="TTVAPI_API_LEGEND_IDX ' + (missing ? 'missing ' : '') + (beta ? 'beta ' : '') + '">' + TwitchAPI_EventSub_GetScopeIdx(api.req_scope) + '</span></span>' + SWITCHBUTTON_CREATE(api.enabled === true, false, 'TwitchAPI_Endpoint_Control(this, ' + unoff + '); ', null, 'data-endpoint="' + api.name + '"  class="TTV_API_ENDPOINT_ENABLE' + (unoff ? '_UNOFF' : '') + '"');
+
+        s += '<div>';
+
+        s += '<span>' + api.name + '<span ';
+        s += 'title="Requieres ' + (missing ? 'missing ' : '') + 'Scopes: ' + (api.req_scope instanceof Array ? api.req_scope.join(' or ') : api.req_scope) + ' " ';
+        s += 'class="TTVAPI_API_LEGEND_IDX ' + (missing ? 'missing ' : '') + (beta ? 'beta ' : '') + '">';
+        s += TwitchAPI_EventSub_GetScopeIdx(api.req_scope) + '</span></span>';
+
+        let uses = [];
+
+        for (let pgk in PACKAGE_DETAILS) {
+            for (let req of (PACKAGE_DETAILS[pgk].api_requierements || {}).endpoints || []) {
+                if (req === api_name_trimmed) uses.push(pgk);
+            }
+        }
+
+        if (uses.length > 0) s += '<span class="ENDPOINT_CAT_USES" title="Used by: ' + uses.join(', ') + '">Used by: ' + uses.join(', ') + '</span>';
+
+        s += '</div>';
+
+        s += SWITCHBUTTON_CREATE(api.enabled === true, false, 'TwitchAPI_Endpoint_Control(this, ' + unoff + '); ', null, 'data-endpoint="' + api.name + '"  class="TTV_API_ENDPOINT_ENABLE' + (unoff ? '_UNOFF' : '') + '"');
     }
 
     s += '</div>';
@@ -1630,7 +1719,28 @@ function TwitchAPI_EventSub_createCategorie(cat) {
     for (let topic of cat.eventsubs) {
         let missing = !TwitchAPI_hasScope(topic.scope);
         let beta = TwitchAPI_isBetaScope(topic.scope);
-        s += '<span>' + topic.name + '<span title="Requieres ' + (missing ? 'missing ' : '') + 'Scopes: ' + (topic.scope instanceof Array ? topic.scope.join(' or ') : topic.scope) + ' " class="EVENTSUB_LEGEND_IDX ' + (missing ? 'missing ' : '') + (beta ? 'beta ' : '') +'">' + TwitchAPI_EventSub_GetScopeIdx(topic.scope) + '</span></span>' + SWITCHBUTTON_CREATE(topic.enabled === true, false, 'TwitchAPI_EventSub_Control(this); ', null, 'data-topic="' + topic.value + '" class="TTV_API_EVENTSUB_ENABLE"');
+
+        s += '<div>';
+        
+        s += '<span>' + topic.name + '<span ';
+        s += 'title="Requieres ' + (missing ? 'missing ' : '') + 'Scopes: ' + (topic.scope instanceof Array ? topic.scope.join(' or ') : topic.scope) + ' " ';
+        s += 'class="EVENTSUB_LEGEND_IDX ' + (missing ? 'missing ' : '') + (beta ? 'beta ' : '') + '">';
+        s += TwitchAPI_EventSub_GetScopeIdx(topic.scope);
+        s += '</span></span>';
+
+        let uses = [];
+
+        for (let pgk in PACKAGE_DETAILS) {
+            for (let req of (PACKAGE_DETAILS[pgk].api_requierements || {}).eventsubs || []) {
+                if (req === topic.value) uses.push(pgk);
+            }
+        }
+
+        if (uses.length > 0) s += '<span class="EVENTSUB_CAT_USES" title="Used by: ' + uses.join(', ') + '">Used by: ' + uses.join(', ') + '</span>';
+
+        s += '</div>';
+
+        s += SWITCHBUTTON_CREATE(topic.enabled === true, false, 'TwitchAPI_EventSub_Control(this); ', null, 'data-topic="' + topic.value + '" class="TTV_API_EVENTSUB_ENABLE"');
     }
 
     s += '</div>';

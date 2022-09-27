@@ -9,7 +9,8 @@ class PackageBase {
         this.Package_Details = {
             name: package_details.name || "UNKNOWN",
             description: package_details.description || "",
-            picture: package_details.picture || null
+            picture: package_details.picture || null,
+            api_requierements: package_details.api_requierements ||  {}
         };
 
         if (!this.getName() || this.getName() === "UNKNOWN") throw new Error("Package needs a name!");
@@ -38,6 +39,7 @@ class PackageBase {
 
         //INIT
         this.SETUP_COMPLETE = false;
+
         this.Package_Interconnects = [];
         this.Requested_Package_Interconnects = [];
         this.Allowed_Package_Interconnects = [];
@@ -59,11 +61,17 @@ class PackageBase {
 
         //TCP
         this.TCP_Clients = [];
-        this.TCP_MESSAGE_ACK = [];
 
         //STATUS
         this.DISPLAYABELS = [];
+        this.CONTROLLABLES = [];
         this.LOGS = [];
+
+        //Ready
+        this.READY_REQUIREMENTS = [];
+        this.addReadyRequirement(() => {
+            return this.Config.ErrorCheck() === true;
+        });
 
         //Setup
         this.Logger.info("Package Setup ... ");
@@ -119,7 +127,7 @@ class PackageBase {
     
     /*
      * /////////////////////////////////////////////////
-     *              CONGIG / SETTINGS
+     *              CONFIG / SETTINGS
      * /////////////////////////////////////////////////
      */
 
@@ -134,6 +142,21 @@ class PackageBase {
         if (loggerObject && loggerObject.info && loggerObject.warn && loggerObject.error) {
             this.Logger = loggerObject;
         }
+    }
+
+    //Ready/Status
+    addReadyRequirement(func) {
+        if (func instanceof Function) this.READY_REQUIREMENTS.push(func);
+    }
+    removeReadyRequirement(index) {
+        this.READY_REQUIREMENTS.splice(index, 1);
+    }
+    isReady() {
+        for (let func of this.READY_REQUIREMENTS) {
+            if (func instanceof Function && func() === false) return false;
+        }
+
+        return true;
     }
     
     /*
@@ -285,80 +308,59 @@ class PackageBase {
      *               TCP CONNECTIONS
      * /////////////////////////////////////////////////
      */
-    
-    TCPCallback(ws, type, data) {
+
+    useTCP(topic = this.getName(), callback = (ws, type, data) => true) {
+        this.WebAppInteractor.AddTCPCallback(topic, (ws, type, data) => this.TCPMasterCallback(ws, type, data, callback));
+    }
+    TCPMasterCallback(ws, type, data, callback) {
         //Add to TCP List
         if (type === 'register') {
-            let client = { origin: data.origin, topic: data.topic, misc: data.misc, ws };
-
-            this.TCP_Clients.push(client);
-            this.TCPRegisterCallback(client);
-            return;
-        }
-
-        //Clear ACK Message
-        let ack_idx = -1;
-        this.TCP_MESSAGE_ACK.find((elt, idx) => {
-            if (elt.ws === ws) {
-                ack_idx = idx;
-                return true;
-            }
-            return false;
-        });
-
-        if (ack_idx > -1) {
-            this.TCP_MESSAGE_ACK.splice(ack_idx, 1);
-        }
-
-    }
-    TCPMassSend(origin, topic, data) {
-        if (typeof origin === 'string') origin = [origin];
-        
-        //Check last Message returns
-        for (let i = 0; i < this.TCP_MESSAGE_ACK.length; i++) {
-            let ack = this.TCP_MESSAGE_ACK[i];
-
-            if (!origin.find(elt => elt === 'all' || ack.origin === elt)) continue;
-            if (ack.ack === true) continue;
-
-            ack.tries++;
-            if (ack.tries < 3) continue;
-
-            this.Logger.warn("WebSocket to " + ack.origin + " TERMINATED! Reason: Timeout");
-            ack.ws.terminate();
-            this.TCP_MESSAGE_ACK.splice(i, 1);
-
-            let client_idx = -1;
-            this.TCP_Clients.find((elt, idx) => {
-                if (elt.ws === ack.ws) {
-                    client_idx = idx;
+            this.TCP_Clients.push({ origin: data.origin, topic: data.topic, misc: data.misc, ws });
+        } else if (type === 'terminated') {
+            let idx = -1;
+            this.TCP_Clients.find((elt, index) => {
+                if (elt.ws === ws) {
+                    idx = index;
                     return true;
                 }
                 return false;
             });
-            this.TCP_Clients.splice(client_idx, 1);
+
+            if (idx >= 0) {
+                this.TCP_Clients.splice(idx, 1);
+            }
         }
 
+        try {
+            if (callback instanceof Function) callback(ws, type, data);
+        } catch (err) {
+
+        }
+    }
+    TCPMassSend(origin, topic, data, check_misc = (client) => this.TCPMiscEval(client, topic)) {
+        if (typeof origin === 'string') origin = [origin];
+        
         //Send Message to All Connected Clients at the given origin
         for (let client of this.TCP_Clients.filter(elt => origin.find(elt2 => elt2 === 'all' || elt.origin === elt2))) {
 
             //Skip Custom Topic and Misc Eval
-            if (!this.TCPMiscEval(client)) continue;
+            if (check_misc instanceof Function && !check_misc(client)) continue;
             
-            //Add ACK Checker when not already
-            if (!this.TCP_MESSAGE_ACK.find(elt => elt.ws === client.ws))
-                this.TCP_MESSAGE_ACK.push({ ws: client.ws, origin: client.origin, message: topic + ":" + JSON.stringify(data), ack: false, tries: 0 });
-
             //Send Data
             client.ws.send(topic + ":" + JSON.stringify(data));
         }
     }
-
-    TCPRegisterCallback(client) {
-        client.ws.send("settings:" + JSON.stringify(this.GetConfig()));
-    }
-    TCPMiscEval(client, origin, topic) {
+    TCPMiscEval(client, topic) {
         return true;
+    }
+
+    TerminateTCPClients(reason = 'unknown') {
+        for (let client of this.TCP_Clients) {
+            client.ws.send("terminated:" + reason);
+            client.ws.terminate();
+        }
+
+        this.TCP_Clients = [];
     }
 
     /*
@@ -398,6 +400,45 @@ class PackageBase {
 
         return out;
     }
+    
+    addControllable(name, title, callback = (user) => 'unused') {
+        if (this.CONTROLLABLES.find(elt => elt.name === name)) return 'already exists';
+        this.CONTROLLABLES.push({ name, title, callback });
+        return true;
+    }
+    addControllables(constrollables = []) {
+        let ress = {};
+
+        for (let controll of constrollables) {
+            let res = this.addControllable(controll.name, controll.title, controll.callback);
+            if (res !== true) return res[controll.name] = res;
+        }
+
+        return Object.getOwnPropertyNames(ress).length === 0 ? ress : true;
+    }
+    removeControllable(name) {
+        let i = -1;
+        this.CONTROLLABLES.find((elt, idx) => {
+            if (elt.name === name) {
+                i = idx;
+                return true;
+            }
+            return false;
+        });
+
+        if (i < 0) return 'not found';
+        this.CONTROLLABLES.splice(i, 1);
+        return true;
+    }
+    async executeControllable(name, user) {
+        let contr = this.CONTROLLABLES.find(elt => elt.name === name);
+        if (!contr) return Promise.reject(new Error('not found'));
+        return contr.callback(user);
+    }
+    GetControllables() {
+        return this.CONTROLLABLES;
+    }
+
 
     addLog(name, database, query) {
         this.LOGS.push({ name, database, query });
@@ -421,7 +462,7 @@ class PackageBase {
         let out = {};
         for (let log of this.LOGS) {
             try {
-                out[log.name] = await this.AccessNeDB(log.database, log.query || {}, pagination);
+                out[log.name] = await this.AccessFrikyDB(log.database, log.query || {}, pagination);
             } catch (err) {
 
             }
@@ -431,8 +472,9 @@ class PackageBase {
     async GetLog(name, pagination) {
         let log = this.LOGS.find(elt => elt.name === name);
         if (!log) return Promise.reject(new Error('Log not found.'));
+
         if (!pagination) pagination = this.GetPaginationString(10, 0, { timesorted: true });
-        return this.AccessNeDB(log.database, log.query || {}, pagination);
+        return this.AccessFrikyDB(log.database, log.query || {}, pagination);
     }
 
     /*
@@ -453,11 +495,14 @@ class PackageBase {
             description: this.getDescription(),
             enabled: this.isEnabled(),
             picture: this.Package_Details['picture'],
+            api_requierements: this.Package_Details['api_requierements'],
             html: (this.USE_HTML_HOSTING ? this.getHTMLROOT() : undefined),
             html_navi: (this.isNaviEnabled ? this.isNaviEnabled() : undefined),
             api: (this.USE_API_HOSTING ? this.getAPIROOT() : undefined),
             restricted: this.RESTRICTED_HTML_HOSTING,
-            displayables: this.GetDisplayables()
+            displayables: this.GetDisplayables(),
+            controllables: this.GetControllables(),
+            ready: this.isReady()
         }
     }
 
@@ -593,6 +638,50 @@ class PackageBase {
             });
         });
     }
+    async AccessFrikyDB(collection, query = {}, pagination) {
+        if (!collection) return Promise.resolve([]);
+        if (pagination instanceof Object) pagination = this.GetPaginationString(pagination.first, pagination.cursor, pagination);
+
+        let collection_slice = [];
+
+        try {
+            collection_slice = await collection.find(query);
+        } catch (err) {
+            return Promise.reject(err);
+        }
+
+        if (pagination) {
+            let pages = this.GetPaginationValues(pagination);
+            let first = 10;
+            let cursor = 0;
+            let opts = {};
+
+            if (pages) {
+                first = pages[0] || 10;
+                cursor = pages[1] || 0;
+                opts = pages[2] || {};
+            }
+
+            if (first > 0) opts.pagecount = Math.ceil(collection_slice.length / first);
+
+            if (opts.timesorted) collection_slice = collection_slice.sort((a, b) => {
+                if (a.time) return (-1) * (a.time - b.time);
+                else if (a.iat) return (-1) * (a.iat - b.iat);
+                else return 0;
+            });
+
+            if (opts.customsort) collection_slice = collection_slice.sort((a, b) => {
+                return (-1) * (a[opts.customsort] - b[opts.customsort]);
+            });
+
+            return Promise.resolve({
+                data: collection_slice.slice(first * cursor, first * (cursor + 1)),
+                pagination: this.GetPaginationString(first, cursor + 1, opts)
+            });
+        } else {
+            return Promise.resolve(collection_slice);
+        }
+    }
     GetPaginationValues(pagination = "") {
         if (!pagination) return null;
         let out = [10, 0, {}];
@@ -615,7 +704,7 @@ class PackageBase {
         return out;
     }
     GetPaginationString(first = 10, cursor = 0, options = {}) {
-        let s = "A" + first + "B" + Math.min(cursor, (options.pagecount || (cursor + 1)) - 1) + "C";
+        let s = "A" + first + "B" + Math.max(0, Math.min(cursor, (options.pagecount === undefined ? (cursor + 1) : options.pagecount) - 1)) + "C";
         if (options.timesorted) s += "T";
         if (options.customsort) s += "CSS" + options.customsort + "CSE";
         if (options.pagecount !== undefined) s += "PS" + options.pagecount + "PE";

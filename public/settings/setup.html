@@ -118,7 +118,8 @@
 
                                 <h4>Upload Limit</h4>
                                 <input id="SETTING_WebApp_upload_limit" type="text" value="3mb" placeholder="Default: 3mb" oninput="upload_limit_change(this.value)" />
-                                <p id="SETTING_WebApp_upload_limit_Hint" hidden>Changing this setting requires a restart!</p>
+                                <button id="WebApp_UploadLimit_Save" disabled onclick="upload_limit_save();">SAVE</button>
+                                <p id="SETTING_WebApp_upload_limit_Hint" hidden>Sadly, Changing the Upload Limit requieres an ENTIRE Bot restart :/</p>
 
                             </div>
                         </div>
@@ -377,6 +378,11 @@
                             <div>
                                 <h3 style="margin-bottom: 5px;">API Endpoints</h3>
                                 <p>The Twitch API provides various API Endpoints to control, get and manipulate Data. Some Endpoints require specific Access Privilieges. All details can be read in the <a href="https://dev.twitch.tv/docs/api/reference" target="_blank">Twitch API Documentation</a>.</p>
+
+                                <h3 style="margin-top: 32px; margin-bottom: 5px;">Twitch API Scope Legend</h3>
+                                <div id="TWITCHAPI_API_LEGEND">
+
+                                </div>
                             </div>
                             <div style="position: relative;">
                                 <h3 style="margin-bottom: 5px;">Twitch API Endpoints</h3>
@@ -391,10 +397,6 @@
                                 <button style="float: right;" onclick="TwitchAPI_Endpoint_Control_All('enable', true)">Enable All</button>
                                 <button style="float: right;" onclick="TwitchAPI_Endpoint_Control_All('disable', true)">Disable All</button>
                                 <div id="TWITCHAPI_API_ENABLES_UNOFF">
-
-                                </div>
-                                <h3 style="margin-bottom: 5px;">Twitch API Scope Legend</h3>
-                                <div id="TWITCHAPI_API_LEGEND">
 
                                 </div>
                             </div>
@@ -444,7 +446,7 @@
                         <div id="WIZ_UI_GRID">
                             <button onclick="WIZARD_prev()" id="WIZ_UI_BACK" class="WIZ_UI_BTN" hidden>BACK</button>
                             <button onclick="WIZARD_next()" id="WIZ_UI_NEXT" class="WIZ_UI_BTN">NEXT</button>
-                            <button onclick="WIZARD_onRestart()" id="WIZ_UI_RESTART" class="WIZ_UI_BTN" hidden>RESTART</button>
+                            <button onclick="WIZARD_onRestart(this)" id="WIZ_UI_RESTART" class="WIZ_UI_BTN" hidden>RESTART</button>
                         </div>
                     </div>
                 </div>

@@ -2,14 +2,15 @@ let TTV_LOGIN_DEFAULT_LOG = {};
 const USERLEVELS = ['viewer', 'moderator', 'staff', 'admin'];
 
 //LOGIN
-async function LOGIN_login(jwt) {
+async function LOGIN_login(jwt, oauth, scopes = []) {
     //Fetch User
     let user;
     let offline = false;
 
     try {
-        user = await LOGIN_fetchUser(jwt);
+        user = await LOGIN_fetchUser(jwt, oauth);
     } catch (err) {
+        console.log(err);
         let cookie = LOGIN_getCookies();
         if (cookie && cookie.id_token === jwt) {
             user = cookie.user;
@@ -17,8 +18,11 @@ async function LOGIN_login(jwt) {
         }
         else return Promise.reject(err);
     }
-
+    
     if (!user) return Promise.reject(new Error('User not found.'));
+
+    //Nonce
+    removeCookie('LOGIN_NONCE', true);
 
     //Create Hoverprofile
     HOVERPROFILE_create({
@@ -28,6 +32,8 @@ async function LOGIN_login(jwt) {
         user_level: user.user_level,
         iat: user.iat,
         id_token: jwt,
+        oauth_token: oauth,
+        scopes,
         offline
     });
 
@@ -35,7 +41,7 @@ async function LOGIN_login(jwt) {
     OUTPUT_showInfo(user.user_level + ' privileges activated!');
 
     //Place in Cookies
-    LOGIN_saveCookies(user, jwt);
+    LOGIN_saveCookies(user, jwt, oauth, scopes);
 
     //Update Navi
     if (LOGIN_isLoggedIn() && document.getElementById("MAINNAV_Settings_Login")) {
@@ -57,7 +63,6 @@ async function LOGIN_fetchUser(jwt, oauth) {
 
     if (oauth) {
         opt['headers'] = { 'authorization': 'OAuth ' + oauth }
-        opt['headers'] = { 'authentication': 'Bearer ' + jwt }
     } else {
         opt['headers'] = { 'authorization': 'Bearer ' + jwt }
     }
@@ -74,8 +79,8 @@ function LOGIN_isLoggedIn() {
     return LOGIN_getCookies() !== null;
 }
 
-function LOGIN_saveCookies(user, jwt) {
-    setCookie('LOGGED_IN_USER', JSON.stringify({ user: user, id_token: jwt }));
+function LOGIN_saveCookies(user, jwt, oauth, scopes) {
+    setCookie('LOGGED_IN_USER', JSON.stringify({ user: user, id_token: jwt, oauth_token: oauth, scopes }));
 }
 function LOGIN_removeCookies() {
     removeCookie('LOGGED_IN_USER');
@@ -120,8 +125,9 @@ async function HOVERPROFILE_init() {
     //Fetch User
     let user;
     try {
-        user = await LOGIN_fetchUser(cookie.id_token, cookie.oauth);
+        user = await LOGIN_fetchUser(cookie.id_token, cookie.oauth_token);
     } catch (err) {
+        console.log(err);
         if (PAGE_IS_PROTECTED) OUTPUT_showError(err.message);
         user = cookie.user;
         offline = true;
@@ -135,12 +141,14 @@ async function HOVERPROFILE_init() {
         user_level: user.user_level,
         iat: user.iat,
         id_token: cookie.id_token,
+        oauth_token: cookie.oauth_token,
+        scopes: cookie.scopes,
         offline: offline
     });
 }
 function HOVERPROFILE_create(user) {
     if (document.getElementById('MASTER_HOVERPROFILE')) document.getElementById('MASTER_HOVERPROFILE').remove();
-
+    
     let s = '';
     if (!user) user = {};
 
@@ -170,7 +178,7 @@ function HOVERPROFILE_create(user) {
 
     s += '<a onclick="HOVERPROFILE_update(this);">' + (user.offline === true ? 'Relogin' : 'Update Info') + '</a>';
     s += '<div class="HOVERPROFILE_DROPDOWN_TOKEN"><input value="' + user.id_token + '" type="password" readonly/><a onclick="HOVERPROFILE_showToken(this);">show ID</a></div>';
-    if (user.oauth) s += '<div class="HOVERPROFILE_DROPDOWN_TOKEN"><input value="' + user.oauth + '" type="password" readonly/><a onclick="HOVERPROFILE_showToken(this);">show OAUTH</a></div>';
+    if (user.oauth_token) s += '<div class="HOVERPROFILE_DROPDOWN_TOKEN"><input value="' + user.oauth_token + '" type="password" readonly/><a onclick="HOVERPROFILE_showToken(this);">show OAUTH</a></div>';
     s += '<a href="/Cookies">Cookies Settings</a>';
     s += '<a onclick="HOVERPROFILE_logout();">Logout</a>';
 
@@ -272,12 +280,12 @@ function HOVERPROFILE_removeCookieAccept() {
 }
 
 //TTV Login
-async function TTV_LOGIN_FETCH_USERINFO(id_token) {
+async function TTV_LOGIN_FETCH_USERINFO(id_token, oauth_token) {
     let opt = getAuthHeader();
     opt.headers['Content-Type'] = 'application/json';
     opt.method = 'POST';
-    opt.body = JSON.stringify({ id_token });
-
+    opt.body = JSON.stringify({ oauth_token, id_token });
+    
     return fetch("/api/TwitchAPI/login", opt)
         .then(STANDARD_FETCH_RESPONSE_CHECKER)
         .then(json => json);
@@ -303,9 +311,8 @@ function TTV_LOGIN_SETDATA(elt, userdata, enable_logout = false, logout_func) {
     if (userdata.sub) infos.push({ name: 'ID', value: userdata.sub });
     if (userdata.description) infos.push({ name: 'DESCRIPTION', value: userdata.description });
     if (userdata.iat) infos.push({ name: 'ISSUED AT', value: new Date(userdata.iat * 1000).toLocaleString('de-DE') });
-    if (isNaN(userdata.exp)) {
-        infos.push({ name: 'EXPIRES IN' + (userdata.refresh === true ? '*' : ''), value: userdata.exp });
-    } else if (userdata.exp) {
+    if (isNaN(userdata.exp)) infos.push({ name: 'EXPIRES IN' + (userdata.refresh === true ? '*' : ''), value: userdata.exp });
+    else if (userdata.exp) {
         let exp_elt_id = Math.random() * (userdata.sub || 10000);
 
         let interval = setInterval(() => {
@@ -334,7 +341,7 @@ function TTV_LOGIN_SETDATA(elt, userdata, enable_logout = false, logout_func) {
 
     if (userdata.refresh === true) s += '<span class="TTV_LOGIN_HINT">*refreshes when expired</span>';
 
-    data_elt.innerHTML = s + '</div><div class="TTV_LOGIN_DATA_RIGHT"><img src="' + (userdata.picture || '/images/no_image_found_alpha.png') + '" /></div></div>';
+    data_elt.innerHTML = s + '</div><div class="TTV_LOGIN_DATA_RIGHT"><img src="' + (userdata.picture || userdata.img || '/images/no_image_found_alpha.png') + '" /></div></div>';
 
     //Login/out
     if (enable_logout) {
@@ -389,24 +396,36 @@ function TTV_COL_LOG(id) {
     log_elt.innerHTML = TTV_LOGIN_DEFAULT_LOG[id];
 }
 
-async function TTV_LOGIN_CLICKED(elt, type, scopes = [], forced = true) {
+async function TTV_LOGIN_CLICKED(elt, type, scopes, nonce) {
     if (!elt || !(elt instanceof Element) || elt.parentElement.parentElement.hasAttribute('disabled')) return;
     if (!type) return;
-    
+    if (typeof scopes === 'string') scopes = scopes.split(',');
+
+    if (type === 'user') {
+        if (!nonce) nonce = GenerateRandomBytes(32);
+    }
+
     let opt = getAuthHeader();
     opt.headers['Content-Type'] = 'application/json';
     opt.method = 'POST';
-    opt.body = JSON.stringify({ scopes: scopes });
+    opt.body = JSON.stringify({ scopes, nonce });
     
     return fetch("/api/TwitchAPI/login/" + type, opt)
         .then(STANDARD_FETCH_RESPONSE_CHECKER)
         .then(json => {
+            if (type === 'user') {
+                let s = setCookie('LOGIN_NONCE', nonce, true);
+                if (s !== true) return Promise.reject(new Error(s));
+            }
+
             LOGIN_setOriginPageCookie();
             window.location.href = json.data;
         })
         .catch(err => {
-            console.log(err);
-            OUTPUT_showError(err.message);
+            if (err.message.indexOf('was not saved, because you didnt allowed that Cookie!') === -1) {
+                console.log(err);
+                OUTPUT_showError(err.message);
+            }
         });
 }
 

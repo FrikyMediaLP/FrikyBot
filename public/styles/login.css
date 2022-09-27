@@ -62,3 +62,73 @@
     bottom: 25px;
     right: 10px;
 }
+
+/* SCOPES */
+#TWITCHAPI_USERLOGIN_SCOPES_WRAPPER_BUTTON{
+    margin: 0 auto;
+}
+
+#TWITCHAPI_USERLOGIN_SCOPES_WRAPPER {
+    display: none;
+    margin: 0 auto;
+}
+
+#TWITCHAPI_USERLOGIN_SCOPES_WRAPPER.show {
+    display: block;
+}
+
+#TWITCHAPI_USERLOGIN_SCOPES {
+    margin-top: 5px;
+    width: calc(100% - 2px);
+    max-height: 300px;
+    overflow-y: scroll;
+    display: grid;
+    grid-template-columns: auto 57px;
+    grid-template-rows: auto;
+}
+
+    #TWITCHAPI_USERLOGIN_SCOPES::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    #TWITCHAPI_USERLOGIN_SCOPES::-webkit-scrollbar-track {
+        background: none;
+    }
+
+    #TWITCHAPI_USERLOGIN_SCOPES::-webkit-scrollbar-thumb {
+        background: #888;
+    }
+
+    #TWITCHAPI_USERLOGIN_SCOPES > div {
+        padding: 5px 0px;
+    }
+
+        #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(2n+1) {
+            padding-top: 8px;
+            padding-left: 5px;
+        }
+
+        #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+3), #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+4) {
+            background-color: #fefaff;
+        }
+
+        #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+1), #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+2) {
+            background-color: #f2f0f2;
+        }
+
+        #TWITCHAPI_USERLOGIN_SCOPES > span, #TWITCHAPI_USERLOGIN_SCOPES > div:nth-last-child(-n+2) {
+            background-color: white;
+            border-bottom: none;
+        }
+
+body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+3), body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+4) {
+    background-color: #2e2e2e;
+}
+
+body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+1), body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > div:nth-child(4n+2) {
+    background-color: #2e2e2e;
+}
+
+body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > span, body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > div:nth-last-child(-n+2) {
+    background-color: #2e2e2e;
+}
