@@ -118,6 +118,24 @@ class Collection {
         
         return this.replace(keep);
     }
+    async removeMany(queries = [], options = { multi: false }) {
+        //Load
+        let docs = null;
+        try {
+            docs = await this.load();
+        } catch (err) {
+            return Promise.reject(err);
+        }
+
+        let keep = docs;
+
+        for (let query of queries) {
+            if (options.multi) keep = keep.findInverse(query);
+            else keep = keep.findInverseRemoveFirst(query);
+        }
+
+        return this.replace(keep);
+    }
 
     async find(query) {
         return this.load().then(collection => collection.find(query));

@@ -36,7 +36,7 @@ class WebApp extends require('./../Util/ModuleBase.js') {
             { name: 'Authenticator', type: 'config', requiered: true, group: 1 },
             { name: 'Log_Dir', type: 'string', default: 'Logs/' + MODULE_DETAILS.name + '/' },
             { name: 'use_legacy_server', type: 'boolean', default: false },
-            { name: 'tcp_pinging_interval', type: 'number', default: 5 }
+            { name: 'tcp_pinging_interval', type: 'number', default: 0.833, min: 0.5 }
         ]);
         this.Config.options = {
             groups: [{ name: 'WebApp' }, { name: 'Authenticator' }]
@@ -302,6 +302,36 @@ class WebApp extends require('./../Util/ModuleBase.js') {
 
             return Promise.resolve();
         });
+        this.WebAppInteractor.addAuthAPIEndpoint('/settings/webapp/tcp_pinging_interval', { user_level: 'admin' }, 'PUT', async (req, res) => {
+            if (!req.body.tcp_pinging_interval) {
+                res.json({ err: 'Interval nof valid' });
+                return Promise.resolve();
+            }
+            let errors = this.Config.UpdateSetting('tcp_pinging_interval', req.body.tcp_pinging_interval);
+
+            if (errors !== true) {
+                res.json({ err: 'Changing Interval: ' + errors[0] });
+                return Promise.resolve();
+            }
+
+            this.stopTCPPinging();
+            this.WS_ping();
+            this.startTCPPinging();
+            
+            res.json({ msg: '200', tcp_pinging_interval: req.body.tcp_pinging_interval });
+
+            //Logging
+            if (this.Settings_LOG) {
+                this.Settings_LOG.insert({
+                    endpoint: '/api/settings/webapp/tcp_pinging_interval',
+                    method: 'PUT',
+                    body: req.body,
+                    time: Date.now()
+                }).catch(err => this.Logger.warn("Settings Logging: " + err.message));
+            }
+
+            return Promise.resolve();
+        });
         this.WebAppInteractor.addAuthAPIEndpoint('/settings/webapp/authenticator', { user_level: 'admin' }, 'PUT', (req, res) => {
             let find = this.Installed_Authenticators.find(elt => elt.GetName() === req.body.authenticator);
             if (!find) return res.json({ err: 'authenticator not found' });
@@ -429,6 +459,7 @@ class WebApp extends require('./../Util/ModuleBase.js') {
     stopTCPPinging() {
         if (this.TCP_PINGING_INTERVAL) {
             clearInterval(this.TCP_PINGING_INTERVAL);
+            this.TCP_PINGING_INTERVAL = null;
         }
     }
     
@@ -728,16 +759,20 @@ class WebApp extends require('./../Util/ModuleBase.js') {
     }
     
     //UTIL
-    GetAuthenticatorDetails() {
+    async GetAuthenticatorDetails() {
         let data = [];
 
         for (let auth of this.Installed_Authenticators) {
-            data.push({
-                name: auth.GetName(),
-                rdy: auth.isReady(),
-                act: auth.isActive(),
-                enabled: auth.isEnabled()
-            });
+            try {
+                data.push({
+                    name: auth.GetName(),
+                    rdy: await auth.isReady(),
+                    act: auth.isActive(),
+                    enabled: auth.isEnabled()
+                });
+            } catch (err) {
+
+            }
         }
 
         return data;
@@ -1165,9 +1200,13 @@ class Authenticator {
     removeReadyRequirement(index) {
         this.READY_REQUIREMENTS.splice(index, 1);
     }
-    isReady() {
+    async isReady() {
         for (let func of this.READY_REQUIREMENTS) {
-            if (func instanceof Function && func() === false) return false;
+            try {
+                if (func instanceof Function && (await func()) === false) return false;
+            } catch (err) {
+
+            }
         }
 
         return true;

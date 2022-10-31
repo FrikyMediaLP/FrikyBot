@@ -185,9 +185,9 @@ body.darkmode#WIZARD #WIZ_CONTENT h3 {
     border-color: dimgray;
 }
 
-        #WIZARD #WIZ_CONTENT h4 {
-            margin: 0px;
-        }
+#WIZARD #WIZ_CONTENT h4 {
+    margin: 0px;
+}
 
         #WIZARD #WIZ_CONTENT p {
             margin-top: 5px;
@@ -328,6 +328,10 @@ body.darkmode #WIZARD #WIZ_UI {
 #WEBAPP_HOSTNAME_VERIFY {
     float: right;
     transform: translate(-20px, -2px);
+}
+
+#WIZARD #WIZ_CONTENT .WIZ_GROUP_WebApp h4 {
+    margin-top: 10px;
 }
 
 /* Twitch IRC */
@@ -681,7 +685,7 @@ body.darkmode #TWITCHAPI_USERLOGIN_SCOPES > span, body.darkmode #TWITCHAPI_USERL
 
 /* EventSubs */
 #TWITCHAPI_EVENTSUB_ENABLES {
-    margin-top: 20px;
+    margin-top: 30px;
 }
 
     #TWITCHAPI_EVENTSUB_ENABLES p {

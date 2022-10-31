@@ -135,9 +135,18 @@ const TTV_API_INFO = {
         method: 'GET',
         url: '/charity/campaigns',
         req_scope: 'channel:read:charity',
-        resource: 'Charity'
+        resource: 'Charity',
+        beta: true
     },
     //Chat
+    "Get Chatters": {
+        token_type: 'Any',
+        method: 'GET',
+        url: '/chat/chatters',
+        req_scope: 'moderator:read:chatters',
+        resource: 'Chat',
+        beta: true
+    },
     "Get Channel Emotes": {
         token_type: 'Any',
         method: 'GET',
@@ -1099,6 +1108,14 @@ const TTV_EVENTSUB_TOPICS = {
         scope: 'channel:read:hype_train',
         resource: 'Channel'
     },
+    "channel.charity_campaign.donate": {
+        version: 'beta',
+        name: 'Charity Donation',
+        description: 'Sends an event notification when a user donates to the broadcaster’s charity campaign.',
+        conditions: ['broadcaster_user_id'],
+        scope: 'channel:read:charity',
+        resource: 'Channel'
+    },
     "stream.online": {
         version: '1',
         name: 'Stream Online',
@@ -1175,6 +1192,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             { name: 'disabled_eventsub_topics', type: 'array', selection: Object.getOwnPropertyNames(TTV_EVENTSUB_TOPICS), allow_empty: true, default: ['drop.entitlement.grant', 'extension.bits_transaction.create', 'user.authorization.grant', 'user.authorization.revoke', 'user.update'] },
             { name: 'EventSub_Secret', type: 'string', private: true, requiered: true, default_func: () => this.regenerateEventSubSecret(false) },
             { name: 'EventSub_max_Timeout', type: 'number', default: 12, min: 1 },
+            { name: 'EventSub_max_lifespan', type: 'number', default: 3, min: 0 },
             { name: 'multi_hostname_mode', type: 'boolean', default: true },
             { name: 'eventsubs_update_interval', type: 'number', default: 24 },
             { name: 'api_caching_range', type: 'number', default: 1 }
@@ -1205,6 +1223,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         this.EventSubs_Duplicates = [];
         this.EventSubs_Extern_Callback = [];
         this.EventSubs_Interval = null;
+        this.is_updating_eventsubs = false;
 
         this.API_CACHE = [];
         this.BOT_USER_NONCE = null;
@@ -1227,7 +1246,9 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         //Controllables
         this.addControllables([
             { name: 'check_tokens', title: 'Check Tokens', callback: async (user) => this.Controllable_CheckTokens() },
-            { name: 'check_eventsubs', title: 'Check EventSubs', callback: async (user) => this.Controllable_CheckEventSubs() }
+            { name: 'check_eventsubs', title: 'Check EventSubs', callback: async (user) => this.Controllable_CheckEventSubs() },
+            { name: 'renew_eventsubs', title: 'Renew EventSubs', callback: async (user) => this.Controllable_ForceRenewEventSubs() },
+            { name: 'cancel_eventsubs', title: 'Cancel EventSubscriptions', callback: async (user) => this.cancelEventSubScriptions(['all']) }
         ]);
 
         //Displayables
@@ -1240,13 +1261,11 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             { name: 'Total API Calls', value: () => this.STAT_API_CALLS },
             { name: 'API Calls Per 10 Min', value: () => this.STAT_API_CALLS_PER_10 },
             { name: 'API Endpoints', value: Object.getOwnPropertyNames(TTV_API_INFO) },
-            {
-                name: 'Active EventSubs', value: () => {
+            { name: 'Active EventSubs', value: () => {
                     let whs = [];
                     for (let wh of this.EventSubs) whs.push(wh.type);
                     return whs;
-                }
-            },
+                } },
             { name: 'Broken EventSubs', value: () => this.GetMissingEventSubs() }
         ]);
     }
@@ -1668,7 +1687,7 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
 
             //Update Config
             this.Config.UpdateSetting('disabled_eventsub_topics', new_dis);
-
+            
             if (topic === 'all') return res.json({ state: new_dis.length === 0 });
             else return res.json({ state: this.Config.GetConfig()['disabled_eventsub_topics'].find(elt => elt === topic) === undefined });
         });
@@ -1737,10 +1756,10 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             if (!this.isEnabled()) return response.status(503).json({ err: 'Twitch API is disabled' });
 
             let topic = req.query['topic'];
-            
+
             //Fetch Data
             try {
-                if(topic === 'all') {
+                if (topic === 'all') {
                     await this.updateEventSubs();
                 } else {
                     return response.sendStatus(408);
@@ -1752,7 +1771,25 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                 res.json({ err: err.message });
                 return Promise.resolve();
             }
-            
+
+            res.sendStatus(500);
+        });
+        WebInter.addAuthAPIEndpoint('/TwitchAPI/EventSub', { user_level: 'admin' }, 'DELETE', async (req, res) => {
+            if (!this.isEnabled()) return response.status(503).json({ err: 'Twitch API is disabled' });
+            let topic = req.query['topic'];
+
+            //Fetch Data
+            try {
+                if (typeof topic === 'string') await this.cancelEventSubScriptions([topic]);
+                else await this.cancelEventSubScriptions(topic);
+
+                res.json({ data: this.EventSubs });
+                return Promise.resolve();
+            } catch (err) {
+                res.json({ err: err.message });
+                return Promise.resolve();
+            }
+
             res.sendStatus(500);
         });
         WebInter.addAPIEndpoint('/TwitchAPI/EventSub/master', 'POST', async (req, res) => this.WEBHOOK_MASTER_CALLBACK(req, res));
@@ -1770,10 +1807,38 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
 
     async Controllable_CheckEventSubs() {
         if (!this.isEnabled()) return Promise.reject(new Error('Twitch API is disabled'));
-        return this.updateEventSubs();
+        if (this.is_updating_eventsubs) return Promise.reject(new Error('Already updating EventSubs!'));
+        this.is_updating_eventsubs = true;
+
+        this.updateEventSubs()
+            .then(x => {
+                this.is_updating_eventsubs = false;
+            })
+            .catch(x => {
+                this.is_updating_eventsubs = false;
+            });
+
+        return Promise.resolve('EventSubs are beeing updated! This might take a bit!');
+    }
+    async Controllable_ForceRenewEventSubs() {
+        if (!this.isEnabled()) return Promise.reject(new Error('Twitch API is disabled'));
+        if (this.is_updating_eventsubs) return Promise.reject(new Error('Already updating EventSubs!'));
+        this.is_updating_eventsubs = true;
+
+        this.RenewEventSubs(['all'])
+            .then(x => {
+                this.is_updating_eventsubs = false;
+            })
+            .catch(x => {
+                this.is_updating_eventsubs = false;
+            });
+
+        return Promise.resolve('EventSubs are beeing updated! This might take a bit!');
     }
     async Controllable_CheckTokens() {
         if (!this.isEnabled()) return Promise.reject(new Error('Twitch API is disabled'));
+        if (this.is_updating_eventsubs) return Promise.reject(new Error('Already updating EventSubs!'));
+        this.is_updating_eventsubs = true;
 
         let data = {};
 
@@ -1802,12 +1867,14 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
                 }
             }
             else {
+                this.is_updating_eventsubs = false;
                 return res.json({ err: 'invalid Type ' + type });
             }
 
             data[type] = tkn_data;
         }
 
+        this.is_updating_eventsubs = false;
         return Promise.resolve('App Access: ' + data.app.state + ' User Access: ' + data.user.state);
     }
 
@@ -2650,7 +2717,10 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             }
         }
 
-        //Check - Scopes + Enabled + Condition
+        //max lifespan in months
+        const MAX_LIFESPAN = Date.now() - 1000 * 60 * 60 * 24 * 30 * cfg['EventSub_max_lifespan'];
+
+        //Check - Scopes + Enabled + Condition + Lifespan
         let revoke_eventsubs = [];
         for (let eventsub of eventsubs) {
             let callback = eventsub.transport.callback;
@@ -2686,6 +2756,14 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
 
             }
 
+            //Lifespan
+            try {
+                let date = new Date(eventsub.created_at);
+                if (date.getTime() < MAX_LIFESPAN) found = false;
+            } catch (err) {
+
+            }
+            
             //Mismatch in Settings -> Revoke
             if (found === false) revoke_eventsubs.push(eventsub);
         }
@@ -2784,7 +2862,10 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             }
         }
 
-        //Check - Scopes + Enabled + Condition
+        //max lifespan in months
+        const MAX_LIFESPAN = Date.now() - 1000 * 60 * 60 * 24 * 30 * cfg['EventSub_max_lifespan'];
+
+        //Check - Scopes + Enabled + Condition + Lifespan
         let revoke_eventsubs = [];
         for (let eventsub of eventsubs) {
             let callback = eventsub.transport.callback;
@@ -2816,6 +2897,14 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
             try {
                 let condition = await this.getEventSubTopiCondition(eventsub.type);
                 found &= condition === eventsub.condition;
+            } catch (err) {
+
+            }
+
+            //Lifespan
+            try {
+                let date = new Date(eventsub.created_at);
+                if (date.getTime() < MAX_LIFESPAN) found = false;
             } catch (err) {
 
             }
@@ -2880,6 +2969,63 @@ class TwitchAPI extends require('./../Util/ModuleBase.js') {
         }
 
         return Promise.resolve(this.EventSubs);
+    }
+    async cancelEventSubScriptions(topics = ['all']) {
+        //Get EventSub Status
+        let eventsubs = [];
+        try {
+            eventsubs = (await this.GetEventSubSubscriptions({ status: 'enabled' })).data;
+        } catch (err) {
+            return Promise.reject(err);
+        }
+        
+        let current_hostname = this.WebAppInteractor.GetHostname();
+
+        //Collect
+        let MY_eventsubs = [];
+        for (let eventsub of eventsubs) {
+            let callback = eventsub.transport.callback;
+            let hostname = callback.substring(8, callback.indexOf('/', 8) > 0 ? callback.indexOf('/', 8) : callback.length);
+
+            if (hostname !== current_hostname) continue;
+            
+            MY_eventsubs.push(eventsub);
+        }
+
+        //Remove Topics
+        for (let eventsub of MY_eventsubs.filter(elt => topics.find(elt2 => elt2 === 'all' || elt2 === elt.type) !== undefined)) {
+            try {
+                this.Logger.warn("Removing EventSub: " + eventsub.type);
+                let response = await this.DeleteEventSubSubscription({ id: eventsub.id });
+                if (response === 204) {
+                    let idx = -1;
+                    MY_eventsubs.find((elt, i) => {
+                        if (elt.id === eventsub.id) {
+                            idx = i;
+                            return true;
+                        }
+                        return false;
+                    });
+                    if (idx >= 0) MY_eventsubs.splice(idx, 1);
+                }
+            } catch (err) {
+                this.Logger.error(err.message);
+            }
+        }
+
+        this.EventSubs = MY_eventsubs;
+        return Promise.resolve(this.EventSubs);
+    }
+    async RenewEventSubs(topics = ['all']) {
+        //Cancel Previous
+        try {
+            await this.cancelEventSubScriptions(topics);
+        } catch (err) {
+            return Promise.reject(err);
+        }
+        
+        //Update / Create new
+        return this.updateEventSubs();
     }
 
     async WEBHOOK_MASTER_CALLBACK(req, res) {
@@ -3226,21 +3372,27 @@ class Authenticator extends WEBAPP.Authenticator {
         this.Config.FillConfig();
 
         //Ready
-        this.addReadyRequirement(() => {
+        this.addReadyRequirement(async () => {
             if (!this.TwitchAPI) return false;
 
             if (!this.TwitchAPI.isEnabled()) return false;
             if (!this.TwitchAPI.isReady()) return false;
 
             if (!this.UserDatabase) return false;
-            if (this.HAS_ADMIN_USER === false) return false;
+
+            //Admin Check
+            try {
+                let docs = await this.GetUsers({ user_level: 'admin' });
+                if (docs.length === 0) return false;
+            } catch (err) {
+
+            }
 
             if (!this.Config.ErrorCheck()) return false;
             return true;
         });
 
         //Init
-        this.HAS_ADMIN_USER = false;
         this.TwitchAPI = TwitchAPI;
     }
 
@@ -3251,14 +3403,7 @@ class Authenticator extends WEBAPP.Authenticator {
             fs.mkdirSync(path.resolve(cfg['UserDB_File'].substring(0, cfg['UserDB_File'].lastIndexOf('/'))));
         }
         this.UserDatabase = new FrikyDB.Collection({ path: path.resolve(cfg['UserDB_File'] + ".db") });
-
-        //Check Admin is set
-        try {
-            await this.UpdateAdminCheck();
-        } catch (err) {
-
-        }
-
+        
         //Add API
         this.setAPI(webInt);
         return Promise.resolve();
@@ -3651,7 +3796,6 @@ class Authenticator extends WEBAPP.Authenticator {
             await this.UserDatabase.remove({ user_id: user_id + "" });
 
             this.Logger.warn('Removed ' + user_id + ' User Authorization by ' + removed_by_id + '(' + removed_by + ')');
-            this.UpdateAdminCheck();
 
             return Promise.resolve(true);
         } catch (err) {
@@ -3727,11 +3871,7 @@ class Authenticator extends WEBAPP.Authenticator {
         
         return true;
     }
-
-    async UpdateAdminCheck() {
-        return this.GetUsers({ user_level: 'admin' })
-            .then(users => { if (users.length > 0) this.HAS_ADMIN_USER = true; });
-    }
+    
     async fetchUserInfo(ids = [], names = []) {
         if (!this.TwitchAPI) return Promise.reject(new Error('Twitch API is not available.'));
 

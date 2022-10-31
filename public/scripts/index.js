@@ -16,8 +16,6 @@
         let h2 = document.createElement('H2');
         h2.innerHTML = '<a href="/News">News</a> <span id="NEWS_SWITCH"><span>SCHEDULED</span><switchbutton id="NEWS_SWITCHER" value="true" onclick="news_switch(this);"></switchbutton></span>';
         document.getElementById('content').insertBefore(h2, document.getElementById('BOT_STATUS_DETAILS_NORMAL').nextSibling);
-        
-        NEWS_FEED_FETCH_Feed(null, "first=2" + (scheduled ? '' : '&end=' + Date.now()));
     }
 
     SWITCHBUTTON_AUTOFILL();
@@ -27,6 +25,10 @@
         scheduled = getCookie('NEWSFEED_ALLOW_SCHEDULED') == 'true';
         SWITCHBUTTON_TOGGLE(document.getElementById('NEWS_SWITCHER'), scheduled);
         document.getElementById('NEWS_SWITCH').style.display = 'inline-block';
+    }
+
+    if (NEWS_FEED_FETCH_Feed) {
+        NEWS_FEED_FETCH_Feed(null, "first=2" + (scheduled ? '' : '&end=' + Date.now()));
     }
 }
 function news_switch(elt) {

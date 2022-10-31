@@ -1,6 +1,6 @@
 ﻿'use strict';
 
-const VERSION = '0.4.0.0';
+const VERSION = '0.4.1.0';
 
 /*
  *  ----------------------------------------------------------
@@ -508,12 +508,17 @@ function loadPackage(pack, preloaded_config) {
         Logger.server.warn(pack + " -> " + "Please check your install or contact the Devs!");
     }
 }
-async function iniPackage(pack) {
+async function iniPackage(pack, auto_enable = false) {
     try {
         let packClass = INSTALLED_PACKAGES[pack].Class;
 
         INSTALLED_PACKAGES[pack].Object = new packClass(INSTALLED_MODULES['WebApp'].Object.GetInteractor(), (INSTALLED_MODULES['TwitchIRC'] || {}).Object, (INSTALLED_MODULES['TwitchAPI'] || {}).Object, Logger);
-        
+
+        //Auto Enable
+        if (auto_enable === true) {
+            await INSTALLED_PACKAGES[pack].Object.enable();
+        }
+
         //Init ENABLED Packages
         if (INSTALLED_PACKAGES[pack].Object.isEnabled()) {
             return INSTALLED_PACKAGES[pack].Object.Init(INSTALLED_PACKAGES[pack].Config);
@@ -1275,12 +1280,20 @@ async function PAGE_Settings_Setup(req, res, next) {
         }
     }
 
+    //Authenticators Details
+    let auths = [];
+
+    try {
+        auths = await INSTALLED_MODULES['WebApp'].Object.GetAuthenticatorDetails();
+    } catch (err) {
+
+    }
+
     res.json({
         data: {
             cfg: ConfigHandler.GetConfigJSON(),
             tmpl: ConfigHandler.GetTemplates(),
-            auths: INSTALLED_MODULES['WebApp'].Object.GetAuthenticatorDetails(),
-            ttv_api, ttv_irc, packages
+            auths, ttv_api, ttv_irc, packages
         }
     });
 }
@@ -1512,7 +1525,17 @@ async function PAGE_Settings_Tools(req, res, next) {
         'API Router': WebApp.API_TREE_SIMPLYFIY(api)
     };
 
+    //Logs
     data['RAW_LOGS'] = Logger.GetAllRawLogNames();
+
+    //EventSubs
+    try {
+        let TwitchAPI = (INSTALLED_MODULES['TwitchAPI'] || {}).Object;
+        data['EVENTSUBS'] = TwitchAPI.GetActiveEventSubs();
+    } catch (err) {
+        console.log(err);
+    }
+
 
     res.json({ data });
 }

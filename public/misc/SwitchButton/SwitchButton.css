@@ -1,4 +1,4 @@
-
+﻿
 /* 
     ------------------
         SWITCH BUTTON
@@ -774,7 +774,6 @@ customtable {
 .MISC_FILE_LIBRARY {
     width: 100%;
     border: 1px solid gray;
-    overflow: hidden;
 }
     .MISC_FILE_LIBRARY > .HIDDEN_AUDIO_CLUB {
         display: none;
@@ -989,4 +988,95 @@ customtable {
 
                 .MISC_FILE_LIBRARY .FILE_LIST .IMAGE_ELT .HOVER_ELT img:last-child:hover {
                     background-color: green;
+                }
+
+/* 
+    -----------------------
+         DROPDOWN BUTTON
+    -----------------------
+*/
+.DROPDOWN_BUTTON {
+    --header-font-size: 20px;
+    --content-font-size: 15px;
+    position: relative;
+}
+
+    .DROPDOWN_BUTTON .DROPDOWN_BUTTON_HEADERS {
+        display: grid;
+        grid-template-columns: auto auto;
+        background-color: var(--frikybot-light);
+    }
+
+        .DROPDOWN_BUTTON .DROPDOWN_BUTTON_HEADERS > center {
+            cursor: pointer;
+            padding: 5px;
+            color: white;
+            font-size: var(--header-font-size);
+            font-weight: 400;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+            .DROPDOWN_BUTTON .DROPDOWN_BUTTON_HEADERS > center:hover {
+                background-color: var(--frikybot-dark);
+            }
+
+            .DROPDOWN_BUTTON .DROPDOWN_BUTTON_HEADERS > center:first-child {
+                padding: 5px 20px;
+                border-right: 1px solid var(--frikybot-darker);
+            }
+
+            .DROPDOWN_BUTTON .DROPDOWN_BUTTON_HEADERS > center:last-child::after {
+                content: '▼';
+            }
+
+    .DROPDOWN_BUTTON.expanded .DROPDOWN_BUTTON_HEADERS > center:last-child::after {
+        content: '▲';
+    }
+
+    .DROPDOWN_BUTTON .DROPDOWN_BUTTON_CONTENT {
+        display: none;
+        grid-template-columns: 100%;
+        grid-template-rows: auto;
+        padding: 0 1px 1px 1px;
+        background-color: black;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        z-index: 1;
+    }
+
+    .DROPDOWN_BUTTON.expanded .DROPDOWN_BUTTON_CONTENT {
+        display: grid;
+    }
+
+        .DROPDOWN_BUTTON.expanded .DROPDOWN_BUTTON_CONTENT > center {
+            margin-top: 1px;
+            padding: 2px 20px;
+            background-color: rgb(240,240,240);
+            cursor: pointer;
+            font-weight: 200;
+            font-size: var(--content-font-size);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            /* DISABLE SELECT */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+            .DROPDOWN_BUTTON.expanded .DROPDOWN_BUTTON_CONTENT > center:hover {
+                background-color: rgb(230,230,230);
+            }
+
+            .DROPDOWN_BUTTON.expanded .DROPDOWN_BUTTON_CONTENT > center.highlighted {
+                background-color: rgb(255, 233, 143);
+            }
+
+                .DROPDOWN_BUTTON.expanded .DROPDOWN_BUTTON_CONTENT > center.highlighted:hover {
+                    background-color: rgb(245, 223, 133);
                 }
