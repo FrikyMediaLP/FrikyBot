@@ -103,10 +103,13 @@ function CONTROLS_CONTROLLABLE(module = true, type_name, controllable_name) {
     fetch('/api/' + (module ? 'modules' : 'packages') + '/control/ables', opts)
         .then(STANDARD_FETCH_RESPONSE_CHECKER)
         .then(json => {
-            console.log(json);
+            if (typeof json === 'string') return OUTPUT_showInfo(json);
+            if (json.type === 'error') return Promise.reject(new Error(json.message));
+            if (json.message) return OUTPUT_showInfo(json.message);
+            OUTPUT_showInfo('200 - Action performed!');
         })
         .catch(err => {
-            console.log(err);
+            console.log(err.message);
             OUTPUT_showError(err.message);
         });
 }

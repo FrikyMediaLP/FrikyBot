@@ -293,6 +293,7 @@ function CONTROLS_CONTROLLABLE(module_name, controllable_name) {
     fetch('/api/modules/control/ables', opts)
         .then(STANDARD_FETCH_RESPONSE_CHECKER)
         .then(json => {
+            if (typeof json === 'string') OUTPUT_showInfo(json);
             console.log(json);
         })
         .catch(err => {

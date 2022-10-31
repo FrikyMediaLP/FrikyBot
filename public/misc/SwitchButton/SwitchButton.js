@@ -1352,3 +1352,71 @@ function byteToString(num) {
 
     return (num / Math.pow(1024, cur-1)).toFixed(2) + letters[cur - 1] + 'B';
 }
+
+/*
+ * -------------------------------------
+ *             DROPDOWN BUTTON
+ * -------------------------------------
+ */
+function MISC_createDropdownButton(title = "", options = [], selected_index = 0, onclick = "", onchange = "", id = "", custom_class = "") {
+    let s = '';
+
+    s += '<div ' + (id !== "" ? ('id="' + id + '"') : '');
+    s += ' class="DROPDOWN_BUTTON ' + (custom_class !== "" ? custom_class : '') + '"';
+    s += ' title="' + title + '"';
+    s += ' data-title="' + title + '"';
+    s += ' >';
+    s += MISC_createDropdownButton_HeaderHTML(title, onclick);
+    s += MISC_createDropdownButton_ContentHTML(options, selected_index, onchange);
+    s += '</div>';
+
+    return s;
+}
+function MISC_createDropdownButton_HeaderHTML(title, onclick = "") {
+    let s = '';
+
+    s += '<div class="DROPDOWN_BUTTON_HEADERS">';
+    s += '<center onclick="' + onclick + '(this);">' + title + '</center>';
+    s += '<center onclick="this.parentElement.parentElement.classList.toggle(' + "'expanded'" + ')"></center>';
+    s += '</div>';
+
+    return s;
+}
+function MISC_createDropdownButton_ContentHTML(options = [], selected_index = 0, onchange = "") {
+    let s = '';
+
+    s += '<div class="DROPDOWN_BUTTON_CONTENT">';
+    for (let i = 0; i < options.length; i++) {
+        let option = options[i];
+        s += '<center ';
+        s += (i === selected_index ? 'class="highlighted"' : '');
+        s += ' data-name="' + option.name + '"';
+        s += ' title="' + option.title + '"';
+        s += ' onclick="MISC_changeDropdownButton(this, ' + "'" + onchange + "'" + ')"';
+        s += ' >';
+        s += option.title;
+        s += '</center>';
+    }
+    s += '</div>';
+
+    return s;
+}
+
+function MISC_changeDropdownButton(elt, callback) {
+    let root = FindHTMLParent(elt, (p) => p.classList.contains('DROPDOWN_BUTTON'));
+
+    if (!elt.classList.contains('highlighted')) {
+        for (let ele of elt.parentElement.childNodes) {
+            ele.classList.remove('highlighted');
+        }
+
+        elt.classList.add('highlighted');
+        
+        if (callback && window[callback]) window[callback](elt.dataset.name, root.id || root.dataset.title);
+    }
+    
+    if (root) root.classList.remove('expanded');
+}
+function MISC_getDropdownButtonValue(elt) {
+    return FindSubElementFromPath(elt, ['.DROPDOWN_BUTTON_CONTENT', '.highlighted']).dataset.name;
+}

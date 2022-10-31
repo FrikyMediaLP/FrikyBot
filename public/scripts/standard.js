@@ -353,10 +353,10 @@ function StartWebsocket(register_info, on_message = (event) => 'unused', on_term
     let is_secure = window.location.protocol === 'https:';
 
     const socket = new WebSocket((is_secure ? 'wss' : 'ws') + '://' + window.location.hostname + (window.location.port ? ":" + window.location.port : ""));
-    
+
     socket.addEventListener('message', function (event) {
         if (event.data.toString() === 'Error') return console.error("Websocket error!");
-        
+
         let type = event.data.split(":")[0];
 
         //System Messages
@@ -374,6 +374,14 @@ function StartWebsocket(register_info, on_message = (event) => 'unused', on_term
 
         //Custom Messages
         return on_message(event);
+    });
+
+    socket.addEventListener('close', function (event) {
+        console.error("Websocket closed!");
+        if (event.code === 1006) {
+            //Abnormal Close - Probably a Heartbeat Timeout
+            console.log("This Close was abnormal! Its probably cause by a Ping-Timeout of your Proxy Service! Try to raise the send / read timeout length to match your WebApp Setting! (e.g. nginx`s default is -> proxy_read_timeout 60s; proxy_send_timeout 60s;). Alternativily lower the WebApp Ping interal to match your Proxy.");
+        }
     });
 
     return socket;
@@ -423,10 +431,10 @@ function HTMLArray2RealArray(arr = []) {
     return output;
 }
 function FindHTMLParent(elt, parent_match = (parent) => true) {
-    while (parent_match(elt) === false && elt.tagName !== 'BODY') {
+    while (elt && parent_match(elt) === false && elt.tagName !== 'BODY') {
         elt = elt.parentElement;
     }
-
+    if (!elt) return null;
     return elt.tagName !== 'BODY' ? elt : null;
 }
 function FindSubElementFromPath(parent, path = []) {

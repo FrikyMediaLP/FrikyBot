@@ -27,13 +27,18 @@ const TOOLS = [
         description: 'Visualizes a Local Storage Dump of Emote Information from twitch.tv',
         targetid: 'TTV_LOCAL_STORAGE_VIS',
         init_func: (data) => {
-
+            EVENTSUB_VISUALIZER_setup(data.EVENTSUBS);
         }
     },
     {
         name: 'Database Visualzier',
         description: 'Visualizes Database Data in a Grid Table.',
         targetid: 'DATABASE_VISUALIZER'
+    },
+    {
+        name: 'EventSub Visualzier',
+        description: 'Visualizes active EventSubs Data in a Grid Table.',
+        targetid: 'EVENTSUB_VISUALIZER'
     },
     {
         name: 'Config JSON Modifier',
@@ -321,4 +326,9 @@ function DATABASE_VISUALIZER_CONVERT(str) {
     };
 
     document.getElementById('DATABASE_VISUALIZER_OUT').innerHTML = MISC_createTable(arr || [], options);
+}
+
+//EVENTSUB VISUALIZER
+function EVENTSUB_VISUALIZER_setup(arr = []) {
+    document.getElementById('EVENTSUB_VISUALIZER_TABLE').innerHTML = MISC_createTable(arr, { headers: ['type', 'version', 'condition', 'created_at', 'cost'], timestamps: { created_at: 'relative' } });
 }

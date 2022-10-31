@@ -445,7 +445,9 @@ function WIZARD_updateSetting(name, value, path, template = {}) {
     let elt = document.getElementById(elementID);
 
     if (elt) {
-        if (template.type === 'boolean' && elt.tagName === 'SWITCHBUTTON') {
+        if (elementID === 'SETTING_WebApp_tcp_pinging_interval') {
+            elt.value = Math.round(value * 60);
+        } else if (template.type === 'boolean' && elt.tagName === 'SWITCHBUTTON') {
             SWITCHBUTTON_TOGGLE(elt, value);
         } else if (template.type === 'boolean' && elt.tagName === 'INPUT') {
             elt.checked = value === true;
@@ -615,7 +617,7 @@ async function CONTENT_OnLoad() {
             try {
                 let data = await TTV_LOGIN_FETCH_USERINFO(id_token.value[0]);
                 let username = data.user['preferred_username'];
-                
+
                 if (username) {
                     document.getElementById('SETTING_TwitchIRC_login').value = username;
                     document.getElementById('SETTING_TwitchIRC_oauth').value = 'oauth:' + access_token.value[0];
@@ -681,17 +683,13 @@ function hostname_save() {
 }
 function upload_limit_change(value) {
     if (value == CUR_CONFIG.WebApp.upload_limit) {
-        document.getElementById('WebApp_UploadLimit_Save').disabled = false;
-        document.getElementById('WIZ_UI_RESTART').setAttribute('hidden', '');
-        document.getElementById('WIZ_UI_NEXT').removeAttribute('hidden');
+        document.getElementById('WebApp_UploadLimit_Save').disabled = true;
         document.getElementById('SETTING_WebApp_upload_limit_Hint').setAttribute('hidden', '');
         return;
     }
 
     document.getElementById('WebApp_UploadLimit_Save').disabled = false;
     document.getElementById('SETTING_WebApp_upload_limit_Hint').removeAttribute('hidden');
-    document.getElementById('WIZ_UI_NEXT').setAttribute('hidden', '');
-    document.getElementById('WIZ_UI_RESTART').removeAttribute('hidden');
 }
 function upload_limit_save() {
     let opt = getAuthHeader();
@@ -707,6 +705,37 @@ function upload_limit_save() {
                 let outS = 'Server Upload Limit updated to ' + json.upload_limit;
                 outS += '</br>Go <a href="http://localhost:' + json.port + '/settings/setup#_m=0&_g=1">here</a> after a manuell restart to resume Setup at this Step!';
                 OUTPUT_showInfo(outS);
+                document.getElementById('WebApp_UploadLimit_Save').disabled = true;
+            } else OUTPUT_showError('500 - Internal Error.');
+        })
+        .catch(err => {
+            OUTPUT_showError(err.message);
+        });
+}
+function tcp_pinging_interval_change(value) {
+    if (value == CUR_CONFIG.WebApp.upload_limit) {
+        document.getElementById('WebApp_TCP_Ping_Interval_Save').disabled = true;
+        return;
+    }
+
+    document.getElementById('WebApp_TCP_Ping_Interval_Save').disabled = false;
+}
+function tcp_pinging_interval_save() {
+    const prescision = 1000;
+
+    let opt = getAuthHeader();
+    opt.method = 'PUT';
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify({ tcp_pinging_interval: Math.floor((document.getElementById('SETTING_WebApp_tcp_pinging_interval').value / 60) * prescision) / prescision });
+    
+    fetch('/api/settings/webapp/tcp_pinging_interval', opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            if (json.msg === '200') {
+                //Output
+                let outS = 'TCP Ping-Pong Interval updated to ' + json.tcp_pinging_interval;
+                OUTPUT_showInfo(outS);
+                document.getElementById('WebApp_TCP_Ping_Interval_Save').disabled = true;
             } else OUTPUT_showError('500 - Internal Error.');
         })
         .catch(err => {
@@ -1310,13 +1339,34 @@ function TwitchAPI_Auth_DB_edit(user_id) {
         TwitchAPI_Auth_DB_create();
     }
 }
-function TwitchAPI_Auth_DB_save(user_id) {
+async function TwitchAPI_Auth_DB_save(user_id) {
     let ulElements = HTMLArray2RealArray(document.getElementsByClassName('TwitchAPI_Authenticator_Users_LEVEL_SELECT'));
     let user_level;
     for (let elElt of ulElements) {
         if (elElt instanceof Element && elElt.dataset.userid === user_id + '') {
             user_level = elElt;
             break;
+        }
+    }
+    
+    //Display Warning when using TTV Auth and changing last admin account
+    if ((WIZARD_AUTHS.find(elt => elt.act === true) || {}).name === 'TTV Auth.') {
+        //using TTV Auth
+        if ((TTV_API_AUTH_USERS.find(elt => elt.user_id == user_id) || {}).user_level === 'admin' && user_level.value !== 'admin') {
+            //Changing User is an Admin to non admin
+            if (TTV_API_AUTH_USERS.filter(elt => elt.user_level === 'admin').length === 1) {
+                //Only 1 Admin is remaining
+                //Await Confirmation
+                let answer = 'NO';
+
+                try {
+                    answer = await MISC_USERCONFIRM("WATCH OUT!!", "You are about to remove the LAST Admin User! This will make you unable to access the bot again until you restart it manually and the bot switches over to an Console-Access Code to Authenticate! Do you really want to do this?");
+                } catch (err) {
+
+                }
+
+                if (answer !== 'YES') return Promise.resolve();
+            }
         }
     }
 
@@ -1537,6 +1587,27 @@ function TwitchAPI_API_createCategorie(cat, unoff = false) {
 
     s += '</div>';
     return s;
+}
+function TwitchAPI_EventSub_Control_Update() {
+    let opt = getAuthHeader();
+
+    opt['method'] = 'PUT';
+    opt['headers']['Content-Type'] = 'application/json';
+    opt['body'] = JSON.stringify({
+        module_name: 'TwitchAPI',
+        controllable_name: 'check_eventsubs'
+    });
+
+    fetch("/api/modules/control/ables", opt)
+        .then(STANDARD_FETCH_RESPONSE_CHECKER)
+        .then(json => {
+            OUTPUT_showInfo('EventSubs are beeing updated! This might take a bit!');
+        })
+        .catch(err => {
+            SWITCHBUTTON_TOGGLE(elt, elt.value === false);
+            console.log(err);
+            OUTPUT_showError(err.message);
+        });
 }
 async function TwitchAPI_Endpoint_Control(elt, unoff = false) {
     //Check

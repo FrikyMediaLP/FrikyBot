@@ -99,12 +99,20 @@
                         </div>
                         <div class="Con_Cat Con_Cat_Description WIZ_GROUP_WebApp" hidden>
                             <div>
+                                <h3>Change Hostname (opt)</h3>
+                                <p>This Hostname refrences where Data from secured Twitch Services (anything over https) should be send to. Change this to your deployed Domain or your proxy adress, if you use any.</p>
+                                <p>Leave this as "localhost" when you run your bot locally, but remember that Extern Services wont be able to send you secured data, since they dont know where/who you are!</p>
+
                                 <h3>Change Websocket Port (opt)</h3>
                                 <p>You can change the Port the Webserver is mounted on here.</p>
                                 <p><b>Remember:</b> Everything is mounted to this Port (Settings, Cookies, ...)! So, if you change the Port, remember to change/update every other related Setting.</p>
 
                                 <h3>Change Upload Limit (opt)</h3>
                                 <p>Changing the Upload Limit of Images/Sounds/Videos/etc. might decrease Performance.</p>
+
+                                <h3>Adjust TCP Ping-Pong Interval (opt)</h3>
+                                <p>Overlays and other Services that react on realtime events use the TCP Protocoll to exchange data. Most browsers/proxy servers close these connections automatically after a while, thats why the Server will frequently ping the Client to maintain a active connection.</p>
+                                <p>Match this setting to your browsers or proxys setting (chrome and nginx use a timeout of 60s)! Otherwise these Clients might get disconnected and need to be reloaed!</p>
                             </div>
                             <div>
                                 <h4>Hostname</h4>
@@ -121,6 +129,9 @@
                                 <button id="WebApp_UploadLimit_Save" disabled onclick="upload_limit_save();">SAVE</button>
                                 <p id="SETTING_WebApp_upload_limit_Hint" hidden>Sadly, Changing the Upload Limit requieres an ENTIRE Bot restart :/</p>
 
+                                <h4>TCP Ping-Pong Interval (seconds)</h4>
+                                <input id="SETTING_WebApp_tcp_pinging_interval" type="number" step="1" min="30" value="50" placeholder="Default: 50s" oninput="tcp_pinging_interval_change(this.value)" />
+                                <button id="WebApp_TCP_Ping_Interval_Save" disabled onclick="tcp_pinging_interval_save();">SAVE</button>
                             </div>
                         </div>
                         <div class="Con_Cat Con_Cat_Description WIZ_GROUP_WebApp" hidden>
@@ -207,7 +218,8 @@
                                 <h3>Twitch Channel</h3>
                                 <p>The FrikyBot currently only supports one Channel at a time.</p>
                                 <p>Please enter the channel the Bot should join and listen for Messages/Events. A list of Twitch Channel will appear, click on one to auto-fill. <b>Note: </b>Not all Channels appear in this list!</p>
-                                <p><b>Note:</b> Twitch removed the ability to follow Channels as a bot - if you need the bot to be a follower, you have to log in the Bot Account on Twitch and follow manually!</p>
+                                <p><b>Note 1:</b> Twitch removed the ability to follow Channels as a bot - if you need the bot to be a follower, you have to log in the Bot Account on Twitch and follow manually!</p>
+                                <p><b>Note 2:</b> Twitch EventSubs are assigned to this channel. If you change the channel at any time, please <a href="#_m=3&_g=5">update the EventSubs</a> aswell! (The "Update EventSub Status" Button in the TwitchAPI -> EventSubs Settings)</p>
                             </div>
                             <div>
                                 <h3>Twitch Channel</h3>
@@ -413,6 +425,7 @@
                             </div>
                             <div style="position: relative;">
                                 <h3 style="margin-bottom: 5px;">Twitch EventSub Topics</h3>
+                                <button style="float: left;" onclick="TwitchAPI_EventSub_Control_Update()">Update EventSub Status</button>
                                 <button style="float: right;" onclick="TwitchAPI_EventSub_Control_All('enable')">Enable All</button>
                                 <button style="float: right;" onclick="TwitchAPI_EventSub_Control_All('disable')">Disable All</button>
                                 <div id="TWITCHAPI_EVENTSUB_ENABLES">
